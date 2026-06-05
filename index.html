@@ -1396,6 +1396,36 @@
   .cal-table td { border:1px solid var(--crema-oscuro); padding:6px; vertical-align:top; min-width:90px; min-height:60px; font-size:11px; }
   .cal-table td:first-child { background:var(--crema-oscuro); font-weight:700; font-size:11px; text-align:center; width:60px; }
   .cal-event { background:var(--verde-claro); color:white; border-radius:6px; padding:3px 6px; margin-bottom:3px; font-size:10px; font-weight:600; }
+
+  /* ══ OBSERVACIONES POR ALUMNO ══ */
+  .obs-alu-card {
+    background:var(--blanco); border-radius:16px; padding:20px;
+    border:1.5px solid var(--crema-oscuro); margin-bottom:14px;
+    transition:box-shadow .2s;
+  }
+  .obs-alu-card:hover { box-shadow:0 6px 18px rgba(45,80,22,.08); }
+  .obs-alu-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .obs-alu-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:white; flex-shrink:0; }
+  .obs-alu-nombre { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--verde-bosque); }
+  .obs-alu-meta { font-size:11px; opacity:.45; }
+  .obs-alu-notas { display:flex; flex-direction:column; gap:10px; }
+  .obs-nota-item { background:var(--crema); border-radius:12px; padding:12px 14px; border-left:3px solid var(--verde-claro); position:relative; }
+  .obs-nota-item.mood-bien { border-left-color:var(--verde-claro); }
+  .obs-nota-item.mood-regular { border-left-color:var(--amarillo); }
+  .obs-nota-item.mood-mal { border-left-color:var(--rojo-suave); }
+  .obs-nota-fecha { font-size:10px; opacity:.4; margin-bottom:4px; }
+  .obs-nota-texto { font-size:13px; line-height:1.5; color:#444; }
+  .obs-nota-del { position:absolute; top:8px; right:8px; width:22px; height:22px; border-radius:6px; border:none; background:rgba(192,57,43,.1); color:var(--rojo-suave); cursor:pointer; font-size:11px; }
+  .mood-selector { display:flex; gap:6px; margin-bottom:10px; }
+  .mood-btn { padding:5px 12px; border-radius:20px; border:1.5px solid var(--crema-oscuro); background:var(--crema); font-size:13px; cursor:pointer; transition:all .15s; }
+  .mood-btn.selected { border-color:var(--verde-bosque); background:var(--verde-bosque); color:white; }
+  .obs-alu-search { position:relative; margin-bottom:20px; }
+  .obs-alu-search input { width:100%; padding:11px 16px; border-radius:14px; border:1.5px solid var(--crema-oscuro); background:var(--blanco); font-family:'DM Sans',sans-serif; font-size:14px; outline:none; transition:border-color .2s; color:var(--gris-texto); }
+  .obs-alu-search input:focus { border-color:var(--verde-claro); }
+  .obs-alu-search-results { position:absolute; top:100%; left:0; right:0; background:var(--blanco); border:1.5px solid var(--crema-oscuro); border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.12); z-index:100; max-height:260px; overflow-y:auto; display:none; }
+  .obs-alu-search-results.visible { display:block; }
+  .obs-alu-result-item { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; transition:background .1s; }
+  .obs-alu-result-item:hover { background:var(--crema); }
 </style>
 </head>
 <body>
@@ -1452,6 +1482,7 @@
     <button class="tab-btn" onclick="showTab('cabanas',event)">🛖 Cabañas</button>
     <button class="tab-btn" onclick="showTab('programacion',event)">📅 Programación</button>
     <button class="tab-btn" onclick="showTab('observaciones',event)">📝 Observaciones</button>
+    <button class="tab-btn" onclick="showTab('obsalumnos',event)">🗒 Notas de alumnos</button>
     <button class="tab-btn" onclick="showTab('recomendaciones',event)">🧭 Recomendaciones</button>
     <button class="tab-btn" onclick="showTab('evaluacion',event)">📊 Evaluación 2025</button>
     <button class="buscar-btn" onclick="openBuscar()">🔍 Buscar alumno</button>
@@ -1805,13 +1836,13 @@
             <div class="prog-field prog-full">
               <label>Días de la semana</label>
               <div class="prog-dias-check" id="pDias">
-                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="lunes"> Lunes</label>
-                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="martes"> Martes</label>
-                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="miercoles"> Miércoles</label>
-                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="jueves"> Jueves</label>
-                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="viernes"> Viernes</label>
-                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="sabado"> Sábado</label>
-                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="domingo"> Domingo</label>
+                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="lunes"> Lunes</label>
+                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="martes"> Martes</label>
+                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="miercoles"> Miércoles</label>
+                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="jueves"> Jueves</label>
+                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="viernes"> Viernes</label>
+                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="sabado"> Sábado</label>
+                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="domingo"> Domingo</label>
               </div>
             </div>
 
@@ -1854,6 +1885,33 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- TAB OBSERVACIONES POR ALUMNO -->
+  <div id="tab-obsalumnos" class="tab-panel">
+    <h2 class="section-title">🗒 Notas individuales de alumnos</h2>
+    <p style="font-size:13px;opacity:.55;margin-bottom:20px;">Registra observaciones sobre el comportamiento, estado de ánimo, logros o incidencias de cada participante. Visible solo para el equipo de monitores.</p>
+
+    <!-- Buscador de alumno -->
+    <div class="obs-alu-search">
+      <input type="text" id="obsAluSearch" placeholder="🔍 Busca un alumno para añadir una nota…" oninput="searchObsAlumno()" autocomplete="off"/>
+      <div class="obs-alu-search-results" id="obsAluResults"></div>
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+      <select id="obsAluFiltMood" onchange="renderObsAlumnos()" style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+        <option value="">Todos los estados</option>
+        <option value="bien">😊 Bien</option>
+        <option value="regular">😐 Regular</option>
+        <option value="mal">😟 Necesita atención</option>
+      </select>
+      <input type="text" id="obsAluFiltNombre" placeholder="Filtrar por alumno…" oninput="renderObsAlumnos()"
+        style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:200px;"/>
+      <span id="obsAluCount" style="font-size:12px;opacity:.4;margin-left:auto;"></span>
+    </div>
+
+    <div id="obsAluContainer"></div>
   </div>
 
   <!-- TAB 2: RECOMENDACIONES -->
@@ -2118,9 +2176,10 @@
     if (panel) panel.classList.add('active');
     const btn = ev && ev.target ? ev.target : null;
     if (btn) btn.classList.add('active');
-    if (id === 'grupos') { renderBanco(); renderGruposCamp(); }
+    if (id === 'grupos') { showGTab('campamento', document.querySelector('.gtab-btn.active,.gtab-btn')); }
     if (id === 'monitores') { renderMedResumen(); }
     if (id === 'cabanas') { renderCabanasVista(); }
+    if (id === 'obsalumnos') { renderObsAlumnos(); }
     if (id === 'programacion') { populateProgFiltros(); renderProg(); }
     if (id === 'edicion') { renderEditTable(); }
   }
@@ -2452,7 +2511,7 @@
       container.innerHTML = '<div class="buscar-hint">Escribe al menos 2 caracteres.</div>';
       return;
     }
-    const results = allParticipants.filter(p =>
+    const results = getAllEditParticipants().filter(p =>
       (p.apellidos + ' ' + p.nombre).toLowerCase().includes(q)
     ).sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
 
@@ -2463,22 +2522,26 @@
 
     container.innerHTML = '';
     results.forEach(p => {
+      const g = gruposEdit[p.gid] || grupos[p.gid];
+      const hex = g ? g.hex : '#999';
+      const label = g ? g.label : '';
       const el = document.createElement('div');
       el.className = 'buscar-item';
-      el.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 20px;transition:background .1s;';
+      el.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 20px;transition:background .1s;cursor:pointer;';
       el.innerHTML = `
-        <div class="modal-avatar" style="background:${p.ghex};cursor:pointer" onclick="closeBuscar();openFicha(p,p.g)">${getInitials(p.nombre,p.apellidos)}</div>
-        <div class="modal-name" style="flex:1;cursor:pointer" onclick="closeBuscar();openFicha(p,p.g)">
+        <div class="modal-avatar" style="background:${hex}">${getInitials(p.nombre,p.apellidos)}</div>
+        <div class="modal-name" style="flex:1;">
           <div class="apellidos">${p.apellidos}</div>
           <div class="nombre">${p.nombre}</div>
         </div>
-        <span class="buscar-curso-badge">${p.glabel}</span>
-        ${p.grupo!=='❓'
-          ? `<span class="modal-grupo-tag" style="background:${p.ghex}22;color:${p.ghex}">Gr. ${p.grupo}</span>`
+        <span class="buscar-curso-badge">${label}</span>
+        ${p.grupo && p.grupo!=='❓'
+          ? `<span class="modal-grupo-tag" style="background:${hex}22;color:${hex}">Gr. ${p.grupo}</span>`
           : `<span class="modal-grupo-tag" style="background:#f0f0f0;color:#999">❓</span>`}
-        <button onclick="deleteAlumnoFromBuscar(${p.n},'${p.gid}',this.closest('.buscar-item'))" title="Eliminar alumno"
+        <button onclick="event.stopPropagation();deleteAlumnoFromBuscar(${p.n},'${p.gid}',this.closest('.buscar-item'))" title="Eliminar alumno"
           style="width:30px;height:30px;border-radius:8px;border:none;background:rgba(192,57,43,.1);color:var(--rojo-suave);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">🗑</button>
       `;
+      el.addEventListener('click', () => { closeBuscar(); openFicha(p, g); });
       container.appendChild(el);
     });
   }
@@ -3191,6 +3254,8 @@
     if (screen === 'grupos') renderMobGrupos();
     if (screen === 'observaciones') renderMobObs();
     if (screen === 'medico') renderMobMedico();
+    if (screen === 'cabanas') renderMobCabanas();
+    if (screen === 'programacion') { renderMobProg(); }
   }
 
   function mobBack() {
@@ -3402,9 +3467,10 @@
   }
 
   function showGTab(id, btn) {
-    document.querySelectorAll('.gtab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.gtab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('gtab-' + id).classList.add('active');
+    document.querySelectorAll('#tab-grupos .gtab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('#tab-grupos .gtab-btn').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('gtab-' + id);
+    if (panel) panel.classList.add('active');
     if (btn) btn.classList.add('active');
     if (id === 'campamento') { renderBanco(); renderGruposCamp(); }
     if (id === 'monitor') renderGruposPorMonitor();
@@ -3981,7 +4047,8 @@
     editingProgId = null;
   }
 
-  function toggleDia(lbl) {
+  function toggleDia(lbl, event) {
+    if (event) event.preventDefault();
     const cb = lbl.querySelector('input');
     if (!cb) return;
     cb.checked = !cb.checked;
@@ -4126,6 +4193,263 @@
       const j = await r.json();
       if (j.ok) console.log('Lista completa sincronizada:', lista.length, 'participantes');
     } catch(e) { console.error('Error sincronizando lista:', e); }
+  }
+
+
+  function renderMobCabanas() {
+    const c = document.getElementById('mobCabanasContent');
+    if (!c) return;
+    const conCabana = gruposCamp.filter(g => g.cabana || g.tipoAloj);
+    if (!conCabana.length) {
+      c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin cabañas asignadas aún.<br>Ve a Grupos → 🛖 Cabaña.</div>';
+      return;
+    }
+    const tipoIcon = {cabana:'🛖',bungalow:'🏠',tienda:'⛺',dormitorio:'🛏',otro:'🏗'};
+    c.innerHTML = '';
+    conCabana.forEach(g => {
+      const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
+      const icon = tipoIcon[g.tipoAloj] || '🛖';
+      const div = document.createElement('div');
+      div.style.cssText = `background:var(--blanco);border-radius:16px;padding:18px;margin-bottom:12px;border-left:5px solid ${g.color||'var(--tierra)'};border-top:1px solid var(--crema-oscuro);border-right:1px solid var(--crema-oscuro);border-bottom:1px solid var(--crema-oscuro);`;
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:24px">${icon}</span>
+          <div><div style="font-family:'Playfair Display',serif;font-weight:700;color:var(--verde-bosque);">${escHtml(g.nombre)}</div>
+          <div style="font-size:11px;opacity:.5;">${g.cabana?escHtml(g.cabana):''}${g.zona?' · '+escHtml(g.zona):''}</div></div>
+          <span style="margin-left:auto;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;background:${g.color}22;color:${g.color}">${alumnos.length} alumnos</span>
+        </div>
+        ${g.notasCabana?`<div style="font-size:12px;opacity:.6;margin-bottom:10px;">📝 ${escHtml(g.notasCabana)}</div>`:''}
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          ${alumnos.sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'})).map(p=>{
+            const pg=gruposEdit[p.gid]||grupos[p.gid];
+            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--crema-oscuro);">
+              <div style="width:24px;height:24px;border-radius:50%;background:${pg.hex};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0">${getInitials(p.nombre,p.apellidos)}</div>
+              <span style="font-size:13px;font-weight:600">${escHtml(p.apellidos.split(' ')[0])}</span>
+              <span style="font-size:12px;opacity:.6">${escHtml(p.nombre)}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      `;
+      c.appendChild(div);
+    });
+  }
+
+  function renderMobProg() {
+    const container = document.getElementById('mobProgList');
+    if (!container) return;
+    const tipo = document.getElementById('mobFiltTipo')?.value || '';
+    const dia  = document.getElementById('mobFiltDia')?.value  || '';
+    let lista = progData.filter(a => {
+      if (tipo && a.tipo !== tipo) return false;
+      if (dia && !(a.dias||[]).includes(dia)) return false;
+      return true;
+    }).sort((a,b) => {
+      const di = DIAS_ORDER.indexOf(a.dias?.[0]||'') - DIAS_ORDER.indexOf(b.dias?.[0]||'');
+      return di !== 0 ? di : (a.horaInicio||'').localeCompare(b.horaInicio||'');
+    });
+
+    if (!lista.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin actividades. Pulsa + Nueva para añadir.</div>';
+      return;
+    }
+    container.innerHTML = '';
+    lista.forEach(a => {
+      const diasStr = (a.dias||[]).map(d=>DIAS_LABELS[d]?.slice(0,3)||d).join(', ');
+      const div = document.createElement('div');
+      div.style.cssText = 'background:var(--blanco);border-radius:14px;padding:14px;margin-bottom:10px;border:1.5px solid var(--crema-oscuro);';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="prog-tipo-badge pt-${a.tipo}" style="font-size:10px;padding:3px 8px;border-radius:8px;font-weight:700;">${TIPO_LABELS[a.tipo]||a.tipo}</span>
+          <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:.95rem;color:var(--verde-bosque);flex:1">${escHtml(a.nombre||'Sin nombre')}</span>
+          <button onclick="openProgModal(${a.id})" style="padding:4px 10px;border-radius:8px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-size:11px;cursor:pointer;">✏️</button>
+        </div>
+        <div style="font-size:12px;opacity:.6;">${diasStr} ${a.horaInicio?'· '+a.horaInicio:''} ${a.horaFin?'→ '+a.horaFin:''} ${a.lugar?'· 📍'+escHtml(a.lugar):''}</div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  OBSERVACIONES POR ALUMNO
+  // ══════════════════════════════════════════════════════════════
+  let obsAlumnos = JSON.parse(localStorage.getItem('camp-obs-alumnos') || '{}');
+  // Structure: { [n]: { apellidos, nombre, gid, notas: [{id, fecha, texto, mood, monitor}] } }
+
+  function saveObsAlumnos() {
+    try { localStorage.setItem('camp-obs-alumnos', JSON.stringify(obsAlumnos)); } catch(e){}
+  }
+
+  function searchObsAlumno() {
+    const q = (document.getElementById('obsAluSearch').value || '').toLowerCase().trim();
+    const results = document.getElementById('obsAluResults');
+    if (q.length < 2) { results.classList.remove('visible'); return; }
+
+    const found = getAllEditParticipants()
+      .filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q))
+      .slice(0, 8);
+
+    if (!found.length) { results.classList.remove('visible'); return; }
+
+    results.innerHTML = '';
+    found.forEach(p => {
+      const g = gruposEdit[p.gid]||grupos[p.gid];
+      const div = document.createElement('div');
+      div.className = 'obs-alu-result-item';
+      div.innerHTML = `
+        <div class="obs-alu-avatar" style="background:${g?g.hex:'#999'};width:30px;height:30px;font-size:11px;">${getInitials(p.nombre,p.apellidos)}</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:600">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
+        <div style="font-size:11px;opacity:.45">${g?g.label:''}</div></div>
+        <button onclick="openAddNota(${p.n})" style="padding:5px 12px;border-radius:8px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Nota</button>
+      `;
+      results.appendChild(div);
+    });
+    results.classList.add('visible');
+  }
+
+  // Close search on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.obs-alu-search')) {
+      const r = document.getElementById('obsAluResults');
+      if (r) r.classList.remove('visible');
+    }
+  });
+
+  function openAddNota(n) {
+    const p = getAllEditParticipants().find(x => x.n === n);
+    if (!p) return;
+    const g = gruposEdit[p.gid]||grupos[p.gid];
+
+    // Close search
+    document.getElementById('obsAluSearch').value = '';
+    document.getElementById('obsAluResults').classList.remove('visible');
+
+    // Scroll to alumno card or create it
+    if (!obsAlumnos[n]) {
+      obsAlumnos[n] = { apellidos:p.apellidos, nombre:p.nombre, gid:p.gid, notas:[] };
+    }
+
+    // Open inline add form
+    renderObsAlumnos();
+    setTimeout(() => {
+      const card = document.getElementById('obscard-'+n);
+      if (card) {
+        card.scrollIntoView({behavior:'smooth', block:'start'});
+        const form = card.querySelector('.obs-add-form');
+        if (form) { form.style.display='block'; form.querySelector('textarea').focus(); }
+      }
+    }, 100);
+  }
+
+  function addNota(n, btn) {
+    const form = btn.closest('.obs-add-form');
+    const texto = form.querySelector('textarea').value.trim();
+    if (!texto) return;
+    const mood = form.querySelector('.mood-btn.selected')?.dataset.mood || 'bien';
+    if (!obsAlumnos[n]) {
+      const p = getAllEditParticipants().find(x => x.n === n);
+      if (p) obsAlumnos[n] = { apellidos:p.apellidos, nombre:p.nombre, gid:p.gid, notas:[] };
+    }
+    obsAlumnos[n].notas.unshift({
+      id: Date.now(),
+      fecha: new Date().toLocaleString('es-ES', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
+      texto, mood,
+      monitor: MONITOR_ID || 'Monitor'
+    });
+    saveObsAlumnos();
+    form.querySelector('textarea').value = '';
+    form.style.display = 'none';
+    renderObsAlumnos();
+  }
+
+  function deleteNota(n, notaId) {
+    if (!obsAlumnos[n]) return;
+    obsAlumnos[n].notas = obsAlumnos[n].notas.filter(x => x.id !== notaId);
+    if (!obsAlumnos[n].notas.length) delete obsAlumnos[n];
+    saveObsAlumnos();
+    renderObsAlumnos();
+  }
+
+  function toggleMood(btn) {
+    btn.closest('.mood-selector').querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function renderObsAlumnos() {
+    const container = document.getElementById('obsAluContainer');
+    if (!container) return;
+    const filtMood  = document.getElementById('obsAluFiltMood')?.value || '';
+    const filtNom   = (document.getElementById('obsAluFiltNombre')?.value || '').toLowerCase().trim();
+
+    let entries = Object.entries(obsAlumnos).filter(([n, d]) => {
+      if (!d.notas || !d.notas.length) return false;
+      if (filtMood && !d.notas.some(nota => nota.mood === filtMood)) return false;
+      if (filtNom && !(d.apellidos+' '+d.nombre).toLowerCase().includes(filtNom)) return false;
+      return true;
+    }).sort(([,a],[,b]) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+
+    const count = document.getElementById('obsAluCount');
+    if (count) count.textContent = entries.length + ' alumno' + (entries.length!==1?'s':'') + ' con notas';
+
+    if (!entries.length) {
+      container.innerHTML = '<div style="text-align:center;padding:60px;font-size:13px;opacity:.4;">Usa el buscador de arriba para añadir la primera nota de un alumno.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    entries.forEach(([n, d]) => {
+      const p = getAllEditParticipants().find(x => x.n === parseInt(n)) || d;
+      const g = gruposEdit[p.gid||d.gid] || grupos[p.gid||d.gid];
+      const hex = g?.hex || '#888';
+      const notasFiltradas = filtMood ? d.notas.filter(nota => nota.mood === filtMood) : d.notas;
+
+      const card = document.createElement('div');
+      card.className = 'obs-alu-card';
+      card.id = 'obscard-' + n;
+      card.innerHTML = `
+        <div class="obs-alu-header">
+          <div class="obs-alu-avatar" style="background:${hex}">${getInitials(d.nombre,d.apellidos)}</div>
+          <div style="flex:1">
+            <div class="obs-alu-nombre">${escHtml(d.apellidos)}, ${escHtml(d.nombre)}</div>
+            <div class="obs-alu-meta">${g?g.label:''} · ${d.notas.length} nota${d.notas.length!==1?'s':''}</div>
+          </div>
+          <button onclick="toggleAddForm(${n})" style="padding:6px 14px;border-radius:10px;border:1.5px solid var(--verde-claro);background:var(--blanco);color:var(--verde-bosque);font-size:12px;font-weight:600;cursor:pointer;">+ Nota</button>
+        </div>
+
+        <!-- Formulario añadir nota (oculto por defecto) -->
+        <div class="obs-add-form" id="obsform-${n}" style="display:none;background:var(--crema);border-radius:12px;padding:14px;margin-bottom:12px;">
+          <div class="mood-selector">
+            <button class="mood-btn selected" data-mood="bien" onclick="toggleMood(this)">😊 Bien</button>
+            <button class="mood-btn" data-mood="regular" onclick="toggleMood(this)">😐 Regular</button>
+            <button class="mood-btn" data-mood="mal" onclick="toggleMood(this)">😟 Atención</button>
+          </div>
+          <textarea rows="3" placeholder="Escribe la observación…" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--blanco);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;margin-bottom:8px;"></textarea>
+          <div style="display:flex;gap:8px;">
+            <button onclick="addNota(${n},this)" style="padding:8px 18px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar nota</button>
+            <button onclick="toggleAddForm(${n})" style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- Notas -->
+        <div class="obs-alu-notas">
+          ${notasFiltradas.map(nota => `
+            <div class="obs-nota-item mood-${nota.mood}">
+              <button class="obs-nota-del" onclick="deleteNota(${n},${nota.id})">🗑</button>
+              <div class="obs-nota-fecha">${nota.fecha} · ${escHtml(nota.monitor||'Monitor')} · ${nota.mood==='bien'?'😊 Bien':nota.mood==='regular'?'😐 Regular':'😟 Necesita atención'}</div>
+              <div class="obs-nota-texto">${escHtml(nota.texto)}</div>
+            </div>`).join('')}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function toggleAddForm(n) {
+    const form = document.getElementById('obsform-' + n);
+    if (!form) return;
+    const isOpen = form.style.display !== 'none';
+    form.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) setTimeout(() => form.querySelector('textarea').focus(), 50);
   }
 
 </script>
@@ -4293,7 +4617,63 @@
         <div class="mob-label">Evaluación</div>
         <div class="mob-sub">2025</div>
       </div>
+      <div class="mob-card" onclick="mobGo('cabanas')">
+        <div class="mob-icon">🛖</div>
+        <div class="mob-label">Cabañas</div>
+        <div class="mob-sub">Alojamiento</div>
+      </div>
+      <div class="mob-card accent" onclick="mobGo('programacion')">
+        <div class="mob-icon">📅</div>
+        <div class="mob-label">Programación</div>
+        <div class="mob-sub">Actividades</div>
+      </div>
     </div>
+  </div>
+
+  <!-- PANTALLA CABAÑAS MOB -->
+  <div class="mob-screen" id="mob-cabanas">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">🛖 Cabañas</div>
+    </div>
+    <div id="mobCabanasContent" style="padding:12px 16px;"></div>
+  </div>
+
+  <!-- PANTALLA PROGRAMACIÓN MOB -->
+  <div class="mob-screen" id="mob-programacion">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">📅 Programación</div>
+      <button onclick="openProgModal()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Nueva</button>
+    </div>
+    <!-- Filtro rápido móvil -->
+    <div style="padding:10px 16px;background:var(--blanco);border-bottom:1px solid var(--crema-oscuro);display:flex;gap:8px;overflow-x:auto;">
+      <select id="mobFiltTipo" onchange="renderMobProg()" style="padding:7px 10px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;white-space:nowrap;">
+        <option value="">Todos</option>
+        <option value="velada">🌙 Velada</option>
+        <option value="taller">🎨 Taller</option>
+        <option value="juego">🎮 Juego</option>
+        <option value="liga">⚽ Liga</option>
+        <option value="piscina">🏊 Piscina</option>
+        <option value="comedor">🍽 Comedor</option>
+        <option value="libre">🌿 Libre</option>
+        <option value="desayuno">☕ Desayuno</option>
+        <option value="almuerzo">🥗 Almuerzo</option>
+        <option value="merienda">🍎 Merienda</option>
+        <option value="cena">🍽 Cena</option>
+      </select>
+      <select id="mobFiltDia" onchange="renderMobProg()" style="padding:7px 10px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
+        <option value="">Todos los días</option>
+        <option value="lunes">Lunes</option>
+        <option value="martes">Martes</option>
+        <option value="miercoles">Miércoles</option>
+        <option value="jueves">Jueves</option>
+        <option value="viernes">Viernes</option>
+        <option value="sabado">Sábado</option>
+        <option value="domingo">Domingo</option>
+      </select>
+    </div>
+    <div id="mobProgList" style="padding:12px 16px;"></div>
   </div>
 
   <!-- PANTALLA ALUMNOS -->
