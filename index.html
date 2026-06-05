@@ -1638,6 +1638,7 @@
             <th style="width:110px">Curso</th>
             <th style="width:70px">Gr. clase</th>
             <th style="width:140px">Monitor campamento</th>
+            <th>Otros grupos <span style="font-weight:400;opacity:.6;font-size:10px">(cabaña, lema…)</span></th>
             <th style="width:44px"></th>
           </tr>
         </thead>
@@ -2181,7 +2182,7 @@
     if (id === 'cabanas') { renderCabanasVista(); }
     if (id === 'obsalumnos') { renderObsAlumnos(); }
     if (id === 'programacion') { populateProgFiltros(); renderProg(); }
-    if (id === 'edicion') { renderEditTable(); }
+    if (id === 'edicion') { renderEditTable(); } // grupos camp may have changed
   }
 
   /* ── DATOS PARTICIPANTES ── */
@@ -2812,6 +2813,22 @@
     return opts;
   }
 
+  function getOtrosGruposCell(p) {
+    // Si no hay grupos campamento creados, mostrar mensaje
+    if (!gruposCamp || !gruposCamp.length) {
+      return `<span style="font-size:11px;opacity:.35;font-style:italic;">Sin grupos creados</span>`;
+    }
+    // Render como chips con checkbox integrado
+    return gruposCamp.map(g => {
+      const asignado = (g.alumnos||[]).includes(p.n);
+      return `<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;margin:2px;cursor:pointer;font-size:11px;font-weight:600;border:1.5px solid ${asignado?g.color:'var(--crema-oscuro)'};background:${asignado?g.color+'22':'var(--crema)'};color:${asignado?g.color:'#888'};transition:all .15s;user-select:none;"
+        onclick="toggleGrupoCampAlumno(${g.id},${p.n},this)">
+        <input type="checkbox" ${asignado?'checked':''} style="display:none"/>
+        ${escHtml(g.nombre)}
+      </label>`;
+    }).join('');
+  }
+
   function renderEditTable() {
     const filtro = document.getElementById('filtroGrupo').value;
     const tbody = document.getElementById('editTableBody');
@@ -2822,6 +2839,8 @@
       const tr = document.createElement('tr');
       tr.dataset.n = p.n;
       tr.dataset.gid = p.gid;
+
+      // Build otros grupos cell separately (can't nest template literals safely)
       tr.innerHTML = `
         <td style="opacity:.4;font-size:11px">${i+1}</td>
         <td><input value="${escHtml(p.apellidos)}" placeholder="Apellidos" onchange="updateAlumno(this,'apellidos',${p.n},'${p.gid}')"/></td>
@@ -2841,10 +2860,39 @@
             ${getMonitorOptions(p.monitorId)}
           </select>
         </td>
+        <td class="otros-grupos-cell" data-n="${p.n}"></td>
         <td><button class="tbl-del-btn" onclick="deleteAlumno(${p.n},'${p.gid}')" title="Eliminar">🗑</button></td>
       `;
+
+      // Fill otros grupos cell after render (avoids template literal nesting issues)
+      const cell = tr.querySelector('.otros-grupos-cell');
+      cell.innerHTML = getOtrosGruposCell(p);
+
       tbody.appendChild(tr);
     });
+  }
+
+  function toggleGrupoCampAlumno(gcampId, alumnoN, labelEl) {
+    const g = gruposCamp.find(x => x.id === gcampId);
+    if (!g) return;
+    const cb = labelEl.querySelector('input');
+    const estaAsignado = (g.alumnos||[]).includes(alumnoN);
+
+    if (estaAsignado) {
+      g.alumnos = g.alumnos.filter(id => id !== alumnoN);
+      cb.checked = false;
+      labelEl.style.borderColor = 'var(--crema-oscuro)';
+      labelEl.style.background = 'var(--crema)';
+      labelEl.style.color = '#888';
+    } else {
+      if (!g.alumnos) g.alumnos = [];
+      g.alumnos.push(alumnoN);
+      cb.checked = true;
+      labelEl.style.borderColor = g.color;
+      labelEl.style.background = g.color + '22';
+      labelEl.style.color = g.color;
+    }
+    saveGruposCampStorage();
   }
 
   function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
