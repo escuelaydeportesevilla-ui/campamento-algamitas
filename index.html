@@ -1497,6 +1497,11 @@
   @media (max-width: 768px) {
     .desktop-nav { display: none !important; }
   }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body>
@@ -1600,6 +1605,11 @@
       <div class="dnav-icon">🔍</div>
       <div class="dnav-label">Buscar alumno</div>
       <div class="dnav-sub">Por nombre</div>
+    </button>
+    <button class="desktop-nav-btn" onclick="actualizarApp(this)" data-tab="actualizar" id="btnActualizar" style="border-color:var(--verde-claro);">
+      <div class="dnav-icon" id="refreshIcon">🔄</div>
+      <div class="dnav-label">Actualizar</div>
+      <div class="dnav-sub" id="refreshSub">Sincronizar datos</div>
     </button>
   </div>
 
@@ -4966,6 +4976,77 @@
     }
   }
 
+
+  // ══════════════════════════════════════════════════════════════
+  //  ACTUALIZAR / RESINCRONIZAR SIN CERRAR SESIÓN
+  // ══════════════════════════════════════════════════════════════
+  async function actualizarApp(btn) {
+    // Animación girando
+    const icons = [document.getElementById('refreshIcon'), document.getElementById('refreshIconMob')];
+    const subs  = [document.getElementById('refreshSub'),  document.getElementById('refreshSubMob')];
+    icons.forEach(el => { if (el) { el.style.animation = 'spin .8s linear infinite'; el.textContent = '🔄'; } });
+    subs.forEach(el  => { if (el) el.textContent = 'Cargando…'; });
+    showSyncIndicator('⏳ Actualizando…', 'loading');
+
+    try {
+      // 1. Recargar todos los datos de config (monitores, grupos, obs, prog, notas)
+      await loadAllFromSheets();
+
+      // 2. Recargar participantes
+      await loadParticipantesFromSheets();
+      gruposEdit = JSON.parse(JSON.stringify(grupos));
+
+      // 3. Re-renderizar la pestaña activa
+      const activePanel = document.querySelector('.tab-panel.active');
+      const activeId = activePanel ? activePanel.id.replace('tab-', '') : 'participantes';
+
+      renderEditTable();
+      renderMonitorGrid();
+      renderObsGrid();
+      renderGruposPorMonitor();
+      renderGruposClase();
+
+      if (activeId === 'grupos')        { renderBanco(); renderGruposCamp(); }
+      if (activeId === 'cabanas')       renderCabanasVista();
+      if (activeId === 'programacion')  { populateProgFiltros(); renderProg(); }
+      if (activeId === 'obsalumnos')    renderObsAlumnos();
+      if (activeId === 'monitores')     renderMedResumen();
+
+      // 4. Actualizar contadores
+      const total = getAllEditParticipants().length;
+      const heroNum = document.querySelector('.hero-stat .num');
+      if (heroNum) heroNum.textContent = total;
+      const dnavPart = document.getElementById('dnav-sub-participantes');
+      if (dnavPart) dnavPart.textContent = total + ' inscritos';
+      const dnavMon = document.getElementById('dnav-sub-monitores');
+      if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
+      const mobTotal = document.getElementById('mobTotal');
+      if (mobTotal) mobTotal.textContent = total;
+      const mobSub = document.getElementById('mobSubTotal');
+      if (mobSub) mobSub.textContent = total + ' inscritos';
+      const mobMon = document.getElementById('mobMonCount');
+      if (mobMon) mobMon.textContent = monitoresData.length + ' monitores';
+
+      icons.forEach(el => { if (el) { el.style.animation = ''; el.textContent = '✅'; } });
+      subs.forEach(el  => { if (el) el.textContent = 'Actualizado'; });
+      showSyncIndicator('✔ Todo actualizado', 'ok');
+
+      setTimeout(() => {
+        icons.forEach(el => { if (el) el.textContent = '🔄'; });
+        subs.forEach(el  => { if (el) el.textContent = 'Sincronizar datos'; });
+      }, 3000);
+
+    } catch(e) {
+      icons.forEach(el => { if (el) { el.style.animation = ''; el.textContent = '⚠️'; } });
+      subs.forEach(el  => { if (el) el.textContent = 'Error al actualizar'; });
+      showSyncIndicator('⚠ Error al actualizar', 'warn');
+      setTimeout(() => {
+        icons.forEach(el => { if (el) el.textContent = '🔄'; });
+        subs.forEach(el  => { if (el) el.textContent = 'Sincronizar datos'; });
+      }, 3000);
+    }
+  }
+
 </script>
 
 
@@ -5140,6 +5221,11 @@
         <div class="mob-icon">📅</div>
         <div class="mob-label">Programación</div>
         <div class="mob-sub">Actividades</div>
+      </div>
+      <div class="mob-card" onclick="actualizarApp(this)" style="border-color:var(--verde-claro);grid-column:1/-1;">
+        <div class="mob-icon" id="refreshIconMob">🔄</div>
+        <div class="mob-label">Actualizar datos</div>
+        <div class="mob-sub" id="refreshSubMob">Sincronizar con el servidor</div>
       </div>
     </div>
   </div>
