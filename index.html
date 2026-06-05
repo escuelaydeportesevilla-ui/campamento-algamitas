@@ -2580,6 +2580,9 @@
     document.getElementById('fichaMeta').textContent = g.label + (newGrupoClase !== '❓' ? ' · Clase ' + newGrupoClase : '');
     document.getElementById('fichaAvatar').style.background = g.hex;
 
+    // ── Guardar participante en Sheets ──
+    saveParticipanteSheets(updatedP);
+
     // ── Guardar datos médicos/contacto ──
     const data = {
       contacto:      document.getElementById('fContacto').value,
@@ -2678,7 +2681,26 @@
   function initApp() {
     // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
-    // Actualizar contadores móvil
+
+    // Cargar participantes desde Sheets antes de renderizar
+    (async () => {
+      await loadParticipantesFromSheets();
+      // Re-clonar gruposEdit con datos actualizados de Sheets
+      gruposEdit = JSON.parse(JSON.stringify(grupos));
+      renderEditTable();
+      renderGruposPorMonitor();
+      renderGruposClase();
+      // Actualizar contadores
+      const total = getAllEditParticipants().length;
+      const mobTotal = document.getElementById('mobTotal');
+      if (mobTotal) mobTotal.textContent = total;
+      const mobSub = document.getElementById('mobSubTotal');
+      if (mobSub) mobSub.textContent = total + ' inscritos';
+      const heroNum = document.querySelector('.hero-stat .num');
+      if (heroNum) heroNum.textContent = total;
+    })();
+
+    // Actualizar contadores móvil (inicial con datos base)
     const total = getAllEditParticipants().length;
     const mobTotal = document.getElementById('mobTotal');
     if (mobTotal) mobTotal.textContent = total;
@@ -2798,7 +2820,13 @@
   function deleteAlumno(n, gid) {
     if (!confirm('¿Eliminar este alumno/a del listado?')) return;
     gruposEdit[gid].participantes = gruposEdit[gid].participantes.filter(x => x.n !== n);
+    grupos[gid].participantes = grupos[gid].participantes.filter(x => x.n !== n);
+    deleteParticipanteSheets(n);
     renderEditTable();
+    // Actualizar contador
+    const total = getAllEditParticipants().length;
+    const heroNum = document.querySelector('.hero-stat .num');
+    if (heroNum) heroNum.textContent = total;
   }
 
   function addAlumno() {
@@ -2813,19 +2841,26 @@
   }
 
   function saveAllAlumnos() {
-    // Sync gruposEdit back to grupos global for search/modal
+    // Sync gruposEdit back to grupos global
     Object.entries(gruposEdit).forEach(([gid, g]) => {
       grupos[gid].participantes = g.participantes.map(p => ({...p}));
     });
-    // Re-count hero
     const total = getAllEditParticipants().length;
     const heroNum = document.querySelector('.hero-stat .num');
     if (heroNum) heroNum.textContent = total;
 
+    // Sincronizar con Google Sheets
     const msg = document.getElementById('editSavedMsg');
-    msg.textContent = `✔ ${total} participantes guardados`;
+    msg.textContent = '⏳ Sincronizando con Sheets…';
     msg.style.opacity = '1';
-    setTimeout(() => msg.style.opacity = '0', 3000);
+    syncAllParticipantesSheets().then(() => {
+      msg.textContent = `✔ ${total} participantes guardados en Sheets`;
+      setTimeout(() => msg.style.opacity = '0', 3000);
+    }).catch(() => {
+      msg.textContent = `✔ ${total} participantes guardados (sin conexión a Sheets)`;
+      setTimeout(() => msg.style.opacity = '0', 3000);
+    });
+
     renderGruposPorMonitor();
     renderGruposClase();
   }
@@ -3991,6 +4026,106 @@
     saveProgData();
     closeProgModal();
     if (progVistaCalendario) renderCalendario(); else renderProg();
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  PARTICIPANTES ↔ GOOGLE SHEETS
+  // ══════════════════════════════════════════════════════════════
+
+  // Carga participantes desde Sheets y los fusiona con los del código fuente
+  async function loadParticipantesFromSheets() {
+    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
+    try {
+      const r = await fetch(SCRIPT_URL + '?action=getParticipantes&pwd=' + PASSWORD);
+      const j = await r.json();
+      if (!j.ok || !j.data || !j.data.length) return;
+
+      // Fusionar: los de Sheets tienen prioridad sobre los del código fuente
+      // Primero indexamos los del código por n
+      const baseByN = {};
+      Object.entries(grupos).forEach(([gid, g]) => {
+        g.participantes.forEach(p => baseByN[p.n] = {...p, gid});
+      });
+
+      // Aplicar actualizaciones de Sheets
+      j.data.forEach(sheetP => {
+        const n = parseInt(sheetP.n);
+        const gid = sheetP.gid || 'g6';
+        const updated = {
+          n, gid,
+          apellidos: sheetP.apellidos || '',
+          nombre:    sheetP.nombre    || '',
+          grupo:     sheetP.grupo     || '❓',
+          grupoCamp: sheetP.grupoCamp || '',
+          monitorId: sheetP.monitorId || '',
+        };
+
+        // Si ya existe en base, actualizar
+        if (baseByN[n]) {
+          const oldGid = baseByN[n].gid;
+          // Quitar del grupo antiguo si cambió de curso
+          if (oldGid !== gid) {
+            grupos[oldGid].participantes = grupos[oldGid].participantes.filter(p => p.n !== n);
+          }
+          // Actualizar en el grupo nuevo
+          const idx = grupos[gid].participantes.findIndex(p => p.n === n);
+          if (idx !== -1) grupos[gid].participantes[idx] = updated;
+          else grupos[gid].participantes.push(updated);
+        } else {
+          // Es un alumno nuevo (añadido desde Sheets o desde otra sesión)
+          if (grupos[gid]) grupos[gid].participantes.push(updated);
+        }
+      });
+
+      console.log('Participantes sincronizados desde Sheets:', j.data.length);
+    } catch(e) {
+      console.warn('No se pudieron cargar participantes de Sheets:', e);
+    }
+  }
+
+  // Guarda un participante individual en Sheets
+  async function saveParticipanteSheets(p) {
+    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return true;
+    try {
+      const params = new URLSearchParams({
+        action: 'saveParticipante', pwd: PASSWORD,
+        n: p.n, apellidos: p.apellidos || '', nombre: p.nombre || '',
+        gid: p.gid || 'g6', grupo: p.grupo || '❓',
+        grupoCamp: p.grupoCamp || '', monitorId: p.monitorId || '',
+      });
+      const r = await fetch(SCRIPT_URL + '?' + params.toString());
+      const j = await r.json();
+      return j.ok;
+    } catch(e) { console.error('Error guardando participante:', e); return false; }
+  }
+
+  // Elimina un participante en Sheets (lo marca como BAJA)
+  async function deleteParticipanteSheets(n) {
+    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return true;
+    try {
+      const r = await fetch(SCRIPT_URL + '?action=deleteParticipante&pwd=' + PASSWORD + '&n=' + n);
+      const j = await r.json();
+      return j.ok;
+    } catch(e) { console.error('Error eliminando participante:', e); return false; }
+  }
+
+  // Sincroniza toda la lista de golpe (útil al guardar cambios masivos)
+  async function syncAllParticipantesSheets() {
+    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
+    const lista = getAllEditParticipants();
+    try {
+      const r = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          pwd: PASSWORD,
+          action: 'saveAllParticipantes',
+          lista: lista
+        })
+      });
+      const j = await r.json();
+      if (j.ok) console.log('Lista completa sincronizada:', lista.length, 'participantes');
+    } catch(e) { console.error('Error sincronizando lista:', e); }
   }
 
 </script>
