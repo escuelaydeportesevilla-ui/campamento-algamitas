@@ -3632,14 +3632,14 @@
     // Render content
     if (screen === 'alumnos') renderMobAlumnos();
     if (screen === 'buscar') { document.getElementById('mobBuscarInput').value = ''; document.getElementById('mobBuscarResults').innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;text-align:center;">Escribe al menos 2 caracteres.</div>'; setTimeout(() => document.getElementById('mobBuscarInput').focus(), 100); }
-    if (screen === 'monitores') renderMobMonitores();
+    if (screen === 'monitores') { renderMobMonitores(); }
     if (screen === 'grupos') renderMobGrupos();
     if (screen === 'observaciones') renderMobObs();
     if (screen === 'medico') renderMobMedico();
     if (screen === 'cabanas') renderMobCabanas();
     if (screen === 'edicion') renderMobEdicion();
     if (screen === 'obsalumnos') { renderMobObsAlumnos(); }
-    if (screen === 'programacion') { renderMobProg(); }
+    if (screen === 'programacion') { populateProgFiltros(); renderMobProgLista(); }
   }
 
   function mobBack() {
@@ -3729,37 +3729,78 @@
   }
 
   function renderMobMonitores() {
-    const container = document.getElementById('mobMonitoresList');
+    const container = document.getElementById('mobMonListaPanel');
     if (!container) return;
     container.innerHTML = '';
+
+    if (!monitoresData.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin monitores. Pulsa "+ Añadir".</div>';
+      return;
+    }
+
     monitoresData.forEach((m, i) => {
+      const fotoHtml = m.foto
+        ? `<img src="${m.foto}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:3px solid #4A7C2F;flex-shrink:0;" onclick="document.getElementById('mobPhotoInput-${i}').click()"/>`
+        : `<div onclick="document.getElementById('mobPhotoInput-${i}').click()" style="width:52px;height:52px;border-radius:50%;background:#2D5016;color:white;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex-shrink:0;border:3px solid #4A7C2F;cursor:pointer;">${monitorInitials(m)}</div>`;
+
       const div = document.createElement('div');
-      div.style.cssText = 'background:var(--blanco);border-radius:16px;padding:18px;margin-bottom:12px;border:1.5px solid var(--crema-oscuro);position:relative;';
+      div.style.cssText = 'background:white;border-radius:16px;padding:16px;margin-bottom:12px;border:1.5px solid #d9ceb8;';
       div.innerHTML = `
-        <button onclick="deleteMonitor(${i});renderMobMonitores()" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:8px;border:none;background:rgba(192,57,43,.1);color:var(--rojo-suave);cursor:pointer;font-size:14px;">🗑</button>
-        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--verde-bosque);margin-bottom:2px;">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
-        <div style="font-size:11px;opacity:.5;margin-bottom:12px;">${escHtml(m.rol)}</div>
-        <div style="display:grid;gap:8px;">
-          <div><label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:3px;">Nombre</label>
-            <input value="${escHtml(m.nombre)}" onchange="updateMonitor(${i},'nombre',this.value)" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;"></div>
-          <div><label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:3px;">Apellidos</label>
-            <input value="${escHtml(m.apellidos)}" onchange="updateMonitor(${i},'apellidos',this.value)" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;"></div>
-          <div><label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:3px;">Teléfono</label>
-            <input type="tel" value="${escHtml(m.tel)}" onchange="updateMonitor(${i},'tel',this.value)" placeholder="000 000 000" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;"></div>
-          <div><label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:3px;">Grupo campamento asignado</label>
-            <select onchange="updateMonitor(${i},'grupoAsignado',this.value)" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
-              <option value="">Sin asignar</option>
-              <option value="g2" ${m.grupoAsignado==='g2'?'selected':''}>2º Primaria</option>
-              <option value="g3" ${m.grupoAsignado==='g3'?'selected':''}>3º Primaria</option>
-              <option value="g4" ${m.grupoAsignado==='g4'?'selected':''}>4º Primaria</option>
-              <option value="g5" ${m.grupoAsignado==='g5'?'selected':''}>5º Primaria</option>
-              <option value="g6" ${m.grupoAsignado==='g6'?'selected':''}>6º Primaria</option>
-            </select></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div style="position:relative;">
+            ${fotoHtml}
+            <div onclick="document.getElementById('mobPhotoInput-${i}').click()" style="position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:#4A7C2F;color:white;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid white;cursor:pointer;">📷</div>
+            <input type="file" id="mobPhotoInput-${i}" accept="image/*" style="display:none" onchange="uploadMonitorPhoto(event,${i})"/>
+          </div>
+          <div style="flex:1;">
+            <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
+            <div style="font-size:11px;opacity:.5;">${escHtml(m.rol)}</div>
+          </div>
+          <button onclick="deleteMonitor(${i});renderMobMonitores()" style="width:28px;height:28px;border-radius:8px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:14px;flex-shrink:0;">🗑</button>
         </div>
-        <button onclick="saveMonitores();renderMobMonitores()" style="margin-top:10px;width:100%;padding:10px;border-radius:12px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar</button>
+        <div style="display:grid;gap:10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Nombre</label>
+              <input value="${escHtml(m.nombre)}" onchange="updateMonitor(${i},'nombre',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"/>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Apellidos</label>
+              <input value="${escHtml(m.apellidos)}" onchange="updateMonitor(${i},'apellidos',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"/>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Rol</label>
+              <select onchange="updateMonitor(${i},'rol',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
+                ${['Coordinador','Monitor/a','Monitor/a auxiliar','Enfermero/a','Cocinero/a'].map(r=>`<option ${m.rol===r?'selected':''}>${r}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Teléfono</label>
+              <input type="tel" value="${escHtml(m.tel||'')}" placeholder="000 000 000" onchange="updateMonitor(${i},'tel',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"/>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Email</label>
+            <input type="email" value="${escHtml(m.email||'')}" placeholder="correo@..." onchange="updateMonitor(${i},'email',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"/>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Grupo asignado</label>
+            <select onchange="updateMonitor(${i},'grupoAsignado',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+              ${getMonitorGrupoOptions(m)}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Observaciones</label>
+            <textarea rows="2" onchange="updateMonitor(${i},'observaciones',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none;box-sizing:border-box;">${escHtml(m.observaciones||'')}</textarea>
+          </div>
+        </div>
+        <button onclick="saveMonitores();renderMobMonitores()" style="margin-top:12px;width:100%;padding:10px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">💾 Guardar</button>
       `;
       container.appendChild(div);
     });
+
     const cnt = document.getElementById('mobMonCount');
     if (cnt) cnt.textContent = monitoresData.length + ' monitores';
   }
@@ -5575,6 +5616,430 @@
     renderMobObsAlumnos();
   }
 
+
+  // ══════════════════════════════════════════════════════════════
+  //  GRUPOS MÓVIL - GESTOR COMPLETO
+  // ══════════════════════════════════════════════════════════════
+  function showMobGTab(tab) {
+    ['camp','mon','clase'].forEach(t => {
+      const panel = document.getElementById('mobGTab'+t.charAt(0).toUpperCase()+t.slice(1)+'Panel');
+      const btn   = document.getElementById('mobGTab'+t.charAt(0).toUpperCase()+t.slice(1));
+      if (panel) panel.style.display = t===tab ? 'block' : 'none';
+      if (btn) {
+        btn.style.color = t===tab ? '#2D5016' : '#888';
+        btn.style.borderBottom = t===tab ? '2px solid #2D5016' : 'none';
+        btn.style.marginBottom = t===tab ? '-2px' : '0';
+      }
+    });
+    if (tab==='camp') renderMobGruposMain();
+    if (tab==='mon')  renderMobGruposPorMonitor();
+    if (tab==='clase') renderMobGruposClase();
+  }
+
+  function renderMobGruposMain() {
+    const c = document.getElementById('mobGTabCampPanel');
+    if (!c) return;
+
+    if (!gruposCamp.length) {
+      c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Pulsa "+ Grupo" para crear el primero.</div>';
+      return;
+    }
+
+    c.innerHTML = '';
+    gruposCamp.forEach((g, gi) => {
+      const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
+      const monitores = monitoresData.filter(m => (g.monitores||[]).includes(m.id));
+
+      const card = document.createElement('div');
+      card.style.cssText = `background:white;border-radius:16px;padding:16px;margin-bottom:14px;border-left:5px solid ${g.color};border-top:1px solid #ede8de;border-right:1px solid #ede8de;border-bottom:1px solid #ede8de;`;
+
+      // Header editable
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div style="width:12px;height:36px;border-radius:6px;background:${g.color};flex-shrink:0;cursor:pointer;" onclick="cycleMobGColor(${g.id},this)" title="Cambiar color"></div>
+          <input value="${escHtml(g.nombre)}" onchange="updateGcampField(${g.id},'nombre',this.value);this.previousElementSibling.nextElementSibling.nextElementSibling.querySelector('.mgname').textContent=this.value"
+            style="flex:1;font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;border:none;background:transparent;outline:none;border-bottom:1.5px dashed #d9ceb8;padding:2px 4px;"/>
+          <span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;background:${g.color}22;color:${g.color};">${alumnos.length}</span>
+          <button onclick="deleteGrupoCamp(${g.id});renderMobGruposMain()" style="width:28px;height:28px;border-radius:8px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:13px;flex-shrink:0;">🗑</button>
+        </div>
+
+        <!-- Sub-tabs del grupo en móvil -->
+        <div style="display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;">
+          <button onclick="showMobGrupCard(${g.id},'alumnos',this)" class="mgcard-tab-btn mgcard-tab-active" style="padding:5px 10px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">👥 Alumnos</button>
+          <button onclick="showMobGrupCard(${g.id},'monitores',this)" class="mgcard-tab-btn" style="padding:5px 10px;border-radius:8px;border:none;background:#f5f0e8;color:#2D5016;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">👤 Monitor</button>
+          <button onclick="showMobGrupCard(${g.id},'cabana',this)" class="mgcard-tab-btn" style="padding:5px 10px;border-radius:8px;border:none;background:#f5f0e8;color:#2D5016;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">🏠 Cabaña</button>
+          <button onclick="showMobGrupCard(${g.id},'vaciar',this)" class="mgcard-tab-btn" style="padding:5px 10px;border-radius:8px;border:none;background:#f5f0e8;color:#C0392B;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">🧹 Vaciar</button>
+        </div>
+
+        <!-- PANEL ALUMNOS -->
+        <div id="mgcardpanel-${g.id}-alumnos">
+          <div style="display:flex;gap:6px;margin-bottom:8px;">
+            <input type="text" id="mobGBuscar-${g.id}" placeholder="🔍 Añadir alumno…" oninput="buscarParaGrupoMob(${g.id})"
+              style="flex:1;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;"/>
+          </div>
+          <div id="mobGBuscarRes-${g.id}" style="display:none;background:white;border:1.5px solid #d9ceb8;border-radius:10px;max-height:160px;overflow-y:auto;margin-bottom:8px;"></div>
+          <div id="mobGAlumnosList-${g.id}" style="display:flex;flex-direction:column;gap:4px;">
+            ${alumnos.length===0
+              ? '<div style="font-size:12px;opacity:.35;font-style:italic;padding:4px 0;">Sin alumnos. Usa el buscador.</div>'
+              : alumnos.sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'})).map(p => {
+                  const pg=gruposEdit[p.gid]||grupos[p.gid];
+                  return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f5f0e8;border-radius:8px;">
+                    <div style="width:24px;height:24px;border-radius:50%;background:${pg?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+                    <span style="flex:1;font-size:12px;font-weight:600;">${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}</span>
+                    <button onclick="removeAlumnoFromGrupo(${g.id},${p.n});renderMobGruposMain()" style="width:22px;height:22px;border-radius:6px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:11px;">✕</button>
+                  </div>`;
+                }).join('')}
+          </div>
+        </div>
+
+        <!-- PANEL MONITORES -->
+        <div id="mgcardpanel-${g.id}-monitores" style="display:none;">
+          ${monitores.map(m=>`<div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f5f0e8;border-radius:8px;margin-bottom:6px;">
+            <span style="flex:1;font-size:13px;font-weight:600;">👤 ${escHtml(m.nombre)} ${escHtml(m.apellidos)}</span>
+            <button onclick="removeMonitorFromGrupo(${g.id},'${m.id}');renderMobGruposMain()" style="width:24px;height:24px;border-radius:6px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:11px;">✕</button>
+          </div>`).join('')}
+          <select onchange="addMonitorToGrupo(${g.id},this.value);this.value='';renderMobGruposMain()"
+            style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-top:4px;">
+            <option value="">+ Asignar monitor…</option>
+            ${monitoresData.filter(m=>!(g.monitores||[]).includes(m.id)).map(m=>`<option value="${m.id}">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- PANEL CABAÑA -->
+        <div id="mgcardpanel-${g.id}-cabana" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Tipo</label>
+              <select onchange="updateGcampField(${g.id},'tipoAloj',this.value)" style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
+                <option ${(g.tipoAloj||'')==='cabana'?'selected':''} value="cabana">🏠 Cabaña</option>
+                <option ${(g.tipoAloj||'')==='bungalow'?'selected':''} value="bungalow">🏠 Bungalow</option>
+                <option ${(g.tipoAloj||'')==='tienda'?'selected':''} value="tienda">⛺ Tienda</option>
+                <option ${(g.tipoAloj||'')==='dormitorio'?'selected':''} value="dormitorio">🛏 Dormitorio</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Nº / Nombre</label>
+              <input type="text" value="${escHtml(g.cabana||'')}" placeholder="Cabaña 4…" onchange="updateGcampField(${g.id},'cabana',this.value)"
+                style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;box-sizing:border-box;"/>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Zona</label>
+              <input type="text" value="${escHtml(g.zona||'')}" placeholder="Zona Norte…" onchange="updateGcampField(${g.id},'zona',this.value)"
+                style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;box-sizing:border-box;"/>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Capacidad</label>
+              <input type="number" value="${escHtml(String(g.capacidad||''))}" placeholder="Nº plazas" onchange="updateGcampField(${g.id},'capacidad',this.value)"
+                style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;box-sizing:border-box;"/>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Notas</label>
+            <textarea rows="2" placeholder="Observaciones…" onchange="updateGcampField(${g.id},'notasCabana',this.value)"
+              style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;resize:none;box-sizing:border-box;">${escHtml(g.notasCabana||'')}</textarea>
+          </div>
+          <button onclick="saveGruposCamp()" style="margin-top:8px;width:100%;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar cabaña</button>
+        </div>
+
+        <!-- PANEL VACIAR -->
+        <div id="mgcardpanel-${g.id}-vaciar" style="display:none;">
+          <div style="text-align:center;padding:16px;">
+            <div style="font-size:32px;margin-bottom:8px;">🧹</div>
+            <div style="font-size:14px;color:#666;margin-bottom:16px;">¿Quitar todos los alumnos de <strong>${escHtml(g.nombre)}</strong>?</div>
+            <button onclick="vaciarGrupoCamp(${g.id});renderMobGruposMain()" style="padding:10px 24px;border-radius:12px;border:none;background:#C0392B;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Vaciar grupo</button>
+          </div>
+        </div>
+      `;
+      c.appendChild(card);
+    });
+  }
+
+  function showMobGrupCard(gid, tab, btn) {
+    ['alumnos','monitores','cabana','vaciar'].forEach(t => {
+      const p = document.getElementById(`mgcardpanel-${gid}-${t}`);
+      if (p) p.style.display = t===tab ? 'block' : 'none';
+    });
+    if (btn) {
+      btn.closest('div').querySelectorAll('.mgcard-tab-btn').forEach(b => {
+        b.style.background = '#f5f0e8';
+        b.style.color = b.style.color.includes('C0392B') ? '#C0392B' : '#2D5016';
+      });
+      btn.style.background = '#2D5016';
+      btn.style.color = 'white';
+    }
+  }
+
+  function cycleMobGColor(gid, el) {
+    const g = gruposCamp.find(x => x.id === gid);
+    if (!g) return;
+    const idx = (window._GCAMP_COLORS || ['#4A90D9','#27AE60','#E67E22','#8E44AD','#C0392B','#16A085','#D35400','#2980B9','#1ABC9C']).indexOf(g.color);
+    const colors = ['#4A90D9','#27AE60','#E67E22','#8E44AD','#C0392B','#16A085','#D35400','#2980B9','#1ABC9C'];
+    g.color = colors[(idx + 1) % colors.length];
+    saveGruposCampStorage();
+    renderMobGruposMain();
+  }
+
+  function buscarParaGrupoMob(gcampId) {
+    const input = document.getElementById('mobGBuscar-'+gcampId);
+    const res   = document.getElementById('mobGBuscarRes-'+gcampId);
+    if (!input||!res) return;
+    const q = input.value.toLowerCase().trim();
+    if (q.length < 2) { res.style.display='none'; return; }
+    const g = gruposCamp.find(x => x.id === gcampId);
+    const yaEnGrupo = new Set((g?.alumnos||[]).map(n=>n));
+    const found = getAllEditParticipants().filter(p => !yaEnGrupo.has(p.n) && (p.apellidos+' '+p.nombre).toLowerCase().includes(q)).slice(0,6);
+    if (!found.length) { res.style.display='none'; return; }
+    res.innerHTML=''; res.style.display='block';
+    found.forEach(p => {
+      const pg = gruposEdit[p.gid]||grupos[p.gid];
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #ede8de;cursor:pointer;';
+      row.innerHTML = `
+        <div style="width:26px;height:26px;border-radius:50%;background:${pg?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+        <div style="flex:1;font-size:12px;"><strong>${escHtml(p.apellidos)}</strong>, ${escHtml(p.nombre)}</div>
+        <button onclick="addAlumnoAGrupo(${gcampId},${p.n},this);renderMobGruposMain()" style="padding:4px 10px;border-radius:7px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:600;cursor:pointer;">+</button>
+      `;
+      res.appendChild(row);
+    });
+  }
+
+  function renderMobGruposPorMonitor() {
+    const c = document.getElementById('mobGTabMonPanel');
+    if (!c) return;
+    c.innerHTML = '';
+    const asignados = monitoresData.filter(m => m.grupoAsignado);
+    if (!asignados.length) {
+      c.innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;">Asigna un grupo a cada monitor en la sección Monitores.</div>';
+      return;
+    }
+    asignados.forEach(m => {
+      const gid = m.grupoAsignado;
+      const g = gruposEdit[gid]||grupos[gid];
+      if (!g) return;
+      const sorted = [...(g.participantes||[])].sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+      const div = document.createElement('div');
+      div.style.cssText = `background:white;border-radius:14px;padding:14px;margin-bottom:12px;border-left:4px solid ${g.hex};border-top:1px solid #ede8de;border-right:1px solid #ede8de;border-bottom:1px solid #ede8de;`;
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${g.hex};flex-shrink:0;"></div>
+          <div style="font-family:'Playfair Display',serif;font-weight:700;color:#2D5016;flex:1;">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:${g.hex}22;color:${g.hex};">${g.label}</span>
+        </div>
+        ${sorted.map(p=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f5f0e8;">
+          <div style="width:22px;height:22px;border-radius:50%;background:${g.hex};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+          <span style="font-size:12px;font-weight:600;">${escHtml(p.apellidos)}</span> <span style="font-size:11px;opacity:.6;">${escHtml(p.nombre)}</span>
+        </div>`).join('')}
+      `;
+      c.appendChild(div);
+    });
+  }
+
+  function renderMobGruposClase() {
+    const c = document.getElementById('mobGTabClasePanel');
+    if (!c) return;
+    c.innerHTML = '';
+    const letras = ['A','B','C','D'];
+    const colors = {'A':'#4A90D9','B':'#27AE60','C':'#E67E22','D':'#8E44AD'};
+    letras.forEach(letra => {
+      const alumnos = getAllEditParticipants().filter(p => p.grupo===letra);
+      if (!alumnos.length) return;
+      const div = document.createElement('div');
+      div.style.cssText = `background:white;border-radius:14px;padding:14px;margin-bottom:12px;border-left:4px solid ${colors[letra]};border-top:1px solid #ede8de;border-right:1px solid #ede8de;border-bottom:1px solid #ede8de;`;
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-family:'Playfair Display',serif;font-weight:700;color:#2D5016;">Grupo ${letra}</div>
+          <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;background:${colors[letra]}22;color:${colors[letra]};">${alumnos.length} alumnos</span>
+        </div>
+        ${alumnos.sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'})).map(p=>{
+          const g=gruposEdit[p.gid]||grupos[p.gid];
+          return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f5f0e8;">
+            <div style="width:22px;height:22px;border-radius:50%;background:${g?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+            <span style="font-size:12px;font-weight:600;">${escHtml(p.apellidos)}</span> <span style="font-size:11px;opacity:.6;">${escHtml(p.nombre)} · ${g?.label||''}</span>
+          </div>`;
+        }).join('')}
+      `;
+      c.appendChild(div);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  PROGRAMACIÓN MÓVIL - lista + nueva actividad
+  // ══════════════════════════════════════════════════════════════
+  // renderMobProg ya existe - solo asegurar que se llame en mobGo
+
+  // ══════════════════════════════════════════════════════════════
+  //  OBSERVACIONES MÓVIL - render correcto
+  // ══════════════════════════════════════════════════════════════
+  function renderMobObsCorrecta() {
+    // renderMobObs ya existe y funciona - alias para compatibilidad
+    if (typeof renderMobObs === 'function') renderMobObs();
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  RECOMENDACIONES MÓVIL
+  // ══════════════════════════════════════════════════════════════
+  // El HTML estático ya está en mob-recomendaciones, no necesita render
+
+  // ══════════════════════════════════════════════════════════════
+  //  EVALUACIÓN MÓVIL
+  // ══════════════════════════════════════════════════════════════
+  // El HTML estático ya está en mob-evaluacion, no necesita render
+
+  // ══════════════════════════════════════════════════════════════
+  //  FIX mobGo: actualizar la pantalla de grupos con sub-tabs
+  // ══════════════════════════════════════════════════════════════
+  const _origMobGo = mobGo;
+
+
+  function showMobMonTab(tab, btn) {
+    document.getElementById('mobMonListaPanel').style.display = tab==='lista' ? 'block' : 'none';
+    document.getElementById('mobMonMedicoPanel').style.display = tab==='medico' ? 'block' : 'none';
+    document.getElementById('mobMonTabLista').style.background  = tab==='lista' ? '#2D5016' : '#f5f0e8';
+    document.getElementById('mobMonTabLista').style.color       = tab==='lista' ? 'white' : '#2D5016';
+    document.getElementById('mobMonTabMedico').style.background = tab==='medico' ? '#2D5016' : '#f5f0e8';
+    document.getElementById('mobMonTabMedico').style.color      = tab==='medico' ? 'white' : '#2D5016';
+    if (tab==='medico') renderMobMonitoResumenMedico();
+  }
+
+  function renderMobMonitoResumenMedico() {
+    const c = document.getElementById('mobMonMedicoPanel');
+    if (!c) return;
+    const conDatos = getAllEditParticipants().filter(p => hasFichaData(p.n));
+    if (!conDatos.length) {
+      c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin fichas médicas registradas.</div>';
+      return;
+    }
+    c.innerHTML = '';
+    conDatos.forEach(p => {
+      const d = fichasCache[String(p.n)] || (() => { try { const r=localStorage.getItem('ficha-'+p.n); return r?JSON.parse(r):{};} catch(e){return{};} })();
+      const g = gruposEdit[p.gid]||grupos[p.gid];
+      const hasAlert = (d.alergias&&d.alergias.trim())||(d.medicacion&&d.medicacion.trim());
+      const div = document.createElement('div');
+      div.style.cssText = `background:white;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid ${hasAlert?'#E67E22':'#27AE60'};border-top:1px solid #ede8de;border-right:1px solid #ede8de;border-bottom:1px solid #ede8de;`;
+      div.innerHTML = `
+        <div style="font-weight:700;font-size:14px;margin-bottom:2px;">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
+        <div style="font-size:11px;opacity:.5;margin-bottom:8px;">${g?g.label:''}</div>
+        ${d.contacto?`<div style="font-size:12px;margin-bottom:3px;">📞 ${escHtml(d.contacto)}${d.tel1?' · '+escHtml(d.tel1):''}</div>`:''}
+        ${d.alergias&&d.alergias.trim()?`<div style="font-size:12px;margin-bottom:3px;color:#E67E22;">⚠️ <strong>Alergias:</strong> ${escHtml(d.alergias)}</div>`:''}
+        ${d.medicacion&&d.medicacion.trim()?`<div style="font-size:12px;margin-bottom:3px;">💊 <strong>Medicación:</strong> ${escHtml(d.medicacion)}</div>`:''}
+      `;
+      c.appendChild(div);
+    });
+  }
+
+
+  function showMobProgTab(tab, btn) {
+    document.getElementById('mobProgListPanel').style.display  = tab==='lista' ? 'block' : 'none';
+    document.getElementById('mobProgSemanaPanel').style.display = tab==='semana' ? 'block' : 'none';
+    document.getElementById('mobProgTabLista').style.color        = tab==='lista' ? '#2D5016' : '#888';
+    document.getElementById('mobProgTabLista').style.borderBottom = tab==='lista' ? '2px solid #2D5016' : 'none';
+    document.getElementById('mobProgTabSemana').style.color        = tab==='semana' ? '#2D5016' : '#888';
+    document.getElementById('mobProgTabSemana').style.borderBottom = tab==='semana' ? '2px solid #2D5016' : 'none';
+    if (tab==='semana') renderMobProgSemana();
+    if (tab==='lista')  renderMobProgLista();
+  }
+
+  function renderMobProgLista() {
+    // Update renderMobProg to use new container
+    const container = document.getElementById('mobProgListPanel');
+    if (!container) return;
+    const tipo = document.getElementById('mobFiltTipo')?.value || '';
+    const dia  = document.getElementById('mobFiltDia')?.value  || '';
+    let lista = progData.filter(a => {
+      if (tipo && a.tipo !== tipo) return false;
+      if (dia && !(a.dias||[]).includes(dia)) return false;
+      return true;
+    }).sort((a,b) => {
+      const di = DIAS_ORDER.indexOf(a.dias?.[0]||'') - DIAS_ORDER.indexOf(b.dias?.[0]||'');
+      return di !== 0 ? di : (a.horaInicio||'').localeCompare(b.horaInicio||'');
+    });
+
+    if (!lista.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin actividades. Pulsa "+ Nueva".</div>';
+      return;
+    }
+    container.innerHTML = '';
+    lista.forEach(a => {
+      const diasStr = (a.dias||[]).map(d=>DIAS_LABELS[d]?.slice(0,3)||d).join(', ');
+      const gruposNom = (a.grupos||[]).map(gid=>{const g=gruposCamp.find(g=>String(g.id)===String(gid));return g?g.nombre:'';}).filter(Boolean).join(', ');
+      const monNom = (a.monitores||[]).map(mid=>{const m=monitoresData.find(m=>String(m.id)===String(mid));return m?(m.nombre).trim():'';}).filter(Boolean).join(', ');
+      const color = (typeof TIPO_COLORS !== 'undefined' ? TIPO_COLORS[a.tipo] : null) || '#4A7C2F';
+      const div = document.createElement('div');
+      div.style.cssText = 'background:white;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid '+color+';border-top:1px solid #ede8de;border-right:1px solid #ede8de;border-bottom:1px solid #ede8de;';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:${color}22;color:${color};">${TIPO_LABELS[a.tipo]||a.tipo}</span>
+          <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:.95rem;color:#2D5016;flex:1;">${escHtml(a.nombre||'Sin nombre')}</span>
+          <button onclick="openProgModal(${a.id})" style="padding:4px 10px;border-radius:7px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-size:11px;cursor:pointer;">✏️</button>
+        </div>
+        <div style="font-size:11px;color:#666;line-height:1.6;">
+          ${diasStr?`📅 ${diasStr}`:''}${a.horaInicio?' · ⏰ '+a.horaInicio+(a.horaFin?' → '+a.horaFin:''):''}
+          ${a.fechaInicio?`<br>📆 ${a.fechaInicio}${a.fechaFin&&a.fechaFin!==a.fechaInicio?' → '+a.fechaFin:''}` :''}
+          ${gruposNom?`<br>🏕 ${escHtml(gruposNom)}`:''}
+          ${monNom?`<br>👤 ${escHtml(monNom)}`:''}
+          ${a.lugar?`<br>📍 ${escHtml(a.lugar)}`:''}
+        </div>
+      `;
+      div.addEventListener('click', e => { if (!e.target.closest('button')) openProgModal(a.id); });
+      container.appendChild(div);
+    });
+  }
+
+  function renderMobProgSemana() {
+    const c = document.getElementById('mobProgSemanaPanel');
+    if (!c) return;
+    const today = new Date();
+    const monday = getWeekStart(today);
+    const DIAS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const todayStr = dateToStr(today);
+
+    c.innerHTML = '';
+    for (let i=0; i<7; i++) {
+      const d = new Date(monday); d.setDate(monday.getDate()+i);
+      const ds = dateToStr(d);
+      const isToday = ds===todayStr;
+      const acts = progData.filter(a => actividadEnFecha(a,ds))
+        .sort((a,b)=>(a.horaInicio||'').localeCompare(b.horaInicio||''));
+      if (!acts.length && !isToday) continue;
+
+      const dayDiv = document.createElement('div');
+      dayDiv.style.cssText = 'margin-bottom:14px;';
+      dayDiv.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:${isToday?'#2D5016':'#f5f0e8'};color:${isToday?'white':'#2D5016'};display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:10px;flex-shrink:0;">
+          <span>${DIAS_ES[d.getDay()]}</span><span style="font-size:14px;line-height:1;">${d.getDate()}</span>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:#555;">${acts.length} actividad${acts.length!==1?'es':''}</div>
+      </div>`;
+
+      acts.forEach(a => {
+        const color = (typeof TIPO_COLORS !== 'undefined' ? TIPO_COLORS[a.tipo] : null) || '#4A7C2F';
+        const item = document.createElement('div');
+        item.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;background:white;border-radius:10px;margin-bottom:6px;border-left:4px solid ${color};border:1px solid #ede8de;border-left:4px solid ${color};cursor:pointer;`;
+        item.innerHTML = `
+          <div style="text-align:center;min-width:42px;">
+            <div style="font-size:12px;font-weight:700;color:#2D5016;">${a.horaInicio||'--'}</div>
+            ${a.horaFin?`<div style="font-size:10px;opacity:.4;">${a.horaFin}</div>`:''}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:10px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.5px;">${TIPO_LABELS[a.tipo]||a.tipo}</div>
+            <div style="font-size:13px;font-weight:600;color:#2D5016;">${escHtml(a.nombre||'')}</div>
+            ${a.lugar?`<div style="font-size:11px;opacity:.5;">📍 ${escHtml(a.lugar)}</div>`:''}
+          </div>
+        `;
+        item.onclick = () => openProgModal(a.id);
+        dayDiv.appendChild(item);
+      });
+
+      if (!acts.length) {
+        dayDiv.innerHTML += '<div style="font-size:12px;opacity:.3;padding:6px 0;">Sin actividades</div>';
+      }
+      c.appendChild(dayDiv);
+    }
+    if (!c.children.length) {
+      c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin actividades esta semana.</div>';
+    }
+  }
+
 </script>
 
 
@@ -5808,12 +6273,17 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">📅 Programación</div>
-      <button onclick="openProgModal()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Nueva</button>
+      <button onclick="openProgModal()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Nueva</button>
     </div>
-    <!-- Filtro rápido móvil -->
-    <div style="padding:10px 16px;background:var(--blanco);border-bottom:1px solid var(--crema-oscuro);display:flex;gap:8px;overflow-x:auto;">
-      <select id="mobFiltTipo" onchange="renderMobProg()" style="padding:7px 10px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;white-space:nowrap;">
-        <option value="">Todos</option>
+    <!-- Vista tabs: Lista / Semana -->
+    <div style="display:flex;gap:0;border-bottom:2px solid #d9ceb8;background:white;position:sticky;top:57px;z-index:90;">
+      <button onclick="showMobProgTab('lista',this)" id="mobProgTabLista" style="flex:1;padding:9px;border:none;background:transparent;font-size:12px;font-weight:700;color:#2D5016;border-bottom:2px solid #2D5016;margin-bottom:-2px;cursor:pointer;">📋 Lista</button>
+      <button onclick="showMobProgTab('semana',this)" id="mobProgTabSemana" style="flex:1;padding:9px;border:none;background:transparent;font-size:12px;font-weight:700;color:#888;cursor:pointer;">📅 Esta semana</button>
+    </div>
+    <!-- Filtros -->
+    <div style="padding:8px 12px;background:#f9f7f3;border-bottom:1px solid #d9ceb8;display:flex;gap:6px;overflow-x:auto;">
+      <select id="mobFiltTipo" onchange="renderMobProg()" style="padding:6px 8px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:11px;outline:none;flex-shrink:0;">
+        <option value="">Todos los tipos</option>
         <option value="velada">🌙 Velada</option>
         <option value="taller">🎨 Taller</option>
         <option value="juego">🎮 Juego</option>
@@ -5826,7 +6296,7 @@
         <option value="merienda">🍎 Merienda</option>
         <option value="cena">🍽 Cena</option>
       </select>
-      <select id="mobFiltDia" onchange="renderMobProg()" style="padding:7px 10px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
+      <select id="mobFiltDia" onchange="renderMobProg()" style="padding:6px 8px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:11px;outline:none;flex-shrink:0;">
         <option value="">Todos los días</option>
         <option value="lunes">Lunes</option>
         <option value="martes">Martes</option>
@@ -5837,7 +6307,8 @@
         <option value="domingo">Domingo</option>
       </select>
     </div>
-    <div id="mobProgList" style="padding:12px 16px;"></div>
+    <div id="mobProgListPanel" style="padding:12px 16px;"></div>
+    <div id="mobProgSemanaPanel" style="display:none;padding:12px 16px;"></div>
   </div>
 
   <!-- PANTALLA ALUMNOS -->
@@ -5873,18 +6344,33 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">👤 Monitores</div>
-      <button onclick="addMonitor();renderMobMonitores()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
+      <button onclick="addMonitor();renderMobMonitores()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
     </div>
-    <div id="mobMonitoresList" style="padding:12px 16px;"></div>
+    <div id="mobMonResumenMed" style="margin:12px 16px 0;display:none;"></div>
+    <div style="padding:10px 16px;border-bottom:1px solid #d9ceb8;background:white;display:flex;gap:6px;">
+      <button onclick="showMobMonTab('lista',this)" id="mobMonTabLista" style="flex:1;padding:8px;border:none;background:#2D5016;color:white;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">👤 Monitores</button>
+      <button onclick="showMobMonTab('medico',this)" id="mobMonTabMedico" style="flex:1;padding:8px;border:none;background:#f5f0e8;color:#2D5016;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">🩺 Resumen médico</button>
+    </div>
+    <div id="mobMonListaPanel" style="padding:12px 16px;"></div>
+    <div id="mobMonMedicoPanel" style="padding:12px 16px;display:none;"></div>
   </div>
 
   <!-- PANTALLA GRUPOS -->
   <div class="mob-screen" id="mob-grupos">
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
-      <div class="mob-topbar-title">🏷 Grupos por monitor</div>
+      <div class="mob-topbar-title">🏕 Grupos campamento</div>
+      <button onclick="addGrupoCamp();renderMobGruposMain()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Grupo</button>
     </div>
-    <div id="mobGruposList" style="padding:12px 16px;"></div>
+    <!-- Sub-nav grupos móvil -->
+    <div style="display:flex;gap:0;border-bottom:2px solid #d9ceb8;background:white;position:sticky;top:57px;z-index:90;">
+      <button id="mobGTabCamp" onclick="showMobGTab('camp')" style="flex:1;padding:10px 6px;border:none;background:transparent;font-size:11px;font-weight:700;color:#2D5016;border-bottom:2px solid #2D5016;margin-bottom:-2px;cursor:pointer;">🏕 Grupos</button>
+      <button id="mobGTabMon"  onclick="showMobGTab('mon')"  style="flex:1;padding:10px 6px;border:none;background:transparent;font-size:11px;font-weight:700;color:#888;cursor:pointer;">👤 Monitor</button>
+      <button id="mobGTabClase" onclick="showMobGTab('clase')" style="flex:1;padding:10px 6px;border:none;background:transparent;font-size:11px;font-weight:700;color:#888;cursor:pointer;">📋 Clase</button>
+    </div>
+    <div id="mobGTabCampPanel" style="padding:12px 16px;"></div>
+    <div id="mobGTabMonPanel"  style="display:none;padding:12px 16px;"></div>
+    <div id="mobGTabClasePanel" style="display:none;padding:12px 16px;"></div>
   </div>
 
   <!-- PANTALLA OBSERVACIONES -->
