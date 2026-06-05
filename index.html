@@ -1222,6 +1222,14 @@
 
     /* Ocultar buscar-overlay en móvil (usamos pantalla propia) */
   }
+
+  .ficha-field select {
+    width:100%; padding:9px 12px; border-radius:10px;
+    border:1.5px solid var(--crema-oscuro); background:var(--crema);
+    font-family:'DM Sans',sans-serif; font-size:13px; outline:none;
+    transition:border-color .2s; color:var(--gris-texto);
+  }
+  .ficha-field select:focus { border-color:var(--verde-claro); background:var(--blanco); }
 </style>
 </head>
 <body>
@@ -1781,7 +1789,6 @@
         {n:26,apellidos:'Muñiz de Castro',nombre:'Javier',grupo:'❓'},
         {n:27,apellidos:'Muñoz Recio',nombre:'Jaime',grupo:'C'},
         {n:28,apellidos:'Nwelati Catalán',nombre:'Marcos',grupo:'❓'},
-        {n:29,apellidos:'Quirante Vega',nombre:'Inés',grupo:'A'},
         {n:30,apellidos:'Salas Ortega',nombre:'María',grupo:'C'},
         {n:31,apellidos:'Seco Pacheco',nombre:'Alejandro',grupo:'D'},
         {n:32,apellidos:'Sigüenza Revuelta',nombre:'Lucas',grupo:'❓'},
@@ -2109,17 +2116,39 @@
 
   async function openFicha(p, g) {
     currentFichaP = p;
+
+    // Avatar
     document.getElementById('fichaAvatar').style.background = g.hex;
     document.getElementById('fichaAvatar').textContent = getInitials(p.nombre, p.apellidos);
-    document.getElementById('fichaNombre').textContent = p.apellidos + ', ' + p.nombre;
-    document.getElementById('fichaMeta').textContent = g.label + (p.grupo !== '❓' ? ' · Grupo ' + p.grupo : ' · Grupo pendiente');
     document.getElementById('fichaSavedMsg').classList.remove('show');
 
-    // Clear fields
+    // ── Datos del participante (editables) ──
+    document.getElementById('fApellidos').value = p.apellidos || '';
+    document.getElementById('fNombre').value = p.nombre || '';
+    document.getElementById('fCurso').value = p.gid || 'g6';
+    document.getElementById('fGrupoClase').value = (p.grupo && p.grupo !== '❓') ? p.grupo : '';
+    document.getElementById('fGrupoCamp').value = p.grupoCamp || '';
+
+    // Populate monitor select
+    const monSel = document.getElementById('fMonitor');
+    monSel.innerHTML = '<option value="">Sin asignar</option>';
+    monitoresData.forEach(m => {
+      const label = (m.nombre + ' ' + m.apellidos).trim() || 'Monitor/a';
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = label;
+      if (String(m.id) === String(p.monitorId)) opt.selected = true;
+      monSel.appendChild(opt);
+    });
+
+    // Header
+    document.getElementById('fichaNombre').textContent = (p.apellidos || '') + ', ' + (p.nombre || '');
+    document.getElementById('fichaMeta').textContent = g.label + (p.grupo && p.grupo !== '❓' ? ' · Clase ' + p.grupo : '');
+
+    // ── Datos médicos / contacto ──
     ['fContacto','fTel1','fTel2','fCodigoAN','fAlergias','fMedicacion','fObservaciones']
       .forEach(id => document.getElementById(id).value = '');
 
-    // Load saved data
     const data = await loadFichaData(p.n);
     if (data) {
       if (data.contacto)      document.getElementById('fContacto').value = data.contacto;
@@ -2129,14 +2158,57 @@
       if (data.alergias)      document.getElementById('fAlergias').value = data.alergias;
       if (data.medicacion)    document.getElementById('fMedicacion').value = data.medicacion;
       if (data.observaciones) document.getElementById('fObservaciones').value = data.observaciones;
+      if (data.grupoCamp)     document.getElementById('fGrupoCamp').value = data.grupoCamp;
     }
 
     document.getElementById('fichaOverlay').classList.add('visible');
     document.body.style.overflow = 'hidden';
   }
 
+  function updateFichaHeader() {
+    const ap = document.getElementById('fApellidos').value;
+    const nm = document.getElementById('fNombre').value;
+    document.getElementById('fichaNombre').textContent = (ap || '—') + ', ' + (nm || '—');
+    const av = document.getElementById('fichaAvatar');
+    av.textContent = ((nm[0]||'') + (ap[0]||'')).toUpperCase();
+  }
+
   async function saveFicha() {
     if (!currentFichaP) return;
+    const n = currentFichaP.n;
+    const oldGid = currentFichaP.gid;
+    const newGid = document.getElementById('fCurso').value;
+    const newAp  = document.getElementById('fApellidos').value.trim();
+    const newNm  = document.getElementById('fNombre').value.trim();
+    const newGrupoClase = document.getElementById('fGrupoClase').value.trim().toUpperCase() || '❓';
+    const newGrupoCamp  = document.getElementById('fGrupoCamp').value.trim();
+    const newMonitorId  = document.getElementById('fMonitor').value;
+
+    // ── Actualizar datos del participante en gruposEdit y grupos ──
+    // Remove from old group
+    if (gruposEdit[oldGid]) gruposEdit[oldGid].participantes = gruposEdit[oldGid].participantes.filter(x => x.n !== n);
+    if (grupos[oldGid])     grupos[oldGid].participantes     = grupos[oldGid].participantes.filter(x => x.n !== n);
+
+    // Add to new group (may be same)
+    const updatedP = {...currentFichaP,
+      apellidos: newAp || currentFichaP.apellidos,
+      nombre:    newNm || currentFichaP.nombre,
+      gid:       newGid,
+      grupo:     newGrupoClase,
+      grupoCamp: newGrupoCamp,
+      monitorId: newMonitorId,
+    };
+    if (gruposEdit[newGid]) gruposEdit[newGid].participantes.push(updatedP);
+    if (grupos[newGid])     grupos[newGid].participantes.push(updatedP);
+    currentFichaP = updatedP;
+
+    // Update header display
+    document.getElementById('fichaNombre').textContent = updatedP.apellidos + ', ' + updatedP.nombre;
+    const g = gruposEdit[newGid] || grupos[newGid];
+    document.getElementById('fichaMeta').textContent = g.label + (newGrupoClase !== '❓' ? ' · Clase ' + newGrupoClase : '');
+    document.getElementById('fichaAvatar').style.background = g.hex;
+
+    // ── Guardar datos médicos/contacto ──
     const data = {
       contacto:      document.getElementById('fContacto').value,
       tel1:          document.getElementById('fTel1').value,
@@ -2145,22 +2217,27 @@
       alergias:      document.getElementById('fAlergias').value,
       medicacion:    document.getElementById('fMedicacion').value,
       observaciones: document.getElementById('fObservaciones').value,
+      grupoCamp:     newGrupoCamp,
     };
-    await saveFichaData(currentFichaP.n, data);
-    // Refresh dot indicator if modal is open
+    await saveFichaData(n, data);
+
+    // Refresh dot indicator in open modal
     if (currentGroup) {
       const items = document.querySelectorAll('#modalList .modal-item');
       items.forEach(el => {
         const apDiv = el.querySelector('.apellidos');
         if (apDiv && apDiv.textContent.includes(currentFichaP.apellidos)) {
-          const dot = apDiv.querySelector('span');
-          if (!dot) {
+          if (!apDiv.querySelector('span')) {
             apDiv.insertAdjacentHTML('beforeend',
-              `<span title="Ficha con datos" style="font-size:8px;color:var(--verde-claro);margin-left:2px">●</span>`);
+              '<span title="Ficha con datos" style="font-size:8px;color:var(--verde-claro);margin-left:2px">●</span>');
           }
         }
       });
     }
+
+    // Refresh edit table if visible
+    if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
+
     const msg = document.getElementById('fichaSavedMsg');
     msg.classList.add('show');
     setTimeout(() => msg.classList.remove('show'), 2500);
@@ -2353,15 +2430,14 @@
   }
 
   function addAlumno() {
+    // Crear alumno temporal y abrir su ficha directamente para editar
     const gid = document.getElementById('filtroGrupo').value || 'g6';
-    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 131) + 1;
-    gruposEdit[gid].participantes.push({n: maxN, apellidos:'Nuevo Alumno', nombre:'', grupo:'❓'});
-    renderEditTable();
-    // Scroll to bottom
-    setTimeout(() => {
-      const tbody = document.getElementById('editTableBody');
-      tbody.lastChild && tbody.lastChild.scrollIntoView({behavior:'smooth'});
-    }, 100);
+    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 200) + 1;
+    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid, grupoCamp:'', monitorId:''};
+    gruposEdit[gid].participantes.push(nuevoP);
+    grupos[gid].participantes.push(nuevoP);
+    const g = gruposEdit[gid] || grupos[gid];
+    openFicha(nuevoP, g);
   }
 
   function saveAllAlumnos() {
@@ -2763,14 +2839,12 @@
 
   function mobAddAlumno() {
     const gid = 'g6';
-    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 131) + 1;
-    gruposEdit[gid].participantes.push({n: maxN, apellidos:'Nuevo', nombre:'Alumno/a', grupo:'❓', monitorId:''});
-    grupos[gid].participantes.push({n: maxN, apellidos:'Nuevo', nombre:'Alumno/a', grupo:'❓', monitorId:''});
-    renderMobAlumnos();
-    setTimeout(() => {
-      const items = document.querySelectorAll('.mob-alumno-item');
-      if (items.length) items[items.length-1].scrollIntoView({behavior:'smooth'});
-    }, 100);
+    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 200) + 1;
+    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid, grupoCamp:'', monitorId:''};
+    gruposEdit[gid].participantes.push(nuevoP);
+    grupos[gid].participantes.push(nuevoP);
+    const g = gruposEdit[gid] || grupos[gid];
+    openFicha(nuevoP, g);
   }
 
   function runMobBuscar() {
@@ -2925,7 +2999,7 @@
 
 <!-- FICHA ALUMNO -->
 <div class="ficha-overlay" id="fichaOverlay" onclick="handleFichaOverlay(event)">
-  <div class="ficha-box">
+  <div class="ficha-box" style="max-width:560px;">
     <div class="ficha-header">
       <div class="ficha-avatar" id="fichaAvatar"></div>
       <div class="ficha-header-text">
@@ -2935,9 +3009,46 @@
       <button class="ficha-close" onclick="closeFicha()">✕</button>
     </div>
     <div class="ficha-body">
+
+      <div class="ficha-section-title">🧒 Datos del participante</div>
+      <div class="ficha-grid">
+        <div class="ficha-field ficha-full">
+          <label>Apellidos</label>
+          <input type="text" id="fApellidos" placeholder="Apellidos" oninput="updateFichaHeader()"/>
+        </div>
+        <div class="ficha-field ficha-full">
+          <label>Nombre</label>
+          <input type="text" id="fNombre" placeholder="Nombre" oninput="updateFichaHeader()"/>
+        </div>
+        <div class="ficha-field">
+          <label>Curso escolar</label>
+          <select id="fCurso">
+            <option value="g2">2º Primaria</option>
+            <option value="g3">3º Primaria</option>
+            <option value="g4">4º Primaria</option>
+            <option value="g5">5º Primaria</option>
+            <option value="g6">6º Primaria</option>
+          </select>
+        </div>
+        <div class="ficha-field">
+          <label>Grupo de clase</label>
+          <input type="text" id="fGrupoClase" placeholder="A / B / C / D" style="text-transform:uppercase"/>
+        </div>
+        <div class="ficha-field ficha-full">
+          <label>Grupo campamento (puede ser distinto al de clase)</label>
+          <input type="text" id="fGrupoCamp" placeholder="Ej. Lobos, Águilas, Grupo 1…"/>
+        </div>
+        <div class="ficha-field ficha-full">
+          <label>Monitor/a asignado/a en el campamento</label>
+          <select id="fMonitor">
+            <option value="">Sin asignar</option>
+          </select>
+        </div>
+      </div>
+
       <div class="ficha-section-title">📞 Contacto familiar</div>
       <div class="ficha-grid">
-        <div class="ficha-field">
+        <div class="ficha-field ficha-full">
           <label>Persona de contacto</label>
           <input type="text" id="fContacto" placeholder="Nombre y apellidos" />
         </div>
