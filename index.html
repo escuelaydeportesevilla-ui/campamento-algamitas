@@ -1310,6 +1310,92 @@
   .pdf-item-name { flex:1; font-size:13px; font-weight:600; }
   .pdf-item-size { font-size:11px; opacity:.4; }
   .pdf-open-btn { padding:5px 12px; border-radius:8px; border:1.5px solid var(--verde-claro); background:white; color:var(--verde-bosque); font-size:12px; font-weight:600; cursor:pointer; }
+
+  /* ══ CABAÑAS ══ */
+  .cabana-vista-card {
+    background:var(--blanco); border-radius:20px; padding:24px;
+    border:1.5px solid var(--crema-oscuro); margin-bottom:20px;
+    border-left:6px solid var(--tierra);
+  }
+  .cabana-vista-header { display:flex; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+  .cabana-vista-icon { font-size:32px; }
+  .cabana-vista-name { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--verde-bosque); }
+  .cabana-vista-meta { font-size:12px; opacity:.5; }
+  .cabana-badge { font-size:11px; font-weight:700; padding:3px 10px; border-radius:10px; background:var(--crema-oscuro); color:var(--gris-texto); }
+  .cabana-alumnos-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; margin-top:12px; }
+  .cabana-alumno-chip { display:flex; align-items:center; gap:8px; padding:7px 10px; background:var(--crema); border-radius:10px; font-size:12px; }
+
+  /* ══ PROGRAMACIÓN ══ */
+  .prog-filtros {
+    background:var(--blanco); border-radius:16px; padding:20px 24px;
+    border:1.5px solid var(--crema-oscuro); margin-bottom:24px;
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px;
+  }
+  .prog-filtro-field label { display:block; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; opacity:.45; margin-bottom:5px; }
+  .prog-filtro-field select, .prog-filtro-field input {
+    width:100%; padding:8px 12px; border-radius:10px;
+    border:1.5px solid var(--crema-oscuro); background:var(--crema);
+    font-family:'DM Sans',sans-serif; font-size:13px; outline:none; color:var(--gris-texto);
+  }
+  .prog-card {
+    background:var(--blanco); border-radius:16px; padding:0;
+    border:1.5px solid var(--crema-oscuro); margin-bottom:14px;
+    overflow:hidden; transition:box-shadow .2s;
+  }
+  .prog-card:hover { box-shadow:0 6px 20px rgba(45,80,22,.1); }
+  .prog-card-header {
+    padding:14px 20px; display:flex; align-items:center; gap:12px; cursor:pointer;
+    border-bottom:1px solid var(--crema-oscuro);
+  }
+  .prog-tipo-badge {
+    font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    padding:4px 10px; border-radius:10px; flex-shrink:0;
+  }
+  .prog-card-nombre { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--verde-bosque); flex:1; }
+  .prog-card-meta { font-size:12px; opacity:.5; flex-shrink:0; }
+  .prog-card-body { padding:18px 20px; display:none; }
+  .prog-card-body.open { display:block; }
+  .prog-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .prog-field label { display:block; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; opacity:.45; margin-bottom:5px; }
+  .prog-field input, .prog-field select, .prog-field textarea {
+    width:100%; padding:9px 12px; border-radius:10px;
+    border:1.5px solid var(--crema-oscuro); background:var(--crema);
+    font-family:'DM Sans',sans-serif; font-size:13px; outline:none;
+    transition:border-color .2s; color:var(--gris-texto);
+  }
+  .prog-field input:focus, .prog-field select:focus { border-color:var(--verde-claro); }
+  .prog-full { grid-column:1/-1; }
+  .prog-dias-check { display:flex; flex-wrap:wrap; gap:6px; }
+  .prog-dia-label {
+    display:flex; align-items:center; gap:4px; padding:5px 10px;
+    border-radius:20px; border:1.5px solid var(--crema-oscuro); background:var(--crema);
+    font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; user-select:none;
+  }
+  .prog-dia-label input { display:none; }
+  .prog-dia-label.checked { background:var(--verde-bosque); color:white; border-color:var(--verde-bosque); }
+  .horario-row { display:flex; align-items:center; gap:10px; }
+  .horario-row span { font-size:13px; opacity:.5; }
+
+  /* Colores por tipo */
+  .pt-velada    { background:#1a1a2e22; color:#1a1a2e; }
+  .pt-taller    { background:#E67E2222; color:#E67E22; }
+  .pt-juego     { background:#27AE6022; color:#27AE60; }
+  .pt-liga      { background:#8E44AD22; color:#8E44AD; }
+  .pt-piscina   { background:#3B7EA122; color:#3B7EA1; }
+  .pt-comedor   { background:#C0392B22; color:#C0392B; }
+  .pt-libre     { background:#7FB06922; color:#4A7C2F; }
+  .pt-desayuno  { background:#E8C54722; color:#8B5E3C; }
+  .pt-almuerzo  { background:#E07A3B22; color:#E07A3B; }
+  .pt-merienda  { background:#8E44AD22; color:#8E44AD; }
+  .pt-cena      { background:#C0392B22; color:#C0392B; }
+
+  /* Vista calendario semanal */
+  .prog-calendar { overflow-x:auto; margin-top:24px; }
+  .cal-table { width:100%; border-collapse:collapse; min-width:700px; }
+  .cal-table th { background:var(--verde-bosque); color:white; padding:10px 8px; font-size:12px; text-align:center; }
+  .cal-table td { border:1px solid var(--crema-oscuro); padding:6px; vertical-align:top; min-width:90px; min-height:60px; font-size:11px; }
+  .cal-table td:first-child { background:var(--crema-oscuro); font-weight:700; font-size:11px; text-align:center; width:60px; }
+  .cal-event { background:var(--verde-claro); color:white; border-radius:6px; padding:3px 6px; margin-bottom:3px; font-size:10px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -1363,6 +1449,8 @@
     <button class="tab-btn" onclick="showTab('edicion',event)">✏️ Editar alumnos</button>
     <button class="tab-btn" onclick="showTab('monitores',event)">👤 Monitores</button>
     <button class="tab-btn" onclick="showTab('grupos',event)">🏷 Grupos</button>
+    <button class="tab-btn" onclick="showTab('cabanas',event)">🛖 Cabañas</button>
+    <button class="tab-btn" onclick="showTab('programacion',event)">📅 Programación</button>
     <button class="tab-btn" onclick="showTab('observaciones',event)">📝 Observaciones</button>
     <button class="tab-btn" onclick="showTab('recomendaciones',event)">🧭 Recomendaciones</button>
     <button class="tab-btn" onclick="showTab('evaluacion',event)">📊 Evaluación 2025</button>
@@ -1595,6 +1683,177 @@
     <p style="font-size:13px;opacity:.55;margin-bottom:24px;">Espacio para el equipo de coordinación. Notas internas, incidencias, recordatorios y aspectos a tener en cuenta durante el campamento.</p>
     <div class="obs-grid" id="obsGrid"></div>
     <button class="edit-btn primary" onclick="addObsCard()">➕ Nueva nota</button>
+  </div>
+
+  <!-- TAB CABAÑAS -->
+  <div id="tab-cabanas" class="tab-panel">
+    <h2 class="section-title">🛖 Vista general de cabañas</h2>
+    <p style="font-size:13px;opacity:.55;margin-bottom:24px;">Resumen de todos los grupos con alojamiento asignado, sus alumnos y monitores. Edita los detalles desde la pestaña <strong>Grupos → 🛖 Cabaña</strong>.</p>
+    <div id="cabanasVista"></div>
+    <div id="cabanasVaciaMsg" style="display:none;text-align:center;padding:60px;opacity:.4;font-size:14px;">
+      Aún no hay cabañas asignadas. Ve a <strong>Grupos</strong>, crea grupos y rellena la pestaña 🛖 Cabaña de cada uno.
+    </div>
+  </div>
+
+  <!-- TAB PROGRAMACIÓN -->
+  <div id="tab-programacion" class="tab-panel">
+    <h2 class="section-title">📅 Programación del campamento</h2>
+
+    <!-- Toolbar -->
+    <div class="edit-toolbar" style="margin-bottom:16px;">
+      <button class="edit-btn primary" onclick="openProgModal()">➕ Nueva actividad</button>
+      <button class="edit-btn" onclick="toggleProgVista()" id="btnVistaProg">📅 Ver calendario</button>
+      <button class="edit-btn" onclick="saveProgData()">💾 Guardar</button>
+      <span id="progSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
+    </div>
+
+    <!-- Filtros -->
+    <div class="prog-filtros">
+      <div class="prog-filtro-field">
+        <label>Tipo de actividad</label>
+        <select id="filtTipo" onchange="renderProg()">
+          <option value="">Todos</option>
+          <option value="velada">🌙 Velada</option>
+          <option value="taller">🎨 Taller</option>
+          <option value="juego">🎮 Juego</option>
+          <option value="liga">⚽ Liga</option>
+          <option value="piscina">🏊 Piscina</option>
+          <option value="comedor">🍽 Comedor</option>
+          <option value="libre">🌿 Tiempo libre</option>
+          <option value="desayuno">☕ Desayuno</option>
+          <option value="almuerzo">🥗 Almuerzo</option>
+          <option value="merienda">🍎 Merienda</option>
+          <option value="cena">🍽 Cena</option>
+        </select>
+      </div>
+      <div class="prog-filtro-field">
+        <label>Día de la semana</label>
+        <select id="filtDia" onchange="renderProg()">
+          <option value="">Todos los días</option>
+          <option value="lunes">Lunes</option>
+          <option value="martes">Martes</option>
+          <option value="miercoles">Miércoles</option>
+          <option value="jueves">Jueves</option>
+          <option value="viernes">Viernes</option>
+          <option value="sabado">Sábado</option>
+          <option value="domingo">Domingo</option>
+        </select>
+      </div>
+      <div class="prog-filtro-field">
+        <label>Grupo campamento</label>
+        <select id="filtGrupoCamp" onchange="renderProg()">
+          <option value="">Todos los grupos</option>
+        </select>
+      </div>
+      <div class="prog-filtro-field">
+        <label>Monitor responsable</label>
+        <select id="filtMonitorProg" onchange="renderProg()">
+          <option value="">Todos los monitores</option>
+        </select>
+      </div>
+      <div class="prog-filtro-field">
+        <label>Hora (desde)</label>
+        <input type="time" id="filtHoraDesde" onchange="renderProg()" min="08:00" max="24:00"/>
+      </div>
+      <div class="prog-filtro-field">
+        <label>Buscar por nombre</label>
+        <input type="text" id="filtNombreProg" placeholder="Escribe…" oninput="renderProg()"/>
+      </div>
+    </div>
+
+    <!-- Vista lista -->
+    <div id="progLista"></div>
+
+    <!-- Vista calendario -->
+    <div id="progCalendario" style="display:none;">
+      <div class="prog-calendar"><table class="cal-table" id="calTable"></table></div>
+    </div>
+
+    <!-- Modal nueva/editar actividad -->
+    <div class="modal-overlay" id="progModal" onclick="if(event.target===this)closeProgModal()" style="z-index:1300;">
+      <div class="modal-box" style="max-width:600px;max-height:92vh;">
+        <div class="modal-header">
+          <div class="modal-color-bar" id="progModalBar" style="background:var(--verde-medio)"></div>
+          <div class="modal-header-text">
+            <div class="modal-title" id="progModalTitle">Nueva actividad</div>
+          </div>
+          <button class="modal-close" onclick="closeProgModal()">✕</button>
+        </div>
+        <div class="modal-list" style="padding:20px;overflow-y:auto;">
+          <div class="prog-form-grid">
+            <div class="prog-field">
+              <label>Tipo de actividad</label>
+              <select id="pTipo" onchange="updateProgModalColor()">
+                <option value="velada">🌙 Velada</option>
+                <option value="taller">🎨 Taller</option>
+                <option value="juego">🎮 Juego</option>
+                <option value="liga">⚽ Liga</option>
+                <option value="piscina">🏊 Piscina</option>
+                <option value="comedor">🍽 Comedor</option>
+                <option value="libre">🌿 Tiempo libre</option>
+                <option value="desayuno">☕ Desayuno</option>
+                <option value="almuerzo">🥗 Almuerzo</option>
+                <option value="merienda">🍎 Merienda</option>
+                <option value="cena">🍽 Cena</option>
+              </select>
+            </div>
+            <div class="prog-field">
+              <label>Nombre / descripción</label>
+              <input type="text" id="pNombre" placeholder="Ej. Velada del Tesoro…"/>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Días de la semana</label>
+              <div class="prog-dias-check" id="pDias">
+                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="lunes"> Lunes</label>
+                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="martes"> Martes</label>
+                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="miercoles"> Miércoles</label>
+                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="jueves"> Jueves</label>
+                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="viernes"> Viernes</label>
+                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="sabado"> Sábado</label>
+                <label class="prog-dia-label" onclick="toggleDia(this)"><input type="checkbox" value="domingo"> Domingo</label>
+              </div>
+            </div>
+
+            <div class="prog-field">
+              <label>Hora de inicio</label>
+              <input type="time" id="pHoraInicio" value="09:00" min="08:00" max="23:59"/>
+            </div>
+            <div class="prog-field">
+              <label>Hora de fin</label>
+              <input type="time" id="pHoraFin" value="10:00" min="08:00" max="24:00"/>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Grupos campamento asignados</label>
+              <div id="pGruposCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Monitores responsables</label>
+              <div id="pMonitoresCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Lugar / espacio</label>
+              <input type="text" id="pLugar" placeholder="Ej. Piscina, Pabellón, Zona barbacoa…"/>
+            </div>
+            <div class="prog-field prog-full">
+              <label>Materiales necesarios</label>
+              <input type="text" id="pMateriales" placeholder="Ej. Cuerdas, pinturas, balones…"/>
+            </div>
+            <div class="prog-field prog-full">
+              <label>Observaciones</label>
+              <textarea id="pObs" rows="2" placeholder="Notas adicionales…"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1.5px solid var(--crema-oscuro);">
+          <button onclick="deleteProgActividad()" id="btnDelProg" style="padding:9px 18px;border-radius:12px;border:1.5px solid var(--rojo-suave);background:white;color:var(--rojo-suave);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:none;">🗑 Eliminar</button>
+          <button onclick="saveProgActividad()" style="padding:9px 22px;border-radius:12px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar actividad</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- TAB 2: RECOMENDACIONES -->
@@ -1861,6 +2120,8 @@
     if (btn) btn.classList.add('active');
     if (id === 'grupos') { renderBanco(); renderGruposCamp(); }
     if (id === 'monitores') { renderMedResumen(); }
+    if (id === 'cabanas') { renderCabanasVista(); }
+    if (id === 'programacion') { populateProgFiltros(); renderProg(); }
     if (id === 'edicion') { renderEditTable(); }
   }
 
@@ -3428,6 +3689,308 @@
     g.pdfs.splice(pi, 1);
     saveGruposCampStorage();
     renderGruposCamp();
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  CABAÑAS — vista resumen
+  // ══════════════════════════════════════════════════════════════
+  function renderCabanasVista() {
+    const container = document.getElementById('cabanasVista');
+    const vacioMsg  = document.getElementById('cabanasVaciaMsg');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const conCabana = gruposCamp.filter(g => g.cabana || g.tipoAloj);
+    if (!conCabana.length) {
+      if (vacioMsg) vacioMsg.style.display = 'block';
+      return;
+    }
+    if (vacioMsg) vacioMsg.style.display = 'none';
+
+    const tipoIcon = {cabana:'🛖', bungalow:'🏠', tienda:'⛺', dormitorio:'🛏', otro:'🏗'};
+
+    conCabana.forEach(g => {
+      const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
+      const monitores = monitoresData.filter(m => (g.monitores||[]).includes(m.id));
+      const icon = tipoIcon[g.tipoAloj] || '🛖';
+      const card = document.createElement('div');
+      card.className = 'cabana-vista-card';
+      card.style.borderLeftColor = g.color || 'var(--tierra)';
+      card.innerHTML = `
+        <div class="cabana-vista-header">
+          <div class="cabana-vista-icon">${icon}</div>
+          <div>
+            <div class="cabana-vista-name">${escHtml(g.nombre)}</div>
+            <div class="cabana-vista-meta">${g.cabana ? escHtml(g.cabana) : ''}${g.zona ? ' · ' + escHtml(g.zona) : ''}</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+            ${g.capacidad ? `<span class="cabana-badge">👥 Cap. ${g.capacidad}</span>` : ''}
+            <span class="cabana-badge" style="background:${g.color}22;color:${g.color}">${alumnos.length} alumno${alumnos.length!==1?'s':''}</span>
+          </div>
+        </div>
+        ${monitores.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+          ${monitores.map(m => `<span class="draggable-chip" style="background:var(--verde-bosque);color:white;border-color:var(--verde-bosque);cursor:default;">👤 ${escHtml(m.nombre)} ${escHtml(m.apellidos)}</span>`).join('')}
+        </div>` : ''}
+        ${g.notasCabana ? `<div style="font-size:13px;opacity:.6;margin-bottom:12px;font-style:italic;">📝 ${escHtml(g.notasCabana)}</div>` : ''}
+        <div class="cabana-alumnos-grid">
+          ${alumnos.sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'})).map(p => {
+            const pg = gruposEdit[p.gid]||grupos[p.gid];
+            return `<div class="cabana-alumno-chip">
+              <div class="chip-avatar" style="background:${pg.hex}">${getInitials(p.nombre,p.apellidos)}</div>
+              <div><div style="font-size:12px;font-weight:600">${escHtml(p.apellidos.split(' ')[0])}</div>
+              <div style="font-size:11px;opacity:.5">${escHtml(p.nombre)}</div></div>
+            </div>`;
+          }).join('')}
+        </div>
+        ${!alumnos.length ? '<div style="font-size:13px;opacity:.35;padding:8px 0;">Sin alumnos asignados aún.</div>' : ''}
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  PROGRAMACIÓN
+  // ══════════════════════════════════════════════════════════════
+  const TIPO_LABELS = {
+    velada:'🌙 Velada', taller:'🎨 Taller', juego:'🎮 Juego', liga:'⚽ Liga',
+    piscina:'🏊 Piscina', comedor:'🍽 Comedor', libre:'🌿 Tiempo libre',
+    desayuno:'☕ Desayuno', almuerzo:'🥗 Almuerzo', merienda:'🍎 Merienda', cena:'🍽 Cena'
+  };
+  const DIAS_ORDER = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
+  const DIAS_LABELS = {lunes:'Lunes',martes:'Martes',miercoles:'Miércoles',jueves:'Jueves',viernes:'Viernes',sabado:'Sábado',domingo:'Domingo'};
+
+  let progData = JSON.parse(localStorage.getItem('camp-prog') || '[]');
+  let progVistaCalendario = false;
+  let editingProgId = null;
+
+  function saveProgData() {
+    try { localStorage.setItem('camp-prog', JSON.stringify(progData)); } catch(e){}
+    const msg = document.getElementById('progSavedMsg');
+    msg.textContent = '✔ Guardado'; msg.style.opacity='1';
+    setTimeout(() => msg.style.opacity='0', 2500);
+  }
+
+  function toggleProgVista() {
+    progVistaCalendario = !progVistaCalendario;
+    document.getElementById('progLista').style.display = progVistaCalendario ? 'none' : 'block';
+    document.getElementById('progCalendario').style.display = progVistaCalendario ? 'block' : 'none';
+    document.getElementById('btnVistaProg').textContent = progVistaCalendario ? '📋 Ver lista' : '📅 Ver calendario';
+    if (progVistaCalendario) renderCalendario(); else renderProg();
+  }
+
+  function populateProgFiltros() {
+    // Grupos campamento
+    const gSel = document.getElementById('filtGrupoCamp');
+    if (gSel) {
+      gSel.innerHTML = '<option value="">Todos los grupos</option>';
+      gruposCamp.forEach(g => { const o=document.createElement('option'); o.value=g.id; o.textContent=g.nombre; gSel.appendChild(o); });
+    }
+    // Monitores
+    const mSel = document.getElementById('filtMonitorProg');
+    if (mSel) {
+      mSel.innerHTML = '<option value="">Todos los monitores</option>';
+      monitoresData.forEach(m => { const o=document.createElement('option'); o.value=m.id; o.textContent=(m.nombre+' '+m.apellidos).trim(); mSel.appendChild(o); });
+    }
+  }
+
+  function getProgFiltrados() {
+    const tipo  = document.getElementById('filtTipo')?.value || '';
+    const dia   = document.getElementById('filtDia')?.value || '';
+    const grupo = document.getElementById('filtGrupoCamp')?.value || '';
+    const mon   = document.getElementById('filtMonitorProg')?.value || '';
+    const desde = document.getElementById('filtHoraDesde')?.value || '';
+    const nombre= (document.getElementById('filtNombreProg')?.value||'').toLowerCase().trim();
+
+    return progData.filter(a => {
+      if (tipo && a.tipo !== tipo) return false;
+      if (dia && !(a.dias||[]).includes(dia)) return false;
+      if (grupo && !(a.grupos||[]).includes(String(grupo))) return false;
+      if (mon && !(a.monitores||[]).includes(String(mon))) return false;
+      if (desde && a.horaInicio && a.horaInicio < desde) return false;
+      if (nombre && !a.nombre.toLowerCase().includes(nombre)) return false;
+      return true;
+    }).sort((a,b) => {
+      const di = DIAS_ORDER.indexOf(a.dias?.[0]||'') - DIAS_ORDER.indexOf(b.dias?.[0]||'');
+      if (di !== 0) return di;
+      return (a.horaInicio||'').localeCompare(b.horaInicio||'');
+    });
+  }
+
+  function renderProg() {
+    const container = document.getElementById('progLista');
+    if (!container) return;
+    populateProgFiltros();
+    const lista = getProgFiltrados();
+    if (!lista.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">No hay actividades que coincidan con los filtros.</div>';
+      return;
+    }
+    container.innerHTML = '';
+    lista.forEach(a => {
+      const gruposNombres = (a.grupos||[]).map(gid => { const g=gruposCamp.find(g=>String(g.id)===String(gid)); return g?g.nombre:''; }).filter(Boolean).join(', ');
+      const monNombres = (a.monitores||[]).map(mid => { const m=monitoresData.find(m=>String(m.id)===String(mid)); return m?(m.nombre+' '+m.apellidos).trim():''; }).filter(Boolean).join(', ');
+      const diasStr = (a.dias||[]).map(d=>DIAS_LABELS[d]||d).join(' · ');
+      const card = document.createElement('div');
+      card.className = 'prog-card';
+      card.innerHTML = `
+        <div class="prog-card-header" onclick="toggleProgCard(this)">
+          <span class="prog-tipo-badge pt-${a.tipo}">${TIPO_LABELS[a.tipo]||a.tipo}</span>
+          <span class="prog-card-nombre">${escHtml(a.nombre||'Sin nombre')}</span>
+          <span class="prog-card-meta">${diasStr} ${a.horaInicio?'· '+a.horaInicio:''} ${a.horaFin?'→ '+a.horaFin:''}</span>
+          <button onclick="event.stopPropagation();openProgModal(${a.id})" style="margin-left:8px;padding:5px 12px;border-radius:8px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-size:12px;cursor:pointer;">✏️ Editar</button>
+        </div>
+        <div class="prog-card-body">
+          ${gruposNombres ? `<div style="font-size:13px;margin-bottom:6px;">🏷 <strong>Grupos:</strong> ${escHtml(gruposNombres)}</div>` : ''}
+          ${monNombres ? `<div style="font-size:13px;margin-bottom:6px;">👤 <strong>Monitores:</strong> ${escHtml(monNombres)}</div>` : ''}
+          ${a.lugar ? `<div style="font-size:13px;margin-bottom:6px;">📍 <strong>Lugar:</strong> ${escHtml(a.lugar)}</div>` : ''}
+          ${a.materiales ? `<div style="font-size:13px;margin-bottom:6px;">🎒 <strong>Materiales:</strong> ${escHtml(a.materiales)}</div>` : ''}
+          ${a.obs ? `<div style="font-size:13px;opacity:.65;">📝 ${escHtml(a.obs)}</div>` : ''}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function toggleProgCard(header) {
+    const body = header.nextElementSibling;
+    body.classList.toggle('open');
+  }
+
+  function renderCalendario() {
+    const table = document.getElementById('calTable');
+    if (!table) return;
+    const horas = [];
+    for (let h=8; h<=23; h++) horas.push((h<10?'0'+h:h)+':00');
+    const lista = getProgFiltrados();
+
+    table.innerHTML = `<tr><th>Hora</th>${DIAS_ORDER.map(d=>`<th>${DIAS_LABELS[d]}</th>`).join('')}</tr>`;
+    horas.forEach(hora => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${hora}</td>`;
+      DIAS_ORDER.forEach(dia => {
+        const td = document.createElement('td');
+        const acts = lista.filter(a => (a.dias||[]).includes(dia) && a.horaInicio && a.horaInicio.startsWith(hora.slice(0,2)));
+        acts.forEach(a => {
+          const ev = document.createElement('div');
+          ev.className = 'cal-event';
+          ev.style.background = 'var(--verde-medio)';
+          ev.textContent = (a.nombre||TIPO_LABELS[a.tipo]||'').slice(0,18);
+          ev.title = (a.nombre||'') + ' ' + a.horaInicio + '-' + a.horaFin;
+          ev.style.cursor = 'pointer';
+          ev.onclick = () => openProgModal(a.id);
+          td.appendChild(ev);
+        });
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+  }
+
+  // ── Modal nueva/editar actividad ──
+  function openProgModal(id) {
+    editingProgId = id || null;
+    const a = id ? progData.find(x => x.id === id) : null;
+    document.getElementById('progModalTitle').textContent = a ? 'Editar actividad' : 'Nueva actividad';
+    document.getElementById('btnDelProg').style.display = a ? 'block' : 'none';
+
+    // Reset
+    document.getElementById('pTipo').value = a?.tipo || 'taller';
+    document.getElementById('pNombre').value = a?.nombre || '';
+    document.getElementById('pHoraInicio').value = a?.horaInicio || '09:00';
+    document.getElementById('pHoraFin').value = a?.horaFin || '10:00';
+    document.getElementById('pLugar').value = a?.lugar || '';
+    document.getElementById('pMateriales').value = a?.materiales || '';
+    document.getElementById('pObs').value = a?.obs || '';
+
+    // Días
+    document.querySelectorAll('#pDias .prog-dia-label').forEach(lbl => {
+      const cb = lbl.querySelector('input');
+      const checked = a ? (a.dias||[]).includes(cb.value) : false;
+      cb.checked = checked;
+      lbl.classList.toggle('checked', checked);
+    });
+
+    // Grupos campamento
+    const gDiv = document.getElementById('pGruposCheck');
+    gDiv.innerHTML = '';
+    gruposCamp.forEach(g => {
+      const checked = a ? (a.grupos||[]).includes(String(g.id)) : false;
+      const lbl = document.createElement('label');
+      lbl.className = 'prog-dia-label' + (checked ? ' checked' : '');
+      lbl.innerHTML = `<input type="checkbox" value="${g.id}" ${checked?'checked':''}> ${escHtml(g.nombre)}`;
+      lbl.onclick = function() { toggleDia(this); };
+      gDiv.appendChild(lbl);
+    });
+
+    // Monitores
+    const mDiv = document.getElementById('pMonitoresCheck');
+    mDiv.innerHTML = '';
+    monitoresData.forEach(m => {
+      const checked = a ? (a.monitores||[]).includes(String(m.id)) : false;
+      const lbl = document.createElement('label');
+      lbl.className = 'prog-dia-label' + (checked ? ' checked' : '');
+      lbl.innerHTML = `<input type="checkbox" value="${m.id}" ${checked?'checked':''}> 👤 ${escHtml(m.nombre)} ${escHtml(m.apellidos)}`;
+      lbl.onclick = function() { toggleDia(this); };
+      mDiv.appendChild(lbl);
+    });
+
+    updateProgModalColor();
+    document.getElementById('progModal').classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeProgModal() {
+    document.getElementById('progModal').classList.remove('visible');
+    document.body.style.overflow = '';
+    editingProgId = null;
+  }
+
+  function toggleDia(lbl) {
+    const cb = lbl.querySelector('input');
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    lbl.classList.toggle('checked', cb.checked);
+  }
+
+  function updateProgModalColor() {
+    const tipo = document.getElementById('pTipo').value;
+    const colors = {velada:'#1a1a2e',taller:'#E67E22',juego:'#27AE60',liga:'#8E44AD',piscina:'#3B7EA1',comedor:'#C0392B',libre:'#7FB069',desayuno:'#8B5E3C',almuerzo:'#E07A3B',merienda:'#8E44AD',cena:'#C0392B'};
+    document.getElementById('progModalBar').style.background = colors[tipo] || 'var(--verde-medio)';
+  }
+
+  function saveProgActividad() {
+    const dias = [...document.querySelectorAll('#pDias input:checked')].map(cb => cb.value);
+    const grupos = [...document.querySelectorAll('#pGruposCheck input:checked')].map(cb => cb.value);
+    const monitores = [...document.querySelectorAll('#pMonitoresCheck input:checked')].map(cb => cb.value);
+    const act = {
+      id: editingProgId || Date.now(),
+      tipo: document.getElementById('pTipo').value,
+      nombre: document.getElementById('pNombre').value.trim(),
+      dias, grupos, monitores,
+      horaInicio: document.getElementById('pHoraInicio').value,
+      horaFin: document.getElementById('pHoraFin').value,
+      lugar: document.getElementById('pLugar').value.trim(),
+      materiales: document.getElementById('pMateriales').value.trim(),
+      obs: document.getElementById('pObs').value.trim(),
+    };
+    if (editingProgId) {
+      const idx = progData.findIndex(x => x.id === editingProgId);
+      if (idx !== -1) progData[idx] = act; else progData.push(act);
+    } else {
+      progData.push(act);
+    }
+    saveProgData();
+    closeProgModal();
+    if (progVistaCalendario) renderCalendario(); else renderProg();
+  }
+
+  function deleteProgActividad() {
+    if (!editingProgId || !confirm('¿Eliminar esta actividad?')) return;
+    progData = progData.filter(a => a.id !== editingProgId);
+    saveProgData();
+    closeProgModal();
+    if (progVistaCalendario) renderCalendario(); else renderProg();
   }
 
 </script>
