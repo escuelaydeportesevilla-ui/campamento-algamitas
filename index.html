@@ -2814,20 +2814,45 @@
     return opts;
   }
 
+  function getOtrosGruposOptions(n) {
+    // Encuentra en qué grupo campamento está el alumno (solo puede estar en uno via este select)
+    // Si está en varios (asignado por drag&drop), mostramos el primero
+    const grupoActual = gruposCamp.find(g => (g.alumnos||[]).includes(n));
+    let opts = '<option value="">Sin grupo</option>';
+    gruposCamp.forEach(g => {
+      const sel = grupoActual && grupoActual.id === g.id ? 'selected' : '';
+      opts += `<option value="${g.id}" ${sel}>${escHtml(g.nombre)}</option>`;
+    });
+    return opts;
+  }
+
   function getOtrosGruposCell(p) {
-    // Si no hay grupos campamento creados, mostrar mensaje
     if (!gruposCamp || !gruposCamp.length) {
       return `<span style="font-size:11px;opacity:.35;font-style:italic;">Sin grupos creados</span>`;
     }
-    // Render como chips con checkbox integrado
-    return gruposCamp.map(g => {
-      const asignado = (g.alumnos||[]).includes(p.n);
-      return `<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;margin:2px;cursor:pointer;font-size:11px;font-weight:600;border:1.5px solid ${asignado?g.color:'var(--crema-oscuro)'};background:${asignado?g.color+'22':'var(--crema)'};color:${asignado?g.color:'#888'};transition:all .15s;user-select:none;"
-        onclick="toggleGrupoCampAlumno(${g.id},${p.n},this)">
-        <input type="checkbox" ${asignado?'checked':''} style="display:none"/>
-        ${escHtml(g.nombre)}
-      </label>`;
-    }).join('');
+    return `<select onchange="asignarGrupoCampAlumno(this.value,${p.n})"
+      style="padding:5px 8px;border-radius:8px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;width:100%;min-width:100px;">
+      ${getOtrosGruposOptions(p.n)}
+    </select>`;
+  }
+
+  function asignarGrupoCampAlumno(nuevoGcampId, alumnoN) {
+    // Quitar de todos los grupos primero
+    gruposCamp.forEach(g => {
+      g.alumnos = (g.alumnos||[]).filter(id => id !== alumnoN);
+    });
+    // Asignar al nuevo si no es "Sin grupo"
+    if (nuevoGcampId) {
+      const g = gruposCamp.find(x => String(x.id) === String(nuevoGcampId));
+      if (g) {
+        if (!g.alumnos) g.alumnos = [];
+        g.alumnos.push(alumnoN);
+      }
+    }
+    saveGruposCampStorage();
+    // Refresh banco si está visible
+    const banco = document.getElementById('bancoBanco');
+    if (banco) renderBanco();
   }
 
   function renderEditTable() {
@@ -2873,28 +2898,7 @@
     });
   }
 
-  function toggleGrupoCampAlumno(gcampId, alumnoN, labelEl) {
-    const g = gruposCamp.find(x => x.id === gcampId);
-    if (!g) return;
-    const cb = labelEl.querySelector('input');
-    const estaAsignado = (g.alumnos||[]).includes(alumnoN);
-
-    if (estaAsignado) {
-      g.alumnos = g.alumnos.filter(id => id !== alumnoN);
-      cb.checked = false;
-      labelEl.style.borderColor = 'var(--crema-oscuro)';
-      labelEl.style.background = 'var(--crema)';
-      labelEl.style.color = '#888';
-    } else {
-      if (!g.alumnos) g.alumnos = [];
-      g.alumnos.push(alumnoN);
-      cb.checked = true;
-      labelEl.style.borderColor = g.color;
-      labelEl.style.background = g.color + '22';
-      labelEl.style.color = g.color;
-    }
-    saveGruposCampStorage();
-  }
+  // toggleGrupoCampAlumno reemplazado por asignarGrupoCampAlumno (select)
 
   function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
