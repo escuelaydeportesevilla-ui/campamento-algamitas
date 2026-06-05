@@ -1095,6 +1095,132 @@
   .monitor-grid { grid-template-columns:1fr; }
 }
 
+
+  /* ══════════════════════════════════════════════════════════════
+     INTERFAZ MÓVIL
+  ══════════════════════════════════════════════════════════════ */
+  .mobile-view { display: none; }
+
+  @media (max-width: 768px) {
+    /* Ocultar interfaz desktop, mostrar móvil */
+    .main, .hero-stats, footer { display: none !important; }
+    .hero { padding: 28px 18px 24px; }
+    .hero h1 { font-size: 1.6rem; }
+    .hero-sub { margin-bottom: 0; }
+    .mobile-view { display: block; }
+
+    /* Pantalla principal móvil */
+    .mob-screen { display: none; padding: 16px; }
+    .mob-screen.active { display: block; }
+
+    /* Grid de botones principales */
+    .mob-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 16px;
+    }
+    .mob-card {
+      background: var(--blanco);
+      border-radius: 20px;
+      padding: 22px 14px 18px;
+      border: 1.5px solid var(--crema-oscuro);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 2px 12px rgba(45,80,22,.06);
+      text-align: center;
+    }
+    .mob-card:active { transform: scale(0.96); background: var(--crema); }
+    .mob-card .mob-icon { font-size: 34px; line-height: 1; }
+    .mob-card .mob-label { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--verde-bosque); }
+    .mob-card .mob-sub { font-size: 11px; opacity: .5; }
+    .mob-card.accent { background: var(--verde-bosque); border-color: var(--verde-bosque); }
+    .mob-card.accent .mob-label { color: white; }
+    .mob-card.accent .mob-sub { color: rgba(255,255,255,.6); }
+
+    /* Barra superior móvil */
+    .mob-topbar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--crema-oscuro);
+      background: var(--blanco);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .mob-back {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 1.5px solid var(--crema-oscuro); background: var(--crema);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; cursor: pointer; flex-shrink: 0;
+    }
+    .mob-topbar-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem; font-weight: 700; color: var(--verde-bosque); flex: 1;
+    }
+
+    /* Lista de alumnos móvil */
+    .mob-alumno-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 16px; border-bottom: 1px solid var(--crema-oscuro);
+      background: var(--blanco);
+    }
+    .mob-alumno-item:active { background: var(--crema); }
+    .mob-alumno-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .mob-alumno-nombre { flex: 1; }
+    .mob-alumno-nombre .ap { font-size: 14px; font-weight: 600; color: var(--gris-texto); }
+    .mob-alumno-nombre .nm { font-size: 12px; opacity: .5; }
+    .mob-alumno-curso { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; flex-shrink: 0; }
+    .mob-del-btn {
+      width: 32px; height: 32px; border-radius: 9px; border: none;
+      background: rgba(192,57,43,.1); color: var(--rojo-suave);
+      cursor: pointer; font-size: 15px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Búsqueda móvil */
+    .mob-search-bar {
+      padding: 10px 16px; background: var(--blanco);
+      border-bottom: 1px solid var(--crema-oscuro); position: sticky; top: 57px; z-index: 99;
+    }
+    .mob-search-bar input {
+      width: 100%; padding: 10px 14px; border-radius: 12px;
+      border: 1.5px solid var(--crema-oscuro); background: var(--crema);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+      color: var(--gris-texto);
+    }
+    .mob-search-bar input:focus { border-color: var(--verde-claro); }
+
+    /* Ficha alumno móvil — usa el mismo modal del desktop */
+    .mob-obs-item {
+      background: var(--blanco); border-radius: 14px; padding: 16px;
+      border: 1.5px solid var(--crema-oscuro); margin-bottom: 12px;
+    }
+    .mob-obs-title { font-family: 'Playfair Display',serif; font-size: .95rem; font-weight: 700; color: var(--verde-bosque); margin-bottom: 8px; }
+    .mob-obs-item textarea {
+      width: 100%; min-height: 100px; padding: 10px 12px; border-radius: 10px;
+      border: 1.5px solid var(--crema-oscuro); background: var(--crema);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; resize: vertical;
+    }
+
+    /* Stats en hero mobile */
+    .mob-stats {
+      display: flex; justify-content: space-around;
+      padding: 14px 16px; background: rgba(255,255,255,.08);
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+    .mob-stat { text-align: center; }
+    .mob-stat .num { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:900; color:var(--verde-claro); }
+    .mob-stat .lbl { font-size:10px; opacity:.6; letter-spacing:.5px; }
+
+    /* Ocultar buscar-overlay en móvil (usamos pantalla propia) */
+  }
 </style>
 </head>
 <body>
@@ -1302,7 +1428,8 @@
             <th>Apellidos</th>
             <th>Nombre</th>
             <th style="width:110px">Curso</th>
-            <th style="width:80px">Grupo</th>
+            <th style="width:70px">Gr. clase</th>
+            <th style="width:140px">Monitor campamento</th>
             <th style="width:44px"></th>
           </tr>
         </thead>
@@ -1958,17 +2085,20 @@
     results.forEach(p => {
       const el = document.createElement('div');
       el.className = 'buscar-item';
-      el.onclick = () => { closeBuscar(); openFicha(p, p.g); };
+      el.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 20px;transition:background .1s;';
       el.innerHTML = `
-        <div class="modal-avatar" style="background:${p.ghex}">${getInitials(p.nombre,p.apellidos)}</div>
-        <div class="modal-name" style="flex:1">
+        <div class="modal-avatar" style="background:${p.ghex};cursor:pointer" onclick="closeBuscar();openFicha(p,p.g)">${getInitials(p.nombre,p.apellidos)}</div>
+        <div class="modal-name" style="flex:1;cursor:pointer" onclick="closeBuscar();openFicha(p,p.g)">
           <div class="apellidos">${p.apellidos}</div>
           <div class="nombre">${p.nombre}</div>
         </div>
         <span class="buscar-curso-badge">${p.glabel}</span>
         ${p.grupo!=='❓'
           ? `<span class="modal-grupo-tag" style="background:${p.ghex}22;color:${p.ghex}">Gr. ${p.grupo}</span>`
-          : `<span class="modal-grupo-tag" style="background:#f0f0f0;color:#999">❓</span>`}`;
+          : `<span class="modal-grupo-tag" style="background:#f0f0f0;color:#999">❓</span>`}
+        <button onclick="deleteAlumnoFromBuscar(${p.n},'${p.gid}',this.closest('.buscar-item'))" title="Eliminar alumno"
+          style="width:30px;height:30px;border-radius:8px;border:none;background:rgba(192,57,43,.1);color:var(--rojo-suave);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">🗑</button>
+      `;
       container.appendChild(el);
     });
   }
@@ -2098,6 +2228,14 @@
   function initApp() {
     // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
+    // Actualizar contadores móvil
+    const total = getAllEditParticipants().length;
+    const mobTotal = document.getElementById('mobTotal');
+    if (mobTotal) mobTotal.textContent = total;
+    const mobSub = document.getElementById('mobSubTotal');
+    if (mobSub) mobSub.textContent = total + ' inscritos';
+    const mobMon = document.getElementById('mobMonCount');
+    if (mobMon) mobMon.textContent = monitoresData.length + ' monitores';
     // Arranque normal de la app (preload fichas, render tablas, etc.)
     renderEditTable();
     renderMonitorGrid();
@@ -2129,6 +2267,16 @@
     return all.sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
   }
 
+  function getMonitorOptions(selectedId) {
+    let opts = '<option value="">Sin asignar</option>';
+    monitoresData.forEach(m => {
+      const label = (m.nombre + ' ' + m.apellidos).trim() || 'Monitor/a';
+      const sel = String(m.id) === String(selectedId) ? 'selected' : '';
+      opts += `<option value="${m.id}" ${sel}>${escHtml(label)}</option>`;
+    });
+    return opts;
+  }
+
   function renderEditTable() {
     const filtro = document.getElementById('filtroGrupo').value;
     const tbody = document.getElementById('editTableBody');
@@ -2152,7 +2300,12 @@
             <option value="g6" ${p.gid==='g6'?'selected':''}>6º Prim.</option>
           </select>
         </td>
-        <td><input value="${escHtml(p.grupo)}" placeholder="A/B/C/D" style="width:60px" onchange="updateAlumno(this,'grupo',${p.n},'${p.gid}')"/></td>
+        <td><input value="${escHtml(p.grupo)}" placeholder="A/B/C/D" style="width:56px" onchange="updateAlumno(this,'grupo',${p.n},'${p.gid}')"/></td>
+        <td>
+          <select onchange="updateAlumno(this,'monitorId',${p.n},'${p.gid}')">
+            ${getMonitorOptions(p.monitorId)}
+          </select>
+        </td>
         <td><button class="tbl-del-btn" onclick="deleteAlumno(${p.n},'${p.gid}')" title="Eliminar">🗑</button></td>
       `;
       tbody.appendChild(tr);
@@ -2176,6 +2329,20 @@
     } else {
       p[field] = el.value;
     }
+  }
+
+
+  function deleteAlumnoFromBuscar(n, gid, el) {
+    if (!confirm('¿Eliminar este alumno/a del listado?')) return;
+    gruposEdit[gid].participantes = gruposEdit[gid].participantes.filter(x => x.n !== n);
+    grupos[gid].participantes = grupos[gid].participantes.filter(x => x.n !== n);
+    el.style.opacity = '0';
+    el.style.transition = 'opacity .3s';
+    setTimeout(() => el.remove(), 300);
+    // Update hero count
+    const total = getAllEditParticipants().length;
+    const heroNum = document.querySelector('.hero-stat .num');
+    if (heroNum) heroNum.textContent = total;
   }
 
   function deleteAlumno(n, gid) {
@@ -2519,6 +2686,225 @@
 
 
 
+
+  // ══════════════════════════════════════════════════════════════
+  //  INTERFAZ MÓVIL
+  // ══════════════════════════════════════════════════════════════
+  let mobHistory = ['home'];
+
+  function isMobile() { return window.innerWidth <= 768; }
+
+  function mobGo(screen) {
+    document.querySelectorAll('.mob-screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById('mob-' + screen);
+    if (el) el.classList.add('active');
+    mobHistory.push(screen);
+    window.scrollTo(0, 0);
+    // Render content
+    if (screen === 'alumnos') renderMobAlumnos();
+    if (screen === 'buscar') { document.getElementById('mobBuscarInput').value = ''; document.getElementById('mobBuscarResults').innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;text-align:center;">Escribe al menos 2 caracteres.</div>'; setTimeout(() => document.getElementById('mobBuscarInput').focus(), 100); }
+    if (screen === 'monitores') renderMobMonitores();
+    if (screen === 'grupos') renderMobGrupos();
+    if (screen === 'observaciones') renderMobObs();
+    if (screen === 'medico') renderMobMedico();
+  }
+
+  function mobBack() {
+    mobHistory.pop();
+    const prev = mobHistory[mobHistory.length - 1] || 'home';
+    document.querySelectorAll('.mob-screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById('mob-' + prev);
+    if (el) el.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function renderMobAlumnos() {
+    const q = (document.getElementById('mobAlumnoSearch').value || '').toLowerCase().trim();
+    const container = document.getElementById('mobAlumnosList');
+    container.innerHTML = '';
+    let lista = getAllEditParticipants();
+    if (q.length >= 2) lista = lista.filter(p => (p.apellidos + ' ' + p.nombre).toLowerCase().includes(q));
+
+    lista.forEach(p => {
+      const g = gruposEdit[p.gid] || grupos[p.gid];
+      const div = document.createElement('div');
+      div.className = 'mob-alumno-item';
+      div.innerHTML = `
+        <div class="mob-alumno-avatar" style="background:${g.hex}">${getInitials(p.nombre,p.apellidos)}</div>
+        <div class="mob-alumno-nombre" onclick="openFicha(p,g)" style="cursor:pointer">
+          <div class="ap">${escHtml(p.apellidos)}</div>
+          <div class="nm">${escHtml(p.nombre)} · ${g.label}</div>
+        </div>
+        ${hasFichaData(p.n) ? '<span style="font-size:16px" title="Tiene ficha">🟢</span>' : ''}
+        <button class="mob-del-btn" onclick="mobDeleteAlumno(${p.n},'${p.gid}',this.closest('.mob-alumno-item'))">🗑</button>
+      `;
+      // Fix closure
+      div.querySelector('.mob-alumno-nombre').addEventListener('click', () => openFicha(p, g));
+      container.appendChild(div);
+    });
+
+    if (!lista.length) container.innerHTML = '<div style="padding:30px;text-align:center;font-size:13px;opacity:.4;">Sin resultados.</div>';
+    // Update count
+    const total = getAllEditParticipants().length;
+    const el = document.getElementById('mobTotal');
+    if (el) el.textContent = total;
+    const sub = document.getElementById('mobSubTotal');
+    if (sub) sub.textContent = total + ' inscritos';
+  }
+
+  function mobDeleteAlumno(n, gid, el) {
+    if (!confirm('¿Eliminar este alumno/a?')) return;
+    gruposEdit[gid].participantes = gruposEdit[gid].participantes.filter(x => x.n !== n);
+    grupos[gid].participantes = grupos[gid].participantes.filter(x => x.n !== n);
+    el.style.opacity = '0'; el.style.transition = 'opacity .3s';
+    setTimeout(() => { el.remove(); renderMobAlumnos(); }, 300);
+  }
+
+  function mobAddAlumno() {
+    const gid = 'g6';
+    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 131) + 1;
+    gruposEdit[gid].participantes.push({n: maxN, apellidos:'Nuevo', nombre:'Alumno/a', grupo:'❓', monitorId:''});
+    grupos[gid].participantes.push({n: maxN, apellidos:'Nuevo', nombre:'Alumno/a', grupo:'❓', monitorId:''});
+    renderMobAlumnos();
+    setTimeout(() => {
+      const items = document.querySelectorAll('.mob-alumno-item');
+      if (items.length) items[items.length-1].scrollIntoView({behavior:'smooth'});
+    }, 100);
+  }
+
+  function runMobBuscar() {
+    const q = document.getElementById('mobBuscarInput').value.toLowerCase().trim();
+    const container = document.getElementById('mobBuscarResults');
+    if (q.length < 2) { container.innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;text-align:center;">Escribe al menos 2 caracteres.</div>'; return; }
+    const results = getAllEditParticipants().filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q))
+      .sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+    if (!results.length) { container.innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;text-align:center;">Sin resultados.</div>'; return; }
+    container.innerHTML = '';
+    results.forEach(p => {
+      const g = gruposEdit[p.gid] || grupos[p.gid];
+      const div = document.createElement('div');
+      div.className = 'mob-alumno-item';
+      div.innerHTML = `
+        <div class="mob-alumno-avatar" style="background:${g.hex}">${getInitials(p.nombre,p.apellidos)}</div>
+        <div class="mob-alumno-nombre" style="cursor:pointer">
+          <div class="ap">${escHtml(p.apellidos)}</div>
+          <div class="nm">${escHtml(p.nombre)} · ${g.label}</div>
+        </div>
+        <button class="mob-del-btn" onclick="mobDeleteAlumno(${p.n},'${p.gid}',this.closest('.mob-alumno-item'));runMobBuscar()">🗑</button>
+      `;
+      div.querySelector('.mob-alumno-nombre').addEventListener('click', () => openFicha(p, g));
+      container.appendChild(div);
+    });
+  }
+
+  function renderMobMonitores() {
+    const container = document.getElementById('mobMonitoresList');
+    if (!container) return;
+    container.innerHTML = '';
+    monitoresData.forEach((m, i) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'background:var(--blanco);border-radius:16px;padding:18px;margin-bottom:12px;border:1.5px solid var(--crema-oscuro);position:relative;';
+      div.innerHTML = `
+        <button onclick="deleteMonitor(${i});renderMobMonitores()" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:8px;border:none;background:rgba(192,57,43,.1);color:var(--rojo-suave);cursor:pointer;font-size:14px;">🗑</button>
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--verde-bosque);margin-bottom:2px;">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
+        <div style="font-size:11px;opacity:.5;margin-bottom:12px;">${escHtml(m.rol)}</div>
+        <div style="display:grid;gap:8px;">
+          <div><label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:3px;">Nombre</label>
+            <input value="${escHtml(m.nombre)}" onchange="updateMonitor(${i},'nombre',this.value)" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;"></div>
+          <div><label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:3px;">Apellidos</label>
+            <input value="${escHtml(m.apellidos)}" onchange="updateMonitor(${i},'apellidos',this.value)" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;"></div>
+          <div><label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:3px;">Teléfono</label>
+            <input type="tel" value="${escHtml(m.tel)}" onchange="updateMonitor(${i},'tel',this.value)" placeholder="000 000 000" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;"></div>
+          <div><label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:3px;">Grupo campamento asignado</label>
+            <select onchange="updateMonitor(${i},'grupoAsignado',this.value)" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+              <option value="">Sin asignar</option>
+              <option value="g2" ${m.grupoAsignado==='g2'?'selected':''}>2º Primaria</option>
+              <option value="g3" ${m.grupoAsignado==='g3'?'selected':''}>3º Primaria</option>
+              <option value="g4" ${m.grupoAsignado==='g4'?'selected':''}>4º Primaria</option>
+              <option value="g5" ${m.grupoAsignado==='g5'?'selected':''}>5º Primaria</option>
+              <option value="g6" ${m.grupoAsignado==='g6'?'selected':''}>6º Primaria</option>
+            </select></div>
+        </div>
+        <button onclick="saveMonitores();renderMobMonitores()" style="margin-top:10px;width:100%;padding:10px;border-radius:12px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar</button>
+      `;
+      container.appendChild(div);
+    });
+    const cnt = document.getElementById('mobMonCount');
+    if (cnt) cnt.textContent = monitoresData.length + ' monitores';
+  }
+
+  function renderMobGrupos() {
+    const container = document.getElementById('mobGruposList');
+    if (!container) return;
+    container.innerHTML = '';
+    const asignados = monitoresData.filter(m => m.grupoAsignado);
+    if (!asignados.length) { container.innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;">Asigna un grupo a cada monitor en la sección Monitores.</div>'; return; }
+    asignados.forEach(m => {
+      const gid = m.grupoAsignado;
+      const g = gruposEdit[gid] || grupos[gid];
+      if (!g) return;
+      const sorted = [...g.participantes].sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+      const div = document.createElement('div');
+      div.style.cssText = 'background:var(--blanco);border-radius:16px;padding:16px;margin-bottom:12px;border:1.5px solid var(--crema-oscuro);';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${g.hex};flex-shrink:0"></div>
+          <div style="font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;color:var(--verde-bosque);">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
+          <div style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:${g.hex}22;color:${g.hex};">${g.label}</div>
+        </div>
+        ${sorted.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--crema-oscuro);">
+          <div style="width:26px;height:26px;border-radius:50%;background:${g.hex};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0">${getInitials(p.nombre,p.apellidos)}</div>
+          <span style="font-size:13px;font-weight:600">${escHtml(p.apellidos)}</span>&nbsp;<span style="font-size:12px;opacity:.6">${escHtml(p.nombre)}</span>
+        </div>`).join('')}
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function renderMobObs() {
+    const container = document.getElementById('mobObsList');
+    if (!container) return;
+    container.innerHTML = '';
+    obsData.forEach((obs, i) => {
+      const div = document.createElement('div');
+      div.className = 'mob-obs-item';
+      div.style.borderLeft = '4px solid ' + obs.color;
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div class="mob-obs-title" style="flex:1">${escHtml(obs.titulo)}</div>
+          <button onclick="deleteObs(${i});renderMobObs()" style="width:26px;height:26px;border-radius:6px;border:none;background:rgba(0,0,0,.06);cursor:pointer;font-size:12px;">🗑</button>
+        </div>
+        <textarea rows="4" onchange="obsData[${i}].texto=this.value">${escHtml(obs.texto)}</textarea>
+        <button onclick="saveObs(${i})" style="margin-top:8px;padding:8px 16px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;width:100%;">Guardar nota</button>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function renderMobMedico() {
+    const container = document.getElementById('mobMedList');
+    if (!container) return;
+    container.innerHTML = '';
+    const conDatos = getAllEditParticipants().filter(p => hasFichaData(p.n));
+    if (!conDatos.length) { container.innerHTML = '<div style="padding:30px;text-align:center;font-size:13px;opacity:.4;">No hay fichas médicas registradas aún.</div>'; return; }
+    conDatos.forEach(p => {
+      const d = fichasCache[String(p.n)] || (() => { try { const r = localStorage.getItem('ficha-'+p.n); return r ? JSON.parse(r) : {}; } catch(e) { return {}; } })();
+      const g = gruposEdit[p.gid] || grupos[p.gid];
+      const hasAlert = (d.alergias && d.alergias.trim()) || (d.medicacion && d.medicacion.trim());
+      const div = document.createElement('div');
+      div.style.cssText = `background:var(--blanco);border-radius:14px;padding:16px;margin-bottom:10px;border-left:4px solid ${hasAlert?'var(--naranja)':'var(--verde-claro)'};border-top:1px solid var(--crema-oscuro);border-right:1px solid var(--crema-oscuro);border-bottom:1px solid var(--crema-oscuro);`;
+      div.innerHTML = `
+        <div style="font-weight:700;font-size:14px;margin-bottom:2px;">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
+        <div style="font-size:11px;opacity:.5;margin-bottom:8px;">${g?g.label:''}</div>
+        ${d.contacto?`<div style="font-size:13px;margin-bottom:4px;"><strong>📞</strong> ${escHtml(d.contacto)}${d.tel1?' · '+escHtml(d.tel1):''}</div>`:''}
+        ${d.alergias&&d.alergias.trim()?`<div style="font-size:13px;margin-bottom:4px;color:var(--naranja);"><strong>⚠️ Alergias:</strong> ${escHtml(d.alergias)}</div>`:''}
+        ${d.medicacion&&d.medicacion.trim()?`<div style="font-size:13px;margin-bottom:4px;"><strong>💊 Medicación:</strong> ${escHtml(d.medicacion)}</div>`:''}
+        ${d.observaciones&&d.observaciones.trim()?`<div style="font-size:13px;opacity:.7;"><strong>📋</strong> ${escHtml(d.observaciones)}</div>`:''}
+      `;
+      container.appendChild(div);
+    });
+  }
+
 </script>
 
 
@@ -2589,6 +2975,211 @@
       <button class="ficha-save-btn" onclick="saveFicha()">Guardar ficha</button>
     </div>
   </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     INTERFAZ MÓVIL
+══════════════════════════════════════════════════════════════ -->
+<div class="mobile-view">
+
+  <!-- Stats hero móvil -->
+  <div class="mob-stats" id="mobStats">
+    <div class="mob-stat"><div class="num" id="mobTotal">131</div><div class="lbl">Participantes</div></div>
+    <div class="mob-stat"><div class="num">5</div><div class="lbl">Cursos</div></div>
+    <div class="mob-stat"><div class="num">9,0</div><div class="lbl">Valoración 2025</div></div>
+  </div>
+
+  <!-- PANTALLA PRINCIPAL -->
+  <div class="mob-screen active" id="mob-home">
+    <div class="mob-grid">
+      <div class="mob-card accent" onclick="mobGo('alumnos')">
+        <div class="mob-icon">👥</div>
+        <div class="mob-label">Participantes</div>
+        <div class="mob-sub" id="mobSubTotal">131 inscritos</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('buscar')">
+        <div class="mob-icon">🔍</div>
+        <div class="mob-label">Buscar</div>
+        <div class="mob-sub">Por nombre</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('monitores')">
+        <div class="mob-icon">👤</div>
+        <div class="mob-label">Monitores</div>
+        <div class="mob-sub" id="mobMonCount">Equipo</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('grupos')">
+        <div class="mob-icon">🏷</div>
+        <div class="mob-label">Grupos</div>
+        <div class="mob-sub">Por monitor</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('observaciones')">
+        <div class="mob-icon">📝</div>
+        <div class="mob-label">Notas</div>
+        <div class="mob-sub">Coordinación</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('medico')">
+        <div class="mob-icon">🩺</div>
+        <div class="mob-label">Resumen médico</div>
+        <div class="mob-sub">Fichas</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('recomendaciones')">
+        <div class="mob-icon">🧭</div>
+        <div class="mob-label">Recomendaciones</div>
+        <div class="mob-sub">Pedagógicas</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('evaluacion')">
+        <div class="mob-icon">📊</div>
+        <div class="mob-label">Evaluación</div>
+        <div class="mob-sub">2025</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA ALUMNOS -->
+  <div class="mob-screen" id="mob-alumnos">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">👥 Participantes</div>
+      <button onclick="mobAddAlumno()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
+    </div>
+    <div class="mob-search-bar">
+      <input type="text" id="mobAlumnoSearch" placeholder="🔍 Buscar por nombre o apellidos…" oninput="renderMobAlumnos()"/>
+    </div>
+    <div style="padding:8px 16px;font-size:11px;opacity:.4;background:var(--crema);">
+      Desliza para ver · Toca el nombre para abrir ficha · 🗑 para eliminar
+    </div>
+    <div id="mobAlumnosList"></div>
+  </div>
+
+  <!-- PANTALLA BUSCAR -->
+  <div class="mob-screen" id="mob-buscar">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">🔍 Buscar alumno</div>
+    </div>
+    <div class="mob-search-bar">
+      <input type="text" id="mobBuscarInput" placeholder="Escribe apellidos o nombre…" oninput="runMobBuscar()"/>
+    </div>
+    <div id="mobBuscarResults" style="padding:20px;font-size:13px;opacity:.4;text-align:center;">Escribe al menos 2 caracteres.</div>
+  </div>
+
+  <!-- PANTALLA MONITORES -->
+  <div class="mob-screen" id="mob-monitores">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">👤 Monitores</div>
+      <button onclick="addMonitor();renderMobMonitores()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
+    </div>
+    <div id="mobMonitoresList" style="padding:12px 16px;"></div>
+  </div>
+
+  <!-- PANTALLA GRUPOS -->
+  <div class="mob-screen" id="mob-grupos">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">🏷 Grupos por monitor</div>
+    </div>
+    <div id="mobGruposList" style="padding:12px 16px;"></div>
+  </div>
+
+  <!-- PANTALLA OBSERVACIONES -->
+  <div class="mob-screen" id="mob-observaciones">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">📝 Observaciones</div>
+      <button onclick="addObsCard();renderMobObs()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Nota</button>
+    </div>
+    <div id="mobObsList" style="padding:12px 16px;"></div>
+  </div>
+
+  <!-- PANTALLA MÉDICO -->
+  <div class="mob-screen" id="mob-medico">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">🩺 Resumen médico</div>
+    </div>
+    <div id="mobMedList" style="padding:12px 16px;"></div>
+  </div>
+
+  <!-- PANTALLA RECOMENDACIONES -->
+  <div class="mob-screen" id="mob-recomendaciones">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">🧭 Recomendaciones</div>
+    </div>
+    <div style="padding:16px;font-size:13px;line-height:1.7;color:#444;">
+      <p style="margin-bottom:16px;">Las recomendaciones pedagógicas completas están disponibles en la versión de escritorio.</p>
+      <div style="background:var(--blanco);border-radius:14px;padding:16px;border-left:4px solid var(--verde-medio);margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--verde-medio);margin-bottom:6px;">2º–3º Primaria</div>
+        <p>Rutinas estables, descanso nocturno ampliado, eliminar «noche del terror», monitor de referencia fijo.</p>
+      </div>
+      <div style="background:var(--blanco);border-radius:14px;padding:16px;border-left:4px solid var(--g4);margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g4);margin-bottom:6px;">4º Primaria</div>
+        <p>Doble nivel de actividad, zona de cabañas para veladas, retos de superación personal.</p>
+      </div>
+      <div style="background:var(--blanco);border-radius:14px;padding:16px;border-left:4px solid var(--g5);margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);margin-bottom:6px;">5º Primaria</div>
+        <p>Multiaventura, mayor autonomía, tiempo libre supervisado, retos e insignias visibles.</p>
+      </div>
+      <div style="background:var(--blanco);border-radius:14px;padding:16px;border-left:4px solid var(--g6);margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g6);margin-bottom:6px;">6º Primaria</div>
+        <p>Línea «prejuvenil», elección de actividades, menos control, veladas de impacto.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA EVALUACIÓN -->
+  <div class="mob-screen" id="mob-evaluacion">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">📊 Evaluación 2025</div>
+    </div>
+    <div style="padding:16px;">
+      <div style="background:var(--verde-bosque);border-radius:16px;padding:20px;color:white;margin-bottom:14px;">
+        <div style="font-size:11px;opacity:.6;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Valoración global</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:10px;opacity:.6;margin-bottom:4px;">2º–3º Primaria</div>
+            <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--amarillo);">9,2</div>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:10px;opacity:.6;margin-bottom:4px;">4º Primaria</div>
+            <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--amarillo);">9,1</div>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:10px;opacity:.6;margin-bottom:4px;">5º Primaria</div>
+            <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--amarillo);">9,0</div>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:10px;opacity:.6;margin-bottom:4px;">6º Primaria</div>
+            <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--amarillo);">8,8</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div style="background:var(--blanco);border-radius:12px;padding:14px;text-align:center;border:1.5px solid var(--crema-oscuro);">
+          <div style="font-size:10px;opacity:.5;margin-bottom:4px;">🍽 Comida</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--verde-bosque);">2,6</div>
+          <div style="font-size:10px;opacity:.4;">/ 3</div>
+        </div>
+        <div style="background:var(--blanco);border-radius:12px;padding:14px;text-align:center;border:1.5px solid var(--crema-oscuro);">
+          <div style="font-size:10px;opacity:.5;margin-bottom:4px;">🏠 Inst.</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--verde-bosque);">2,57</div>
+          <div style="font-size:10px;opacity:.4;">/ 3</div>
+        </div>
+        <div style="background:var(--blanco);border-radius:12px;padding:14px;text-align:center;border:1.5px solid var(--crema-oscuro);">
+          <div style="font-size:10px;opacity:.5;margin-bottom:4px;">👥 Monitores</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--verde-bosque);">2,86</div>
+          <div style="font-size:10px;opacity:.4;">/ 3</div>
+        </div>
+      </div>
+      <div style="background:var(--crema-oscuro);border-radius:14px;padding:16px;border-left:4px solid var(--verde-medio);font-size:13px;line-height:1.6;color:#444;">
+        El equipo de monitores es el elemento <strong>mejor valorado</strong> en todas las edades. El reto para 2026 es metodológico: diversificar la programación por tramos de edad.
+      </div>
+    </div>
+  </div>
+
 </div>
 
 </body>
