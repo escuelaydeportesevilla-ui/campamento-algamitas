@@ -1117,28 +1117,28 @@
     /* Grid de botones principales */
     .mob-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      padding: 16px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      padding: 14px;
     }
     .mob-card {
       background: var(--blanco);
-      border-radius: 20px;
-      padding: 22px 14px 18px;
+      border-radius: 16px;
+      padding: 16px 8px 12px;
       border: 1.5px solid var(--crema-oscuro);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 5px;
       cursor: pointer;
       transition: all .2s;
-      box-shadow: 0 2px 12px rgba(45,80,22,.06);
+      box-shadow: 0 2px 8px rgba(45,80,22,.06);
       text-align: center;
     }
     .mob-card:active { transform: scale(0.96); background: var(--crema); }
-    .mob-card .mob-icon { font-size: 34px; line-height: 1; }
-    .mob-card .mob-label { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--verde-bosque); }
-    .mob-card .mob-sub { font-size: 11px; opacity: .5; }
+    .mob-card .mob-icon { font-size: 28px; line-height: 1; }
+    .mob-card .mob-label { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; color: var(--verde-bosque); }
+    .mob-card .mob-sub { font-size: 10px; opacity: .5; }
     .mob-card.accent { background: var(--verde-bosque); border-color: var(--verde-bosque); }
     .mob-card.accent .mob-label { color: white; }
     .mob-card.accent .mob-sub { color: rgba(255,255,255,.6); }
@@ -1972,7 +1972,16 @@
 
     <!-- Vista calendario -->
     <div id="progCalendario" style="display:none;">
-      <div class="prog-calendar"><table class="cal-table" id="calTable"></table></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="edit-btn" onclick="calNavPrev()">◀</button>
+        <div id="calTitleDisplay" style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--verde-bosque);flex:1;text-align:center;"></div>
+        <button class="edit-btn" onclick="calNavNext()">▶</button>
+        <button class="edit-btn active" id="btnCalDia" onclick="setCalVista('dia',this)">Día</button>
+        <button class="edit-btn" id="btnCalSemana" onclick="setCalVista('semana',this)">Semana</button>
+        <button class="edit-btn" id="btnCalMes" onclick="setCalVista('mes',this)">Mes</button>
+        <button class="edit-btn" onclick="goToToday()">Hoy</button>
+      </div>
+      <div id="calContainer" style="overflow-x:auto;border-radius:16px;border:1.5px solid var(--crema-oscuro);background:var(--blanco);"></div>
     </div>
 
     <!-- Modal nueva/editar actividad -->
@@ -2022,6 +2031,14 @@
               </div>
             </div>
 
+            <div class="prog-field">
+              <label>Fecha de inicio</label>
+              <input type="date" id="pFechaInicio" onchange="autoSetFechaFin()"/>
+            </div>
+            <div class="prog-field">
+              <label>Fecha de fin</label>
+              <input type="date" id="pFechaFin"/>
+            </div>
             <div class="prog-field">
               <label>Hora de inicio</label>
               <input type="time" id="pHoraInicio" value="09:00" min="08:00" max="23:59"/>
@@ -2756,9 +2773,53 @@
       monSel.appendChild(opt);
     });
 
+    // ── Datos vinculados de otros módulos ──
+    // Grupo campamento
+    const grupoCampAsig = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
+    // Monitor asignado
+    const monitorAsig = monitoresData.find(m => String(m.id) === String(p.monitorId)) ||
+                        (grupoCampAsig ? monitoresData.find(m => String(m.id) === String(grupoCampAsig.monitores?.[0])) : null);
+    // Notas de observación
+    const notasAlumno = obsAlumnos[p.n]?.notas || [];
+    const tieneNotas  = notasAlumno.length > 0;
+    const ultimaNota  = tieneNotas ? notasAlumno[0] : null;
+    const moodIcon    = {bien:'😊',regular:'😐',mal:'😟'};
+
     // Header
     document.getElementById('fichaNombre').textContent = (p.apellidos || '') + ', ' + (p.nombre || '');
-    document.getElementById('fichaMeta').textContent = g.label + (p.grupo && p.grupo !== '❓' ? ' · Clase ' + p.grupo : '');
+    let metaText = g.label;
+    if (p.grupo && p.grupo !== '❓') metaText += ' · Clase ' + p.grupo;
+    if (grupoCampAsig) metaText += ' · 🏕 ' + grupoCampAsig.nombre;
+    document.getElementById('fichaMeta').textContent = metaText;
+
+    // Panel de datos vinculados
+    let linkedHtml = '';
+    if (monitorAsig || grupoCampAsig || tieneNotas || p.activo === false) {
+      linkedHtml += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:12px 14px;background:var(--crema);border-radius:12px;">';
+      if (p.activo === false) linkedHtml += '<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;background:#C0392B22;color:#C0392B;">⛔ No asiste</span>';
+      if (grupoCampAsig) linkedHtml += `<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;background:${grupoCampAsig.color}22;color:${grupoCampAsig.color};">🏕 ${escHtml(grupoCampAsig.nombre)}</span>`;
+      if (grupoCampAsig?.cabana) linkedHtml += `<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;background:#8B5E3C22;color:#8B5E3C;">🏠 ${escHtml(grupoCampAsig.cabana)}</span>`;
+      if (monitorAsig) linkedHtml += `<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;background:#2D501622;color:#2D5016;">👤 ${escHtml(monitorAsig.nombre)} ${escHtml(monitorAsig.apellidos)}</span>`;
+      if (tieneNotas) linkedHtml += `<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;background:#27AE6022;color:#27AE60;cursor:pointer;" onclick="showTab('obsalumnos',null);closeFicha();">🗒 ${notasAlumno.length} nota${notasAlumno.length!==1?'s':''}</span>`;
+      linkedHtml += '</div>';
+      if (tieneNotas && ultimaNota) {
+        const moodCol = {bien:'#27AE60',regular:'#E67E22',mal:'#C0392B'};
+        linkedHtml += `<div style="padding:10px 14px;border-radius:10px;border-left:3px solid ${moodCol[ultimaNota.mood]||'#27AE60'};background:var(--crema);margin-bottom:16px;font-size:12px;">
+          <div style="font-weight:700;opacity:.5;margin-bottom:3px;">Última nota ${ultimaNota.fecha||''}</div>
+          <div>${moodIcon[ultimaNota.mood]||''} ${escHtml(ultimaNota.texto)}</div>
+        </div>`;
+      }
+    }
+
+    // Insert linked panel before the datos sección
+    const fichaBody = document.querySelector('.ficha-body');
+    let linkedDiv = document.getElementById('fichaLinkedPanel');
+    if (!linkedDiv) {
+      linkedDiv = document.createElement('div');
+      linkedDiv.id = 'fichaLinkedPanel';
+      fichaBody.insertBefore(linkedDiv, fichaBody.firstChild);
+    }
+    linkedDiv.innerHTML = linkedHtml;
 
     // ── Datos médicos / contacto ──
     ['fContacto','fTel1','fTel2','fCodigoAN','fAlergias','fMedicacion','fObservaciones']
@@ -3576,6 +3637,8 @@
     if (screen === 'observaciones') renderMobObs();
     if (screen === 'medico') renderMobMedico();
     if (screen === 'cabanas') renderMobCabanas();
+    if (screen === 'edicion') renderMobEdicion();
+    if (screen === 'obsalumnos') { renderMobObsAlumnos(); }
     if (screen === 'programacion') { renderMobProg(); }
   }
 
@@ -4225,7 +4288,16 @@
     document.getElementById('progLista').style.display = progVistaCalendario ? 'none' : 'block';
     document.getElementById('progCalendario').style.display = progVistaCalendario ? 'block' : 'none';
     document.getElementById('btnVistaProg').textContent = progVistaCalendario ? '📋 Ver lista' : '📅 Ver calendario';
-    if (progVistaCalendario) renderCalendario(); else renderProg();
+    if (progVistaCalendario) {
+      calFecha = new Date();
+      calVista = 'semana';
+      document.querySelectorAll('#btnCalDia,#btnCalSemana,#btnCalMes').forEach(b => b.classList.remove('active'));
+      const sb = document.getElementById('btnCalSemana');
+      if (sb) sb.classList.add('active');
+      renderCalendario();
+    } else {
+      renderProg();
+    }
   }
 
   function populateProgFiltros() {
@@ -4306,34 +4378,207 @@
     body.classList.toggle('open');
   }
 
-  function renderCalendario() {
-    const table = document.getElementById('calTable');
-    if (!table) return;
-    const horas = [];
-    for (let h=8; h<=23; h++) horas.push((h<10?'0'+h:h)+':00');
-    const lista = getProgFiltrados();
+  // ── CALENDARIO COMPLETO ─────────────────────────────────────
+  let calVista = 'semana';   // 'dia' | 'semana' | 'mes'
+  let calFecha = new Date(); // fecha de referencia actual
 
-    table.innerHTML = `<tr><th>Hora</th>${DIAS_ORDER.map(d=>`<th>${DIAS_LABELS[d]}</th>`).join('')}</tr>`;
-    horas.forEach(hora => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${hora}</td>`;
-      DIAS_ORDER.forEach(dia => {
-        const td = document.createElement('td');
-        const acts = lista.filter(a => (a.dias||[]).includes(dia) && a.horaInicio && a.horaInicio.startsWith(hora.slice(0,2)));
-        acts.forEach(a => {
-          const ev = document.createElement('div');
-          ev.className = 'cal-event';
-          ev.style.background = 'var(--verde-medio)';
-          ev.textContent = (a.nombre||TIPO_LABELS[a.tipo]||'').slice(0,18);
-          ev.title = (a.nombre||'') + ' ' + a.horaInicio + '-' + a.horaFin;
-          ev.style.cursor = 'pointer';
-          ev.onclick = () => openProgModal(a.id);
-          td.appendChild(ev);
-        });
-        tr.appendChild(td);
+  const TIPO_COLORS = {
+    velada:'#1a1a4e',taller:'#E67E22',juego:'#27AE60',liga:'#8E44AD',
+    piscina:'#3B7EA1',comedor:'#C0392B',libre:'#4A7C2F',desayuno:'#8B5E3C',
+    almuerzo:'#E07A3B',merienda:'#9B59B6',cena:'#922B21'
+  };
+
+  function setCalVista(vista, btn) {
+    calVista = vista;
+    document.querySelectorAll('#btnCalDia,#btnCalSemana,#btnCalMes').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderCalendario();
+  }
+
+  function calNavPrev() {
+    if (calVista==='dia')    calFecha.setDate(calFecha.getDate()-1);
+    else if (calVista==='semana') calFecha.setDate(calFecha.getDate()-7);
+    else calFecha.setMonth(calFecha.getMonth()-1);
+    renderCalendario();
+  }
+
+  function calNavNext() {
+    if (calVista==='dia')    calFecha.setDate(calFecha.getDate()+1);
+    else if (calVista==='semana') calFecha.setDate(calFecha.getDate()+7);
+    else calFecha.setMonth(calFecha.getMonth()+1);
+    renderCalendario();
+  }
+
+  function goToToday() { calFecha = new Date(); renderCalendario(); }
+
+  function dateToStr(d) {
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function strToDate(s) { if (!s) return null; const [y,m,d]=s.split('-'); return new Date(y,m-1,d); }
+
+  function actividadEnFecha(a, dateStr) {
+    if (!a.fechaInicio) {
+      // Compatibilidad: actividades sin fecha usan días de semana
+      const dow = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+      const d = new Date(dateStr+'T12:00:00');
+      return (a.dias||[]).includes(dow[d.getDay()]);
+    }
+    const fi = a.fechaInicio;
+    const ff = a.fechaFin || a.fechaInicio;
+    return dateStr >= fi && dateStr <= ff;
+  }
+
+  function getWeekStart(d) {
+    const day = d.getDay(); // 0=dom
+    const diff = (day === 0 ? -6 : 1 - day);
+    const mon = new Date(d); mon.setDate(d.getDate() + diff); return mon;
+  }
+
+  function renderCalendario() {
+    const container = document.getElementById('calContainer');
+    const titleEl   = document.getElementById('calTitleDisplay');
+    if (!container) return;
+
+    const lista = progData; // mostrar todas, sin filtros de fecha
+    const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const DIAS_SHORT = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+    if (calVista === 'dia') {
+      const ds = dateToStr(calFecha);
+      titleEl.textContent = calFecha.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      renderCalDia(container, lista, ds);
+
+    } else if (calVista === 'semana') {
+      const mon = getWeekStart(new Date(calFecha));
+      const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+      titleEl.textContent = mon.toLocaleDateString('es-ES',{day:'numeric',month:'long'}) +
+        ' – ' + sun.toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
+      renderCalSemana(container, lista, mon);
+
+    } else {
+      titleEl.textContent = MESES[calFecha.getMonth()] + ' ' + calFecha.getFullYear();
+      renderCalMes(container, lista, calFecha.getFullYear(), calFecha.getMonth());
+    }
+  }
+
+  function renderCalDia(container, lista, ds) {
+    const acts = lista.filter(a => actividadEnFecha(a, ds));
+    let html = '<div style="padding:16px;">';
+    html += `<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;margin-bottom:12px;">` +
+            `${acts.length} actividad${acts.length!==1?'es':''}</div>`;
+    if (!acts.length) {
+      html += '<div style="text-align:center;padding:40px;font-size:13px;opacity:.35;">Sin actividades este día.</div>';
+    } else {
+      const sorted = [...acts].sort((a,b)=>(a.horaInicio||'').localeCompare(b.horaInicio||''));
+      sorted.forEach(a => {
+        const color = TIPO_COLORS[a.tipo] || '#4A7C2F';
+        html += `<div onclick="openProgModal(${a.id})" style="display:flex;gap:12px;padding:14px 16px;border-radius:14px;
+          border-left:5px solid ${color};border:1px solid #e8e0d0;border-left:5px solid ${color};
+          margin-bottom:10px;cursor:pointer;transition:box-shadow .15s;background:white;"
+          onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseleave="this.style.boxShadow=''">
+          <div style="text-align:center;min-width:52px;">
+            <div style="font-size:20px;">${a.horaInicio||'--'}</div>
+            <div style="font-size:11px;opacity:.45;">${a.horaFin||''}</div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${color};margin-bottom:4px;">${TIPO_LABELS[a.tipo]||a.tipo}</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;">${escHtml(a.nombre||'Sin nombre')}</div>
+            ${a.lugar?`<div style="font-size:12px;opacity:.5;margin-top:4px;">📍 ${escHtml(a.lugar)}</div>`:''}
+          </div>
+          <div style="font-size:11px;opacity:.4;align-self:flex-start;padding-top:2px;">✏️ Editar</div>
+        </div>`;
       });
-      table.appendChild(tr);
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function renderCalSemana(container, lista, monday) {
+    const HORAS = [];
+    for (let h=8; h<=22; h++) HORAS.push(String(h).padStart(2,'0')+':00');
+    const dias = [];
+    for (let i=0; i<7; i++) { const d=new Date(monday); d.setDate(monday.getDate()+i); dias.push(d); }
+    const TODAY = dateToStr(new Date());
+
+    let html = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:600px;">`;
+    // Header
+    html += '<tr><th style="width:52px;background:#f5f0e8;border-bottom:2px solid #d9ceb8;"></th>';
+    dias.forEach(d => {
+      const ds = dateToStr(d);
+      const isToday = ds === TODAY;
+      const DIAS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      html += `<th style="padding:10px 6px;text-align:center;background:${isToday?'#2D5016':'#f5f0e8'};
+        color:${isToday?'white':'#2D5016'};font-size:12px;font-weight:700;border-bottom:2px solid #d9ceb8;border-left:1px solid #d9ceb8;min-width:90px;">
+        <div>${DIAS_ES[d.getDay()]}</div>
+        <div style="font-size:18px;font-weight:900;">${d.getDate()}</div>
+      </th>`;
     });
+    html += '</tr>';
+
+    // Rows por hora
+    HORAS.forEach(hora => {
+      html += `<tr><td style="padding:6px 8px;text-align:right;font-size:11px;color:#888;font-weight:600;background:#f9f7f3;border-bottom:1px solid #ede8de;white-space:nowrap;">${hora}</td>`;
+      dias.forEach(d => {
+        const ds = dateToStr(d);
+        const isToday = ds === TODAY;
+        const hNum = parseInt(hora);
+        const actsHora = lista.filter(a => actividadEnFecha(a,ds) && a.horaInicio && parseInt(a.horaInicio)===hNum);
+        html += `<td style="padding:2px;vertical-align:top;border-bottom:1px solid #ede8de;border-left:1px solid #ede8de;background:${isToday?'#f0f7eb':'white'};min-height:40px;">`;
+        actsHora.forEach(a => {
+          const color = TIPO_COLORS[a.tipo] || '#4A7C2F';
+          html += `<div onclick="openProgModal(${a.id})" style="background:${color};color:white;border-radius:6px;padding:3px 6px;
+            font-size:10px;font-weight:600;margin-bottom:2px;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"
+            title="${escHtml(a.nombre||'')} ${a.horaInicio}-${a.horaFin}">
+            ${escHtml((a.nombre||TIPO_LABELS[a.tipo]||'').slice(0,20))}
+          </div>`;
+        });
+        html += '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</table></div>';
+    container.innerHTML = html;
+  }
+
+  function renderCalMes(container, lista, year, month) {
+    const TODAY = dateToStr(new Date());
+    const firstDay = new Date(year, month, 1);
+    const lastDay  = new Date(year, month+1, 0);
+    // Start from Monday
+    let startDow = firstDay.getDay(); if (startDow===0) startDow=7;
+    const DIAS_CAB = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+    let html = `<table style="width:100%;border-collapse:collapse;">`;
+    html += '<tr>' + DIAS_CAB.map(d=>`<th style="padding:10px 4px;text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;color:#2D5016;background:#f5f0e8;border-bottom:2px solid #d9ceb8;">${d}</th>`).join('') + '</tr>';
+
+    let day = 1;
+    let started = false;
+    for (let week=0; week<6; week++) {
+      if (day > lastDay.getDate()) break;
+      html += '<tr>';
+      for (let dow=1; dow<=7; dow++) {
+        if (week===0 && dow < startDow) { html += '<td style="background:#faf8f4;border:1px solid #ede8de;height:80px;"></td>'; continue; }
+        if (day > lastDay.getDate()) { html += '<td style="background:#faf8f4;border:1px solid #ede8de;"></td>'; continue; }
+        const ds = dateToStr(new Date(year,month,day));
+        const isToday = ds===TODAY;
+        const dayActs = lista.filter(a => actividadEnFecha(a,ds));
+        html += `<td style="vertical-align:top;padding:4px;border:1px solid #ede8de;height:80px;background:${isToday?'#f0f7eb':'white'};cursor:pointer;" onclick="calFecha=new Date(${year},${month},${day});setCalVista('dia',document.getElementById('btnCalDia'))">
+          <div style="font-size:12px;font-weight:${isToday?'900':'600'};color:${isToday?'#2D5016':'#555'};margin-bottom:3px;
+            ${isToday?'background:#2D5016;color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;':''}">${day}</div>
+          ${dayActs.slice(0,3).map(a=>{
+            const color=TIPO_COLORS[a.tipo]||'#4A7C2F';
+            return `<div style="background:${color};color:white;border-radius:4px;padding:1px 5px;font-size:9px;font-weight:600;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" title="${escHtml(a.nombre||'')}">${escHtml((a.nombre||TIPO_LABELS[a.tipo]||'').slice(0,14))}</div>`;
+          }).join('')}
+          ${dayActs.length>3?`<div style="font-size:9px;opacity:.5;">+${dayActs.length-3} más</div>`:''}
+        </td>`;
+        day++;
+      }
+      html += '</tr>';
+    }
+    html += '</table>';
+    container.innerHTML = html;
   }
 
   // ── Modal nueva/editar actividad ──
@@ -4346,6 +4591,8 @@
     // Reset
     document.getElementById('pTipo').value = a?.tipo || 'taller';
     document.getElementById('pNombre').value = a?.nombre || '';
+    document.getElementById('pFechaInicio').value = a?.fechaInicio || '';
+    document.getElementById('pFechaFin').value = a?.fechaFin || '';
     document.getElementById('pHoraInicio').value = a?.horaInicio || '09:00';
     document.getElementById('pHoraFin').value = a?.horaFin || '10:00';
     document.getElementById('pLugar').value = a?.lugar || '';
@@ -4355,23 +4602,19 @@
     // Días — reset todos primero
     document.querySelectorAll('#pDias .dia-btn').forEach(btn => {
       btn.classList.remove('activo');
-      btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+      applyDiaStyle(btn, false);
     });
     if (a && a.dias) {
       a.dias.forEach(dia => {
         const btn = document.querySelector('#pDias .dia-btn[data-dia="' + dia + '"]');
-        if (btn) {
-          btn.classList.add('activo');
-          btn.style.background = 'var(--verde-bosque)';
-          btn.style.color = 'white';
-          btn.style.borderColor = 'var(--verde-bosque)';
-        }
+        if (btn) { btn.classList.add('activo'); applyDiaStyle(btn, true); }
       });
       const semanalBtn = document.querySelector('.dia-btn-all');
       if (semanalBtn && (a.dias||[]).length === 7) {
         semanalBtn.classList.add('activo');
-        semanalBtn.style.background = 'var(--verde-medio)';
+        semanalBtn.style.background = '#4A7C2F';
         semanalBtn.style.color = 'white';
+        semanalBtn.style.borderColor = '#4A7C2F';
       }
     }
 
@@ -4411,17 +4654,16 @@
   }
 
   function clickDia(btn) {
-    event.stopPropagation();
+    if (event) event.stopPropagation();
+    const wasActive = btn.classList.contains('activo');
     btn.classList.toggle('activo');
-    // Visual feedback
-    if (btn.classList.contains('activo')) {
-      btn.style.background = 'var(--verde-bosque)';
-      btn.style.color = 'white';
-      btn.style.borderColor = 'var(--verde-bosque)';
+    if (!wasActive) {
+      btn.style.cssText = 'background:#2D5016;color:white;border-color:#2D5016;padding:7px 14px;border-radius:20px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;';
     } else {
-      btn.style.background = '';
-      btn.style.color = '';
-      btn.style.borderColor = '';
+      btn.style.cssText = 'background:D9CEB8;color:#444;border-color:#D9CEB8;padding:7px 14px;border-radius:20px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid #D9CEB8;';
+      btn.style.background = '#f5f0e8';
+      btn.style.color = '#555';
+      btn.style.borderColor = '#c8bfa8';
     }
   }
 
@@ -4430,26 +4672,25 @@
     const allActive = [...btns].every(b => b.classList.contains('activo'));
     btns.forEach(b => {
       b.classList.toggle('activo', !allActive);
-      if (!allActive) {
-        b.style.background = 'var(--verde-bosque)';
-        b.style.color = 'white';
-        b.style.borderColor = 'var(--verde-bosque)';
-      } else {
-        b.style.background = '';
-        b.style.color = '';
-        b.style.borderColor = '';
-      }
+      applyDiaStyle(b, !allActive);
     });
     const semanal = document.querySelector('.dia-btn-all');
     if (semanal) {
       semanal.classList.toggle('activo', !allActive);
-      if (!allActive) {
-        semanal.style.background = 'var(--verde-medio)';
-        semanal.style.color = 'white';
-      } else {
-        semanal.style.background = '';
-        semanal.style.color = '';
-      }
+      if (!allActive) { semanal.style.background='#4A7C2F'; semanal.style.color='white'; semanal.style.borderColor='#4A7C2F'; }
+      else { semanal.style.background=''; semanal.style.color=''; semanal.style.borderColor=''; }
+    }
+  }
+
+  function applyDiaStyle(btn, active) {
+    if (active) {
+      btn.style.background = '#2D5016';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#2D5016';
+    } else {
+      btn.style.background = '#f5f0e8';
+      btn.style.color = '#555';
+      btn.style.borderColor = '#c8bfa8';
     }
   }
 
@@ -4477,6 +4718,8 @@
       tipo: document.getElementById('pTipo').value,
       nombre: document.getElementById('pNombre').value.trim(),
       dias, grupos, monitores,
+      fechaInicio: document.getElementById('pFechaInicio').value,
+      fechaFin: document.getElementById('pFechaFin').value || document.getElementById('pFechaInicio').value,
       horaInicio: document.getElementById('pHoraInicio').value,
       horaFin: document.getElementById('pHoraFin').value,
       lugar: document.getElementById('pLugar').value.trim(),
@@ -5173,6 +5416,165 @@
     }
   }
 
+
+  function autoSetFechaFin() {
+    const fi = document.getElementById('pFechaInicio').value;
+    const ff = document.getElementById('pFechaFin');
+    if (fi && !ff.value) ff.value = fi;
+  }
+
+
+  // ── Editar alumnos móvil ──────────────────────────────────────
+  function renderMobEdicion() {
+    const container = document.getElementById('mobEdicionList');
+    if (!container) return;
+    const q = (document.getElementById('mobEdicionSearch')?.value||'').toLowerCase().trim();
+    let lista = getAllEditParticipants();
+    if (q.length >= 2) lista = lista.filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q));
+
+    container.innerHTML = '';
+    lista.forEach(p => {
+      const g = gruposEdit[p.gid]||grupos[p.gid];
+      const activo = p.activo !== false;
+      const gcampAsig = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
+      const div = document.createElement('div');
+      div.className = 'mob-alumno-item';
+      div.style.opacity = activo ? '1' : '0.5';
+      div.innerHTML = `
+        <div class="mob-alumno-avatar" style="background:${g?.hex||'#888'}">${getInitials(p.nombre,p.apellidos)}</div>
+        <div class="mob-alumno-nombre" style="cursor:pointer">
+          <div class="ap">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
+          <div class="nm">${g?.label||''} ${p.grupo&&p.grupo!=='❓'?' · Gr.'+p.grupo:''} ${gcampAsig?' · '+escHtml(gcampAsig.nombre):''}</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;">
+          <input type="checkbox" ${activo?'checked':''} onchange="toggleActivoMob(${p.n},'${p.gid}',this)" style="width:16px;height:16px;accent-color:#2D5016;"/>
+        </label>
+        <button class="mob-del-btn" onclick="mobDeleteAlumno(${p.n},'${p.gid}',this.closest('.mob-alumno-item'))">🗑</button>
+      `;
+      div.querySelector('.mob-alumno-nombre').addEventListener('click', () => openFicha(p, g||{hex:'#888',label:''}));
+      container.appendChild(div);
+    });
+    if (!lista.length) container.innerHTML = '<div style="padding:30px;text-align:center;font-size:13px;opacity:.4;">Sin resultados.</div>';
+  }
+
+  function toggleActivoMob(n, gid, cb) {
+    const p = gruposEdit[gid]?.participantes.find(x => x.n === n);
+    if (p) { p.activo = cb.checked; }
+    const pg = grupos[gid]?.participantes.find(x => x.n === n);
+    if (pg) { pg.activo = cb.checked; }
+    const row = cb.closest('.mob-alumno-item');
+    if (row) row.style.opacity = cb.checked ? '1' : '0.5';
+  }
+
+  // ── Notas alumnos móvil ───────────────────────────────────────
+  function searchMobObsAlumno() {
+    const q = (document.getElementById('mobObsAluSearch')?.value||'').toLowerCase().trim();
+    const res = document.getElementById('mobObsAluResults');
+    if (!res) return;
+    if (q.length < 2) { res.style.display='none'; return; }
+
+    const found = getAllEditParticipants()
+      .filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q))
+      .slice(0,6);
+
+    if (!found.length) { res.style.display='none'; return; }
+    res.innerHTML = '';
+    res.style.display = 'block';
+    found.forEach(p => {
+      const g = gruposEdit[p.gid]||grupos[p.gid];
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #ede8de;cursor:pointer;';
+      div.innerHTML = `
+        <div style="width:28px;height:28px;border-radius:50%;background:${g?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+        <div style="flex:1;font-size:13px;"><strong>${escHtml(p.apellidos)}</strong>, ${escHtml(p.nombre)}</div>
+        <button onclick="openAddNotaMob(${p.n})" style="padding:4px 10px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:600;cursor:pointer;">+ Nota</button>
+      `;
+      res.appendChild(div);
+    });
+  }
+
+  function openAddNotaMob(n) {
+    document.getElementById('mobObsAluSearch').value = '';
+    document.getElementById('mobObsAluResults').style.display = 'none';
+    if (!obsAlumnos[n]) {
+      const p = getAllEditParticipants().find(x => x.n === n);
+      if (p) obsAlumnos[n] = {apellidos:p.apellidos, nombre:p.nombre, gid:p.gid, notas:[]};
+    }
+    renderMobObsAlumnos();
+    setTimeout(() => {
+      const card = document.getElementById('mobobscard-'+n);
+      if (card) {
+        card.scrollIntoView({behavior:'smooth',block:'start'});
+        const form = card.querySelector('textarea');
+        if (form) form.focus();
+      }
+    }, 100);
+  }
+
+  function renderMobObsAlumnos() {
+    const container = document.getElementById('mobObsAluList');
+    if (!container) return;
+    const entries = Object.entries(obsAlumnos)
+      .sort(([,a],[,b]) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+
+    container.innerHTML = '';
+    entries.forEach(([n, d]) => {
+      const p = getAllEditParticipants().find(x => x.n === parseInt(n)) || d;
+      const g = gruposEdit[p.gid||d.gid]||grupos[p.gid||d.gid];
+      const hex = g?.hex||'#888';
+      const div = document.createElement('div');
+      div.id = 'mobobscard-'+n;
+      div.style.cssText = 'background:white;border-radius:14px;padding:16px;margin-bottom:12px;border:1.5px solid #d9ceb8;';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:${hex};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0">${getInitials(d.nombre,d.apellidos)}</div>
+          <div style="flex:1"><div style="font-weight:700;font-size:14px;">${escHtml(d.apellidos)}, ${escHtml(d.nombre)}</div>
+          <div style="font-size:11px;opacity:.45;">${d.notas.length} nota${d.notas.length!==1?'s':''}</div></div>
+        </div>
+        <div class="mood-selector" style="margin-bottom:8px;">
+          <button class="mood-btn selected" data-mood="bien" onclick="toggleMood(this)" style="font-size:12px;padding:4px 10px;">😊</button>
+          <button class="mood-btn" data-mood="regular" onclick="toggleMood(this)" style="font-size:12px;padding:4px 10px;">😐</button>
+          <button class="mood-btn" data-mood="mal" onclick="toggleMood(this)" style="font-size:12px;padding:4px 10px;">😟</button>
+        </div>
+        <textarea rows="2" placeholder="Nueva nota…" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none;box-sizing:border-box;margin-bottom:8px;"></textarea>
+        <button onclick="addNotaMob(${n},this)" style="width:100%;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;">Guardar nota</button>
+        ${d.notas.map(nota => {
+          const col = {bien:'#27AE60',regular:'#E67E22',mal:'#C0392B'}[nota.mood]||'#27AE60';
+          const mi  = {bien:'😊',regular:'😐',mal:'😟'}[nota.mood]||'';
+          return `<div style="background:#f5f0e8;border-radius:10px;padding:10px 12px;border-left:3px solid ${col};margin-bottom:6px;position:relative;">
+            <button onclick="deleteNota(${n},${nota.id})" style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:5px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:10px;">🗑</button>
+            <div style="font-size:10px;opacity:.4;margin-bottom:3px;">${nota.fecha||''}</div>
+            <div style="font-size:13px;">${mi} ${escHtml(nota.texto)}</div>
+          </div>`;
+        }).join('')}
+      `;
+      container.appendChild(div);
+    });
+
+    if (!entries.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Usa el buscador para añadir la primera nota.</div>';
+    }
+  }
+
+  function addNotaMob(n, btn) {
+    const card = btn.closest('[id^="mobobscard-"]');
+    const textarea = card.querySelector('textarea');
+    const texto = textarea.value.trim();
+    if (!texto) return;
+    const mood = card.querySelector('.mood-btn.selected')?.dataset.mood || 'bien';
+    if (!obsAlumnos[n]) {
+      const p = getAllEditParticipants().find(x => x.n === parseInt(n));
+      if (p) obsAlumnos[n] = {apellidos:p.apellidos, nombre:p.nombre, gid:p.gid, notas:[]};
+    }
+    obsAlumnos[n].notas.unshift({
+      id: Date.now(), fecha: new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
+      texto, mood, monitor: 'Monitor'
+    });
+    saveObsAlumnos();
+    textarea.value = '';
+    renderMobObsAlumnos();
+  }
+
 </script>
 
 
@@ -5303,6 +5705,11 @@
         <div class="mob-label">Participantes</div>
         <div class="mob-sub" id="mobSubTotal">131 inscritos</div>
       </div>
+      <div class="mob-card" onclick="mobGo('edicion')">
+        <div class="mob-icon">✏️</div>
+        <div class="mob-label">Editar alumnos</div>
+        <div class="mob-sub">Lista completa</div>
+      </div>
       <div class="mob-card" onclick="mobGo('buscar')">
         <div class="mob-icon">🔍</div>
         <div class="mob-label">Buscar</div>
@@ -5314,29 +5721,9 @@
         <div class="mob-sub" id="mobMonCount">Equipo</div>
       </div>
       <div class="mob-card" onclick="mobGo('grupos')">
-        <div class="mob-icon">🏷</div>
+        <div class="mob-icon">🏕</div>
         <div class="mob-label">Grupos</div>
-        <div class="mob-sub">Por monitor</div>
-      </div>
-      <div class="mob-card" onclick="mobGo('observaciones')">
-        <div class="mob-icon">📝</div>
-        <div class="mob-label">Notas</div>
-        <div class="mob-sub">Coordinación</div>
-      </div>
-      <div class="mob-card" onclick="mobGo('medico')">
-        <div class="mob-icon">🩺</div>
-        <div class="mob-label">Resumen médico</div>
-        <div class="mob-sub">Fichas</div>
-      </div>
-      <div class="mob-card" onclick="mobGo('recomendaciones')">
-        <div class="mob-icon">🧭</div>
-        <div class="mob-label">Recomendaciones</div>
-        <div class="mob-sub">Pedagógicas</div>
-      </div>
-      <div class="mob-card" onclick="mobGo('evaluacion')">
-        <div class="mob-icon">📊</div>
-        <div class="mob-label">Evaluación</div>
-        <div class="mob-sub">2025</div>
+        <div class="mob-sub">Campamento</div>
       </div>
       <div class="mob-card" onclick="mobGo('cabanas')">
         <div class="mob-icon">🏠</div>
@@ -5348,12 +5735,63 @@
         <div class="mob-label">Programación</div>
         <div class="mob-sub">Actividades</div>
       </div>
-      <div class="mob-card" onclick="actualizarApp(this)" style="border-color:var(--verde-claro);grid-column:1/-1;">
+      <div class="mob-card" onclick="mobGo('observaciones')">
+        <div class="mob-icon">📝</div>
+        <div class="mob-label">Notas coord.</div>
+        <div class="mob-sub">General</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('obsalumnos')">
+        <div class="mob-icon">🗒</div>
+        <div class="mob-label">Notas alumnos</div>
+        <div class="mob-sub">Individual</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('medico')">
+        <div class="mob-icon">🩺</div>
+        <div class="mob-label">Médico</div>
+        <div class="mob-sub">Resumen</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('recomendaciones')">
+        <div class="mob-icon">🧭</div>
+        <div class="mob-label">Pedagógico</div>
+        <div class="mob-sub">Recomendaciones</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('evaluacion')">
+        <div class="mob-icon">📊</div>
+        <div class="mob-label">Evaluación</div>
+        <div class="mob-sub">2025</div>
+      </div>
+      <div class="mob-card" onclick="actualizarApp(this)" style="border-color:#4A7C2F;grid-column:1/-1;">
         <div class="mob-icon" id="refreshIconMob">🔄</div>
         <div class="mob-label">Actualizar datos</div>
         <div class="mob-sub" id="refreshSubMob">Sincronizar con el servidor</div>
       </div>
     </div>
+  </div>
+
+  <!-- PANTALLA EDITAR ALUMNOS MOB -->
+  <div class="mob-screen" id="mob-edicion">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">✏️ Editar alumnos</div>
+      <button onclick="mobAddAlumno()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
+    </div>
+    <div class="mob-search-bar">
+      <input type="text" id="mobEdicionSearch" placeholder="🔍 Buscar alumno…" oninput="renderMobEdicion()"/>
+    </div>
+    <div id="mobEdicionList"></div>
+  </div>
+
+  <!-- PANTALLA NOTAS ALUMNOS MOB -->
+  <div class="mob-screen" id="mob-obsalumnos">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">🗒 Notas de alumnos</div>
+    </div>
+    <div class="mob-search-bar">
+      <input type="text" id="mobObsAluSearch" placeholder="🔍 Buscar alumno para añadir nota…" oninput="searchMobObsAlumno()" autocomplete="off"/>
+      <div id="mobObsAluResults" style="display:none;background:white;border:1.5px solid #d9ceb8;border-radius:12px;margin-top:4px;max-height:200px;overflow-y:auto;"></div>
+    </div>
+    <div id="mobObsAluList" style="padding:12px 16px;"></div>
   </div>
 
   <!-- PANTALLA CABAÑAS MOB -->
