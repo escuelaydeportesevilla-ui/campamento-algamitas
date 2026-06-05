@@ -1567,7 +1567,7 @@
       <div class="dnav-sub">Campamento</div>
     </button>
     <button class="desktop-nav-btn" onclick="showTab('cabanas',event)" data-tab="cabanas">
-      <div class="dnav-icon">🛖</div>
+      <div class="dnav-icon">🏠</div>
       <div class="dnav-label">Cabañas</div>
       <div class="dnav-sub">Alojamiento</div>
     </button>
@@ -1609,7 +1609,7 @@
     <button class="tab-btn" onclick="showTab('edicion',event)">✏️ Editar alumnos</button>
     <button class="tab-btn" onclick="showTab('monitores',event)">👤 Monitores</button>
     <button class="tab-btn" onclick="showTab('grupos',event)">🏷 Grupos</button>
-    <button class="tab-btn" onclick="showTab('cabanas',event)">🛖 Cabañas</button>
+    <button class="tab-btn" onclick="showTab('cabanas',event)">🏠 Cabañas</button>
     <button class="tab-btn" onclick="showTab('programacion',event)">📅 Programación</button>
     <button class="tab-btn" onclick="showTab('observaciones',event)">📝 Observaciones</button>
     <button class="tab-btn" onclick="showTab('obsalumnos',event)">🗒 Notas de alumnos</button>
@@ -1856,11 +1856,11 @@
 
   <!-- TAB CABAÑAS -->
   <div id="tab-cabanas" class="tab-panel">
-    <h2 class="section-title">🛖 Vista general de cabañas</h2>
-    <p style="font-size:13px;opacity:.55;margin-bottom:24px;">Resumen de todos los grupos con alojamiento asignado, sus alumnos y monitores. Edita los detalles desde la pestaña <strong>Grupos → 🛖 Cabaña</strong>.</p>
+    <h2 class="section-title">🏠 Vista general de cabañas</h2>
+    <p style="font-size:13px;opacity:.55;margin-bottom:24px;">Resumen de todos los grupos con alojamiento asignado, sus alumnos y monitores. Edita los detalles desde la pestaña <strong>Grupos → 🏠 Cabaña</strong>.</p>
     <div id="cabanasVista"></div>
     <div id="cabanasVaciaMsg" style="display:none;text-align:center;padding:60px;opacity:.4;font-size:14px;">
-      Aún no hay cabañas asignadas. Ve a <strong>Grupos</strong>, crea grupos y rellena la pestaña 🛖 Cabaña de cada uno.
+      Aún no hay cabañas asignadas. Ve a <strong>Grupos</strong>, crea grupos y rellena la pestaña 🏠 Cabaña de cada uno.
     </div>
   </div>
 
@@ -3829,7 +3829,7 @@
         <div style="display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--crema-oscuro);padding-bottom:0;">
           <button class="gtab-btn active" style="font-size:12px;padding:6px 12px;" onclick="showCardTab(${g.id},'alumnos',this)">👥 Alumnos</button>
           <button class="gtab-btn" style="font-size:12px;padding:6px 12px;" onclick="showCardTab(${g.id},'monitores',this)">👤 Monitores</button>
-          <button class="gtab-btn" style="font-size:12px;padding:6px 12px;" onclick="showCardTab(${g.id},'cabana',this)">🛖 Cabaña</button>
+          <button class="gtab-btn" style="font-size:12px;padding:6px 12px;" onclick="showCardTab(${g.id},'cabana',this)">🏠 Cabaña</button>
           <button class="gtab-btn" style="font-size:12px;padding:6px 12px;" onclick="showCardTab(${g.id},'docs',this)">📄 Docs</button>
         </div>
 
@@ -3887,7 +3887,7 @@
             <div class="cabana-field">
               <label>Tipo de alojamiento</label>
               <select onchange="updateGcampField(${g.id},'tipoAloj',this.value)">
-                <option ${(g.tipoAloj||'')==='cabana'?'selected':''} value="cabana">🛖 Cabaña</option>
+                <option ${(g.tipoAloj||'')==='cabana'?'selected':''} value="cabana">🏠 Cabaña</option>
                 <option ${(g.tipoAloj||'')==='bungalow'?'selected':''} value="bungalow">🏠 Bungalow</option>
                 <option ${(g.tipoAloj||'')==='tienda'?'selected':''} value="tienda">⛺ Tienda</option>
                 <option ${(g.tipoAloj||'')==='dormitorio'?'selected':''} value="dormitorio">🛏 Dormitorio</option>
@@ -4059,12 +4059,12 @@
     }
     if (vacioMsg) vacioMsg.style.display = 'none';
 
-    const tipoIcon = {cabana:'🛖', bungalow:'🏠', tienda:'⛺', dormitorio:'🛏', otro:'🏗'};
+    const tipoIcon = {cabana:'🏠', bungalow:'🏠', tienda:'⛺', dormitorio:'🛏', otro:'🏗'};
 
     conCabana.forEach(g => {
       const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
       const monitores = monitoresData.filter(m => (g.monitores||[]).includes(m.id));
-      const icon = tipoIcon[g.tipoAloj] || '🛖';
+      const icon = tipoIcon[g.tipoAloj] || '🏠';
       const card = document.createElement('div');
       card.className = 'cabana-vista-card';
       card.style.borderLeftColor = g.color || 'var(--tierra)';
@@ -4510,14 +4510,14 @@
     if (!c) return;
     const conCabana = gruposCamp.filter(g => g.cabana || g.tipoAloj);
     if (!conCabana.length) {
-      c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin cabañas asignadas aún.<br>Ve a Grupos → 🛖 Cabaña.</div>';
+      c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin cabañas asignadas aún.<br>Ve a Grupos → 🏠 Cabaña.</div>';
       return;
     }
-    const tipoIcon = {cabana:'🛖',bungalow:'🏠',tienda:'⛺',dormitorio:'🛏',otro:'🏗'};
+    const tipoIcon = {cabana:'🏠',bungalow:'🏠',tienda:'⛺',dormitorio:'🛏',otro:'🏗'};
     c.innerHTML = '';
     conCabana.forEach(g => {
       const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
-      const icon = tipoIcon[g.tipoAloj] || '🛖';
+      const icon = tipoIcon[g.tipoAloj] || '🏠';
       const div = document.createElement('div');
       div.style.cssText = `background:var(--blanco);border-radius:16px;padding:18px;margin-bottom:12px;border-left:5px solid ${g.color||'var(--tierra)'};border-top:1px solid var(--crema-oscuro);border-right:1px solid var(--crema-oscuro);border-bottom:1px solid var(--crema-oscuro);`;
       div.innerHTML = `
@@ -5132,7 +5132,7 @@
         <div class="mob-sub">2025</div>
       </div>
       <div class="mob-card" onclick="mobGo('cabanas')">
-        <div class="mob-icon">🛖</div>
+        <div class="mob-icon">🏠</div>
         <div class="mob-label">Cabañas</div>
         <div class="mob-sub">Alojamiento</div>
       </div>
@@ -5148,7 +5148,7 @@
   <div class="mob-screen" id="mob-cabanas">
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
-      <div class="mob-topbar-title">🛖 Cabañas</div>
+      <div class="mob-topbar-title">🏠 Cabañas</div>
     </div>
     <div id="mobCabanasContent" style="padding:12px 16px;"></div>
   </div>
