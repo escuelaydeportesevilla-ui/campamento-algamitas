@@ -1680,6 +1680,7 @@
       <div class="edit-toolbar">
         <button class="edit-btn primary" onclick="addGrupoCamp()">➕ Nuevo grupo</button>
         <button class="edit-btn" onclick="saveGruposCamp()">💾 Guardar grupos</button>
+        <button class="edit-btn danger" onclick="resetTodosGrupos()" title="Eliminar todos los grupos y empezar de cero">🗑 Resetear todo</button>
         <span id="gcSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
       </div>
 
@@ -3536,6 +3537,15 @@
     setTimeout(() => msg.style.opacity = '0', 2500);
   }
 
+
+  function resetTodosGrupos() {
+    if (!confirm('¿Eliminar TODOS los grupos campamento y empezar de cero? Esta acción no se puede deshacer.')) return;
+    gruposCamp = [];
+    saveGruposCampStorage();
+    renderBanco();
+    renderGruposCamp();
+    if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
+  }
   function addGrupoCamp() {
     const id = Date.now();
     const color = GCAMP_COLORS[gruposCamp.length % GCAMP_COLORS.length];
@@ -3545,12 +3555,23 @@
     renderGruposCamp();
   }
 
+  function vaciarGrupoCamp(id) {
+    if (!confirm('¿Quitar todos los alumnos de este grupo? Volverán al banco sin asignar.')) return;
+    const g = gruposCamp.find(x => x.id === id);
+    if (g) { g.alumnos = []; saveGruposCampStorage(); }
+    renderBanco();
+    renderGruposCamp();
+    // Refresh edit table if visible
+    if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
+  }
+
   function deleteGrupoCamp(id) {
     if (!confirm('¿Eliminar este grupo? Los alumnos volverán al banco.')) return;
     gruposCamp = gruposCamp.filter(g => g.id !== id);
     saveGruposCampStorage();
     renderBanco();
     renderGruposCamp();
+    if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
   }
 
   // ── Banco de alumnos sin asignar ──
@@ -3626,6 +3647,7 @@
           <div class="gcamp-color-strip" style="background:${g.color}" title="Cambiar color" onclick="cycleColor(${g.id},this)"></div>
           <input class="gcamp-name-input" value="${escHtml(g.nombre)}" placeholder="Nombre del grupo"
             onchange="updateGcampField(${g.id},'nombre',this.value)"/>
+          <button class="edit-btn" onclick="vaciarGrupoCamp(${g.id})" style="font-size:12px;padding:6px 12px;" title="Quitar todos los alumnos de este grupo">🧹 Vaciar</button>
           <button class="edit-btn danger gcamp-del-btn" onclick="deleteGrupoCamp(${g.id})">🗑 Eliminar</button>
         </div>
 
