@@ -1426,6 +1426,28 @@
   .obs-alu-search-results.visible { display:block; }
   .obs-alu-result-item { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; transition:background .1s; }
   .obs-alu-result-item:hover { background:var(--crema); }
+
+  /* Botones días semana en programación */
+  .dia-btn {
+    padding: 7px 14px; border-radius: 20px;
+    border: 1.5px solid var(--crema-oscuro);
+    background: var(--crema); color: var(--gris-texto);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s; user-select: none;
+  }
+  .dia-btn:hover { border-color: var(--verde-claro); color: var(--verde-bosque); }
+  .dia-btn.activo {
+    background: var(--verde-bosque); color: white;
+    border-color: var(--verde-bosque);
+  }
+  .dia-btn-all {
+    background: var(--crema-oscuro); font-size: 12px;
+    border-style: dashed;
+  }
+  .dia-btn-all.activo {
+    background: var(--verde-medio); border-color: var(--verde-medio);
+    border-style: solid;
+  }
 </style>
 </head>
 <body>
@@ -1837,14 +1859,15 @@
 
             <div class="prog-field prog-full">
               <label>Días de la semana</label>
-              <div class="prog-dias-check" id="pDias">
-                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="lunes"> Lunes</label>
-                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="martes"> Martes</label>
-                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="miercoles"> Miércoles</label>
-                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="jueves"> Jueves</label>
-                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="viernes"> Viernes</label>
-                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="sabado"> Sábado</label>
-                <label class="prog-dia-label" onclick="toggleDia(this,event)"><input type="checkbox" value="domingo"> Domingo</label>
+              <div id="pDias" style="display:flex;flex-wrap:wrap;gap:6px;">
+                <button type="button" class="dia-btn" data-dia="lunes"    onclick="clickDia(this)">Lunes</button>
+                <button type="button" class="dia-btn" data-dia="martes"   onclick="clickDia(this)">Martes</button>
+                <button type="button" class="dia-btn" data-dia="miercoles" onclick="clickDia(this)">Miércoles</button>
+                <button type="button" class="dia-btn" data-dia="jueves"   onclick="clickDia(this)">Jueves</button>
+                <button type="button" class="dia-btn" data-dia="viernes"  onclick="clickDia(this)">Viernes</button>
+                <button type="button" class="dia-btn" data-dia="sabado"   onclick="clickDia(this)">Sábado</button>
+                <button type="button" class="dia-btn" data-dia="domingo"  onclick="clickDia(this)">Domingo</button>
+                <button type="button" class="dia-btn dia-btn-all" onclick="seleccionarTodosLosDias()" title="Seleccionar todos los días">📅 Semanal</button>
               </div>
             </div>
 
@@ -4078,13 +4101,17 @@
     document.getElementById('pMateriales').value = a?.materiales || '';
     document.getElementById('pObs').value = a?.obs || '';
 
-    // Días
-    document.querySelectorAll('#pDias .prog-dia-label').forEach(lbl => {
-      const cb = lbl.querySelector('input');
-      const checked = a ? (a.dias||[]).includes(cb.value) : false;
-      cb.checked = checked;
-      lbl.classList.toggle('checked', checked);
-    });
+    // Días — reset todos primero, luego activar los guardados
+    document.querySelectorAll('#pDias .dia-btn').forEach(btn => btn.classList.remove('activo'));
+    if (a && a.dias) {
+      a.dias.forEach(dia => {
+        const btn = document.querySelector('#pDias .dia-btn[data-dia="' + dia + '"]');
+        if (btn) btn.classList.add('activo');
+      });
+      // Botón semanal activo si están los 7 días
+      const semanalBtn = document.querySelector('.dia-btn-all');
+      if (semanalBtn) semanalBtn.classList.toggle('activo', (a.dias||[]).length === 7);
+    }
 
     // Grupos campamento
     const gDiv = document.getElementById('pGruposCheck');
@@ -4121,7 +4148,22 @@
     editingProgId = null;
   }
 
+  function clickDia(btn) {
+    btn.classList.toggle('activo');
+  }
+
+  function seleccionarTodosLosDias() {
+    const dias = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
+    const btns = document.querySelectorAll('#pDias .dia-btn[data-dia]');
+    const allActive = [...btns].every(b => b.classList.contains('activo'));
+    // Si todos están activos, desmarcar todos; si no, marcar todos
+    btns.forEach(b => b.classList.toggle('activo', !allActive));
+    const semanal = document.querySelector('.dia-btn-all');
+    if (semanal) semanal.classList.toggle('activo', !allActive);
+  }
+
   function toggleDia(lbl, event) {
+    // Kept for backward compat with groups checkboxes
     if (event) event.preventDefault();
     const cb = lbl.querySelector('input');
     if (!cb) return;
@@ -4136,7 +4178,7 @@
   }
 
   function saveProgActividad() {
-    const dias = [...document.querySelectorAll('#pDias input:checked')].map(cb => cb.value);
+    const dias = [...document.querySelectorAll('#pDias .dia-btn[data-dia].activo')].map(b => b.dataset.dia);
     const grupos = [...document.querySelectorAll('#pGruposCheck input:checked')].map(cb => cb.value);
     const monitores = [...document.querySelectorAll('#pMonitoresCheck input:checked')].map(cb => cb.value);
     const act = {
