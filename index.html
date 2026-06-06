@@ -1,4 +1,58 @@
-<!DOCTYPE html>
+<!DOC
+
+  <!-- ══ SELECTOR DE PROYECTO ══ -->
+  <div class="project-overlay" id="projectOverlay">
+    <div class="project-box">
+      <div class="project-box-header">
+        <div class="project-app-icon">🏕</div>
+        <div>
+          <div class="project-app-name">CampApp</div>
+          <div class="project-app-tagline">Gestión de campamentos y tiempo libre</div>
+        </div>
+      </div>
+
+      <div class="project-section-title">Selecciona un proyecto</div>
+      <div id="projList"></div>
+
+      <div class="project-section-title">¿Nuevo proyecto?</div>
+      <button onclick="openNewProjectForm()"
+        style="width:100%;padding:11px;border-radius:12px;border:1.5px dashed var(--verde-claro);
+          background:transparent;color:var(--verde-bosque);font-family:'DM Sans',sans-serif;
+          font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;"
+        onmouseenter="this.style.background='#f0f7eb'" onmouseleave="this.style.background='transparent'">
+        ➕ Crear nuevo proyecto
+      </button>
+
+      <div class="new-proj-form" id="newProjForm">
+        <label>Nombre del proyecto *</label>
+        <input type="text" id="npNombre" placeholder="Ej. Campamento Verano 2027"/>
+        <label>Entidad organizadora</label>
+        <input type="text" id="npEntidad" placeholder="Ej. Colegio San José SSCC"/>
+        <div class="new-proj-date-row">
+          <div>
+            <label>Fecha de inicio</label>
+            <input type="date" id="npFechaInicio"/>
+          </div>
+          <div>
+            <label>Fecha de fin</label>
+            <input type="date" id="npFechaFin"/>
+          </div>
+        </div>
+        <button id="btnCreateProj" onclick="createProject()"
+          style="margin-top:14px;width:100%;padding:10px;border-radius:12px;border:none;
+            background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;
+            font-size:13px;font-weight:700;cursor:pointer;">
+          Crear proyecto
+        </button>
+        <p style="font-size:11px;opacity:.45;margin-top:8px;line-height:1.5;">
+          Se creará un Google Sheet nuevo para este proyecto. 
+          Necesitarás configurar el Apps Script vinculado y pegar su URL en la configuración.
+        </p>
+      </div>
+    </div>
+  </div>
+
+TYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1503,32 +1557,266 @@
     to   { transform: rotate(360deg); }
   }
 
-  /* ── Foto monitor ── */
-  .monitor-photo-wrap {
-    position: relative; width: 72px; height: 72px; margin-bottom: 14px;
+  /* foto monitores eliminada - se usa avatar con iniciales */
+
+  /* ══ ASISTENCIA ══ */
+  .asist-day-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; background: var(--verde-bosque); border-radius: 16px 16px 0 0;
+    color: white;
   }
-  .monitor-photo {
-    width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
-    border: 3px solid var(--verde-claro); display: block;
-    background: var(--crema-oscuro);
+  .asist-day-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; flex: 1; }
+  .asist-stats { font-size: 12px; opacity: .75; }
+  .asist-nav-btn {
+    padding: 6px 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,.3);
+    background: transparent; color: white; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s;
   }
-  .monitor-photo-placeholder {
-    width: 72px; height: 72px; border-radius: 50%;
-    background: var(--verde-bosque); color: white;
+  .asist-nav-btn:hover { background: rgba(255,255,255,.15); }
+
+  .asist-grupo-section { margin-bottom: 20px; border: 1.5px solid var(--crema-oscuro); border-radius: 16px; overflow: hidden; }
+  .asist-grupo-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; background: var(--crema); border-bottom: 1px solid var(--crema-oscuro);
+  }
+  .asist-grupo-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .asist-grupo-nombre { font-weight: 700; font-size: 13px; color: var(--verde-bosque); flex: 1; }
+  .asist-grupo-count { font-size: 11px; opacity: .5; }
+  .asist-btn-all { padding: 4px 12px; border-radius: 8px; border: 1.5px solid var(--crema-oscuro); background: white; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--verde-bosque); }
+
+  .asist-alumno-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; border-bottom: 1px solid var(--crema-oscuro);
+    transition: background .1s;
+  }
+  .asist-alumno-row:last-child { border-bottom: none; }
+  .asist-alumno-row:hover { background: var(--crema); }
+  .asist-alumno-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+  .asist-alumno-nombre { flex: 1; font-size: 13px; font-weight: 600; color: var(--gris-texto); }
+  .asist-alumno-meta { font-size: 11px; opacity: .4; }
+
+  .asist-toggle {
+    display: flex; gap: 4px;
+  }
+  .asist-btn {
+    padding: 5px 10px; border-radius: 8px; border: 1.5px solid var(--crema-oscuro);
+    background: var(--crema); font-size: 11px; font-weight: 700; cursor: pointer;
+    transition: all .15s; color: #888;
+  }
+  .asist-btn.presente  { background: #27AE6022; border-color: #27AE60; color: #27AE60; }
+  .asist-btn.ausente   { background: #C0392B22; border-color: #C0392B; color: #C0392B; }
+  .asist-btn.justif    { background: #E67E2222; border-color: #E67E22; color: #E67E22; }
+
+  .asist-resumen-bar {
+    display: flex; gap: 12px; padding: 14px 20px;
+    background: var(--blanco); border-radius: 12px;
+    border: 1.5px solid var(--crema-oscuro); margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .asist-resumen-item { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+  .asist-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ══ ESTILOS DE IMPRESIÓN / PDF ══ */
+  @media print {
+    /* Ocultar todo excepto el contenido a imprimir */
+    body > *:not(#printArea) { display: none !important; }
+    #printArea {
+      display: block !important;
+      position: fixed; inset: 0;
+      background: white; z-index: 99999;
+      padding: 0; margin: 0;
+      font-family: 'DM Sans', sans-serif;
+    }
+    @page {
+      size: A4 landscape;
+      margin: 12mm 10mm;
+    }
+  }
+
+  /* ══ ÁREA DE IMPRESIÓN (visible solo al imprimir) ══ */
+  #printArea {
+    display: none;
+  }
+
+  /* ══ MODAL DE EXPORTACIÓN ══ */
+  .export-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(45,80,22,.5); backdrop-filter: blur(4px);
+    z-index: 2000; align-items: center; justify-content: center; padding: 20px;
+  }
+  .export-modal-overlay.visible { display: flex; }
+  .export-modal {
+    background: white; border-radius: 20px; padding: 28px;
+    max-width: 480px; width: 100%;
+    box-shadow: 0 24px 64px rgba(0,0,0,.2);
+    animation: modalIn .25s cubic-bezier(.4,0,.2,1);
+  }
+  .export-modal h3 {
+    font-family: 'Playfair Display', serif; font-size: 1.2rem;
+    font-weight: 700; color: #2D5016; margin-bottom: 20px;
+  }
+  .export-option {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+    border-radius: 12px; border: 1.5px solid #d9ceb8; margin-bottom: 10px;
+    cursor: pointer; transition: all .15s;
+  }
+  .export-option:hover { border-color: #4A7C2F; background: #f0f7eb; }
+  .export-option.selected { border-color: #2D5016; background: #2D501611; }
+  .export-option-icon { font-size: 28px; flex-shrink: 0; }
+  .export-option-title { font-size: 14px; font-weight: 700; color: #2D5016; }
+  .export-option-sub { font-size: 12px; opacity: .5; }
+
+  /* ══ HISTORIAL ══ */
+  .hist-item {
+    display: flex; gap: 12px; padding: 11px 16px;
+    border-bottom: 1px solid var(--crema-oscuro); align-items: flex-start;
+    transition: background .1s;
+  }
+  .hist-item:hover { background: var(--crema); }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+  }
+  .hist-content { flex: 1; }
+  .hist-accion { font-size: 13px; font-weight: 600; color: var(--gris-texto); }
+  .hist-meta { font-size: 11px; opacity: .45; margin-top: 2px; }
+  .hist-tiempo { font-size: 11px; opacity: .35; white-space: nowrap; flex-shrink: 0; }
+  .hist-tipo-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
+    margin-right: 6px; letter-spacing: .3px;
+  }
+  .hist-filtro-bar {
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+  }
+  .hist-filtro-btn {
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--crema-oscuro);
+    background: var(--crema); font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; color: #666;
+  }
+  .hist-filtro-btn.active {
+    background: var(--verde-bosque); color: white; border-color: var(--verde-bosque);
+  }
+
+  /* ══ MODO OSCURO ══ */
+  body.dark-mode {
+    --verde-bosque: #5BA85C;
+    --verde-medio:  #4A9B4B;
+    --verde-claro:  #7FB069;
+    --verde-suave:  #2A3D2A;
+    --tierra:       #C9956C;
+    --tierra-claro: #E8B48A;
+    --crema:        #1E2420;
+    --crema-oscuro: #2A3230;
+    --blanco:       #171E1A;
+    --gris-texto:   #E8F0E8;
+    --amarillo:     #E8C547;
+    --azul:         #5BA8C8;
+    --naranja:      #E07A3B;
+    --rojo-suave:   #E05A4A;
+  }
+
+  body.dark-mode { background: #131A15; color: #E8F0E8; }
+  body.dark-mode .hero { background: linear-gradient(135deg, #1A2E1A 0%, #0E1A10 100%); }
+  body.dark-mode .main { background: #131A15; }
+  body.dark-mode .desktop-nav-btn { background: #1E2820; border-color: #2A3830; }
+  body.dark-mode .desktop-nav-btn:hover { border-color: #5BA85C; box-shadow: 0 4px 16px rgba(91,168,92,.15); }
+  body.dark-mode .desktop-nav-btn.active-nav { background: #2D5016; border-color: #5BA85C; }
+  body.dark-mode .tab-panel { background: #131A15; }
+  body.dark-mode .monitor-card,
+  body.dark-mode .obs-card,
+  body.dark-mode .gcamp-card,
+  body.dark-mode .prog-card,
+  body.dark-mode .obs-alu-card,
+  body.dark-mode .asist-grupo-section,
+  body.dark-mode .cabana-vista-card { background: #1E2820; border-color: #2A3830; }
+  body.dark-mode input,
+  body.dark-mode select,
+  body.dark-mode textarea { background: #2A3830 !important; color: #E8F0E8 !important; border-color: #3A4840 !important; }
+  body.dark-mode input:focus,
+  body.dark-mode select:focus,
+  body.dark-mode textarea:focus { border-color: #5BA85C !important; }
+  body.dark-mode .login-box { background: #1E2820; }
+  body.dark-mode .ficha-box,
+  body.dark-mode .modal-box,
+  body.dark-mode .export-modal { background: #1E2820; }
+  body.dark-mode .buscar-overlay { background: rgba(0,0,0,.7); }
+  body.dark-mode .buscar-box { background: #1E2820; }
+  body.dark-mode .buscar-item:hover { background: #2A3830; }
+  body.dark-mode .prog-filtros { background: #1E2820; border-color: #2A3830; }
+  body.dark-mode .alumnos-table { background: #1E2820; }
+  body.dark-mode .alumnos-table th { background: #1A2A1A; }
+  body.dark-mode .alumnos-table tr:hover td { background: #2A3830; }
+  body.dark-mode .alumnos-table td { border-color: #2A3830; }
+  body.dark-mode .asist-alumno-row:hover { background: #2A3830; }
+  body.dark-mode .hist-item:hover { background: #2A3830; }
+  body.dark-mode .cal-table td { background: #1E2820; border-color: #2A3830; }
+  body.dark-mode .cal-table th { background: #1A2A1A; }
+  body.dark-mode footer { background: #1A2A1A; border-color: #2A3830; }
+  body.dark-mode .mob-card { background: #1E2820; border-color: #2A3830; }
+  body.dark-mode .mob-card.accent { background: #2D5016; }
+  body.dark-mode .mob-topbar { background: #1E2820; border-color: #2A3830; }
+  body.dark-mode .mob-alumno-item { background: #1E2820; border-color: #2A3830; }
+  body.dark-mode .mob-alumno-item:active { background: #2A3830; }
+  body.dark-mode .mob-search-bar { background: #1E2820; border-color: #2A3830; }
+  body.dark-mode #syncIndicator { box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+
+  /* Botón de modo oscuro */
+  .dark-toggle {
+    position: fixed; bottom: 20px; left: 20px;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: none; background: var(--verde-bosque);
+    color: white; font-size: 20px; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    z-index: 500; transition: all .2s;
     display: flex; align-items: center; justify-content: center;
-    font-family: "Playfair Display", serif; font-size: 22px; font-weight: 700;
-    border: 3px solid var(--verde-claro); cursor: pointer;
-    transition: opacity .2s;
   }
-  .monitor-photo-placeholder:hover { opacity: .85; }
-  .monitor-photo-upload-btn {
-    position: absolute; bottom: 0; right: 0;
-    width: 24px; height: 24px; border-radius: 50%;
-    background: var(--verde-claro); color: white; border: 2px solid white;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; cursor: pointer; transition: background .15s;
+  .dark-toggle:hover { transform: scale(1.1); }
+  @media (max-width: 768px) { .dark-toggle { bottom: 80px; left: 14px; width: 38px; height: 38px; font-size: 17px; } }
+
+  /* ══ SELECTOR DE PROYECTO ══ */
+  .project-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(45,80,22,0.88); backdrop-filter: blur(8px);
+    z-index: 8500; align-items: center; justify-content: center; padding: 20px;
   }
-  .monitor-photo-upload-btn:hover { background: var(--verde-bosque); }
+  .project-box {
+    background: var(--blanco); border-radius: 24px; padding: 32px 28px;
+    max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 32px 80px rgba(0,0,0,.35);
+    animation: modalIn .3s cubic-bezier(.4,0,.2,1);
+  }
+  .project-box-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 6px;
+  }
+  .project-app-icon {
+    width: 52px; height: 52px; border-radius: 14px; background: var(--verde-bosque);
+    display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0;
+  }
+  .project-app-name {
+    font-family: 'Playfair Display', serif; font-size: 1.6rem;
+    font-weight: 900; color: var(--verde-bosque);
+  }
+  .project-app-tagline { font-size: 12px; opacity: .45; margin-top: 1px; }
+  .project-section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    opacity: .4; margin: 20px 0 10px;
+  }
+  .new-proj-form {
+    display: none; background: var(--crema); border-radius: 14px;
+    padding: 18px; margin-top: 14px; border: 1.5px solid var(--crema-oscuro);
+  }
+  .new-proj-form label {
+    display: block; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; opacity: .45; margin-bottom: 5px; margin-top: 10px;
+  }
+  .new-proj-form label:first-child { margin-top: 0; }
+  .new-proj-form input {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1.5px solid var(--crema-oscuro); background: white;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+    transition: border-color .2s; box-sizing: border-box;
+  }
+  .new-proj-form input:focus { border-color: var(--verde-claro); }
+  .new-proj-date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 </style>
 </head>
 <body>
@@ -1538,8 +1826,8 @@
   <div class="login-box">
     <img class="login-logo" src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD" alt="" id="loginLogoPlaceholder" style="display:none"/>
     <div style="font-size:56px;margin-bottom:12px">🏕</div>
-    <div class="login-title">Campamento Algámitas 2026</div>
-    <div class="login-sub">ACPA · Colegio San José SSCC<br>Introduce la contraseña de acceso</div>
+    <div class="login-title">CampApp</div>
+    <div class="login-sub">Gestión de campamentos y tiempo libre<br>Introduce la contraseña de acceso</div>
     <input type="password" id="loginInput" placeholder="Contraseña…" onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-error" id="loginError">Contraseña incorrecta. Inténtalo de nuevo.</div>
@@ -1623,6 +1911,21 @@
       <div class="dnav-label">Recomendaciones</div>
       <div class="dnav-sub">Pedagógicas</div>
     </button>
+    <button class="desktop-nav-btn" onclick="showTab('historial',event)" data-tab="historial">
+      <div class="dnav-icon">📜</div>
+      <div class="dnav-label">Historial</div>
+      <div class="dnav-sub">Registro cambios</div>
+    </button>
+    <button class="desktop-nav-btn" onclick="showTab('asistencia',event)" data-tab="asistencia">
+      <div class="dnav-icon">✅</div>
+      <div class="dnav-label">Asistencia</div>
+      <div class="dnav-sub" id="dnav-sub-asistencia">Control diario</div>
+    </button>
+    <button class="desktop-nav-btn" onclick="showTab('guardia',event)" data-tab="guardia">
+      <div class="dnav-icon">🔔</div>
+      <div class="dnav-label">Guardia</div>
+      <div class="dnav-sub">Turno actual</div>
+    </button>
     <button class="desktop-nav-btn" onclick="showTab('evaluacion',event)" data-tab="evaluacion">
       <div class="dnav-icon">📊</div>
       <div class="dnav-label">Evaluación</div>
@@ -1651,6 +1954,9 @@
     <button class="tab-btn" onclick="showTab('observaciones',event)">📝 Observaciones</button>
     <button class="tab-btn" onclick="showTab('obsalumnos',event)">🗒 Notas de alumnos</button>
     <button class="tab-btn" onclick="showTab('recomendaciones',event)">🧭 Recomendaciones</button>
+    <button class="tab-btn" onclick="showTab('historial',event)">📜 Historial</button>
+    <button class="tab-btn" onclick="showTab('asistencia',event)">✅ Asistencia</button>
+    <button class="tab-btn" onclick="showTab('guardia',event)">🔔 Guardia</button>
     <button class="tab-btn" onclick="showTab('evaluacion',event)">📊 Evaluación 2025</button>
     <button class="buscar-btn" onclick="openBuscar()">🔍 Buscar alumno</button>
   </div>
@@ -1909,6 +2215,7 @@
     <div class="edit-toolbar" style="margin-bottom:16px;">
       <button class="edit-btn primary" onclick="openProgModal()">➕ Nueva actividad</button>
       <button class="edit-btn" onclick="toggleProgVista()" id="btnVistaProg">📅 Ver calendario</button>
+      <button class="edit-btn" onclick="openExportModal()">📄 Exportar PDF</button>
       <button class="edit-btn" onclick="saveProgData()">💾 Guardar</button>
       <span id="progSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
     </div>
@@ -2105,6 +2412,89 @@
     </div>
 
     <div id="obsAluContainer"></div>
+  </div>
+
+  <!-- TAB ASISTENCIA -->
+  <div id="tab-asistencia" class="tab-panel">
+    <h2 class="section-title">✅ Control de asistencia diaria</h2>
+
+    <!-- Header de día con navegación -->
+    <div class="asist-day-header" style="margin-bottom:0;border-radius:16px 16px 0 0;">
+      <button class="asist-nav-btn" onclick="asistNavDay(-1)">◀</button>
+      <div class="asist-day-title" id="asistDayTitle">—</div>
+      <div class="asist-stats" id="asistDayStats"></div>
+      <button class="asist-nav-btn" onclick="asistNavDay(1)">▶</button>
+      <button class="asist-nav-btn" onclick="asistGoToday()" style="margin-left:4px;">Hoy</button>
+    </div>
+
+    <!-- Resumen del día -->
+    <div class="asist-resumen-bar" style="border-radius:0 0 0 0;border-top:none;margin-bottom:0;" id="asistResumenBar">
+      <div class="asist-resumen-item"><div class="asist-dot" style="background:#27AE60"></div><span id="asistCountPresente">0 presentes</span></div>
+      <div class="asist-resumen-item"><div class="asist-dot" style="background:#C0392B"></div><span id="asistCountAusente">0 ausentes</span></div>
+      <div class="asist-resumen-item"><div class="asist-dot" style="background:#E67E22"></div><span id="asistCountJustif">0 justificados</span></div>
+      <div class="asist-resumen-item"><div class="asist-dot" style="background:#bbb"></div><span id="asistCountSin">0 sin marcar</span></div>
+    </div>
+
+    <div style="display:flex;gap:10px;padding:12px 16px;background:var(--crema);border:1.5px solid var(--crema-oscuro);border-top:none;margin-bottom:20px;border-radius:0 0 16px 16px;flex-wrap:wrap;align-items:center;">
+      <button class="edit-btn primary" onclick="marcarTodosPresentes()">✅ Todos presentes</button>
+      <button class="edit-btn" onclick="exportAsistenciaCSV()">⬇ Exportar CSV</button>
+      <span style="font-size:12px;opacity:.45;margin-left:auto;">✅ Presente · ❌ Ausente · ⚠️ Justificado</span>
+    </div>
+
+    <!-- Lista por grupos campamento -->
+    <div id="asistLista"></div>
+  </div>
+
+  <!-- TAB GUARDIA -->
+  <div id="tab-guardia" class="tab-panel">
+    <h2 class="section-title">🔔 Panel de guardia</h2>
+    <p style="font-size:13px;opacity:.55;margin-bottom:20px;">Muestra qué monitor está de guardia ahora mismo y las próximas actividades del día. Se actualiza en tiempo real.</p>
+
+    <!-- Turno actual -->
+    <div id="guardiaAhora" style="margin-bottom:24px;"></div>
+
+    <!-- Próximas actividades hoy -->
+    <h3 style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--verde-bosque);margin-bottom:14px;">📋 Actividades de hoy</h3>
+    <div id="guardiaHoy"></div>
+
+    <!-- Recordatorios médicos del día -->
+    <h3 style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--verde-bosque);margin-bottom:14px;margin-top:28px;">💊 Recordatorios médicos</h3>
+    <p style="font-size:12px;opacity:.5;margin-bottom:12px;">Alumnos con medicación que deben tomar en el día.</p>
+    <div id="guardiaMedico"></div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+      <button class="edit-btn" onclick="renderGuardia()">🔄 Actualizar</button>
+      <button class="edit-btn primary" onclick="generarResumenDiario()">📋 Resumen del día</button>
+    </div>
+  </div>
+
+  <!-- TAB HISTORIAL -->
+  <div id="tab-historial" class="tab-panel">
+    <h2 class="section-title">📜 Historial de cambios</h2>
+    <p style="font-size:13px;opacity:.55;margin-bottom:20px;">Registro de todas las modificaciones realizadas en la aplicación, con fecha, hora y tipo de acción.</p>
+
+    <div class="hist-filtro-bar">
+      <button class="hist-filtro-btn active" onclick="filterHistorial('',this)">Todos</button>
+      <button class="hist-filtro-btn" onclick="filterHistorial('alumno',this)">👥 Alumnos</button>
+      <button class="hist-filtro-btn" onclick="filterHistorial('monitor',this)">👤 Monitores</button>
+      <button class="hist-filtro-btn" onclick="filterHistorial('grupo',this)">🏕 Grupos</button>
+      <button class="hist-filtro-btn" onclick="filterHistorial('ficha',this)">🩺 Fichas</button>
+      <button class="hist-filtro-btn" onclick="filterHistorial('asistencia',this)">✅ Asistencia</button>
+      <button class="hist-filtro-btn" onclick="filterHistorial('programacion',this)">📅 Programación</button>
+      <button class="hist-filtro-btn" onclick="filterHistorial('obs',this)">📝 Notas</button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+        <span id="histCount" style="font-size:12px;opacity:.4;"></span>
+        <button onclick="clearHistorial()" class="edit-btn danger" style="font-size:11px;padding:5px 12px;">🗑 Limpiar</button>
+      </div>
+    </div>
+
+    <div style="background:var(--blanco);border-radius:16px;border:1.5px solid var(--crema-oscuro);overflow:hidden;">
+      <div id="historialLista">
+        <div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">
+          El historial registrará los cambios a partir de ahora.
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- TAB 2: RECOMENDACIONES -->
@@ -2376,6 +2766,9 @@
     if (id === 'grupos') { showGTab('campamento', document.querySelector('.gtab-btn.active,.gtab-btn')); }
     if (id === 'monitores') { renderMedResumen(); }
     if (id === 'cabanas') { renderCabanasVista(); }
+    if (id === 'historial') { loadHistorial(); renderHistorial(); }
+    if (id === 'asistencia') { loadAsistencia(); renderAsistencia(); }
+    if (id === 'guardia') { renderGuardia(); }
     if (id === 'obsalumnos') { renderObsAlumnos(); }
     if (id === 'programacion') { populateProgFiltros(); renderProg(); }
     if (id === 'edicion') { renderEditTable(); } // grupos camp may have changed
@@ -2544,11 +2937,11 @@
 
   // Carga todas las fichas al iniciar (una sola petición)
   async function preloadFichas() {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
+    if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
       cacheLoaded = true; return; // modo local si no hay URL configurada
     }
     try {
-      const r = await fetch(SCRIPT_URL + '?action=getAll&pwd=' + PASSWORD);
+      const r = await fetch(getActiveScriptUrl() + '?action=getAll&pwd=' + PASSWORD);
       const j = await r.json();
       if (j.ok) { fichasCache = j.data || {}; }
     } catch(e) { console.warn('Sin conexión a Sheets, usando caché local:', e); }
@@ -2556,7 +2949,7 @@
   }
 
   async function loadFichaData(n) {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
+    if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
       // Fallback a localStorage si no hay URL
       try { const raw = localStorage.getItem(storageKey(n)); return raw ? JSON.parse(raw) : null; }
       catch(e) { return null; }
@@ -2565,14 +2958,14 @@
   }
 
   async function saveFichaData(n, data) {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
+    if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
       // Fallback a localStorage
       try { localStorage.setItem(storageKey(n), JSON.stringify(data)); return true; }
       catch(e) { return false; }
     }
     try {
       const payload = { ...data, n, pwd: PASSWORD, modificadoPor: MONITOR_ID };
-      const r = await fetch(SCRIPT_URL, {
+      const r = await fetch(getActiveScriptUrl(), {
         method: 'POST',
         body: JSON.stringify(payload)
       });
@@ -2589,7 +2982,10 @@
     currentGroup = groupId;
     const g = grupos[groupId];
     document.getElementById('modalTitle').textContent = g.label;
-    document.getElementById('modalSubtitle').textContent = g.edad + ' · ' + g.participantes.length + ' participantes';
+    const activosCount = g.participantes.filter(p => p.activo !== false).length;
+    const totalCount = g.participantes.length;
+    const inactivosCount = totalCount - activosCount;
+    document.getElementById('modalSubtitle').textContent = g.edad + ' · ' + activosCount + ' participantes' + (inactivosCount > 0 ? ' (' + inactivosCount + ' no asisten)' : '');
     document.getElementById('modalColorBar').style.background = g.hex;
     document.getElementById('modalSearch').value = '';
 
@@ -2666,7 +3062,7 @@
       item.classList.toggle('hidden', !match);
       if (match) visible++;
     });
-    const total = grupos[currentGroup].participantes.length;
+    const total = grupos[currentGroup].participantes.filter(p => p.activo !== false).length;
     updateCount(visible, total);
     document.getElementById('modalEmpty').style.display = visible === 0 ? 'block' : 'none';
   }
@@ -2708,7 +3104,7 @@
       container.innerHTML = '<div class="buscar-hint">Escribe al menos 2 caracteres.</div>';
       return;
     }
-    const results = getAllEditParticipants().filter(p =>
+    const results = getAllParticipantsAll().filter(p =>
       (p.apellidos + ' ' + p.nombre).toLowerCase().includes(q)
     ).sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
 
@@ -2722,13 +3118,14 @@
       const g = gruposEdit[p.gid] || grupos[p.gid];
       const hex = g ? g.hex : '#999';
       const label = g ? g.label : '';
+      const isInactive = p.activo === false;
       const el = document.createElement('div');
       el.className = 'buscar-item';
-      el.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 20px;transition:background .1s;cursor:pointer;';
+      el.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 20px;transition:background .1s;cursor:pointer;${isInactive?'opacity:.55;':''}`;
       el.innerHTML = `
-        <div class="modal-avatar" style="background:${hex}">${getInitials(p.nombre,p.apellidos)}</div>
+        <div class="modal-avatar" style="background:${isInactive?'#aaa':hex}">${getInitials(p.nombre,p.apellidos)}</div>
         <div class="modal-name" style="flex:1;">
-          <div class="apellidos">${p.apellidos}</div>
+          <div class="apellidos">${p.apellidos}${isInactive?' <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;background:#C0392B22;color:#C0392B;vertical-align:middle;">no asiste</span>':''}</div>
           <div class="nombre">${p.nombre}</div>
         </div>
         <span class="buscar-curso-badge">${label}</span>
@@ -2960,6 +3357,7 @@
   // ── ARRANQUE ──────────────────────────────────────────────────
   // El arranque real ocurre en initApp(), llamado desde doLogin()
   // Mostramos el login overlay; si quieres desactivar el login, llama initApp() directamente
+  // Note: getAllEditParticipants() counts only active by default
   window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loginInput').focus();
   });
@@ -2968,13 +3366,16 @@
   // ══════════════════════════════════════════════════════════════
   //  LOGIN
   // ══════════════════════════════════════════════════════════════
-  const APP_PASSWORD = 'algamitas2026'; // contraseña de acceso compartida
+  const APP_PASSWORD   = 'algamitas2026'; // contraseña de acceso compartida
+  const MASTER_URL     = 'https://script.google.com/macros/s/AKfycbyrST-HCXCBiohwMeRt7zNvXTxKdqgiAIvvvLgUFgOeFgasJsfc5563QSGRK6pHViu69w/exec';  // URL del Apps Script maestro
+  const MASTER_PWD     = 'campapp2026';             // contraseña del maestro
+  let   currentProject = null; // proyecto activo
 
   function doLogin() {
     const val = document.getElementById('loginInput').value;
     if (val === APP_PASSWORD || val === PASSWORD) {
       document.getElementById('loginOverlay').style.display = 'none';
-      initApp();
+      showProjectSelector();
     } else {
       document.getElementById('loginError').style.display = 'block';
       document.getElementById('loginInput').value = '';
@@ -2982,9 +3383,144 @@
     }
   }
 
+  // ── Pantalla de selección de proyecto ──
+  async function showProjectSelector() {
+    document.getElementById('projectOverlay').style.display = 'flex';
+    document.getElementById('projList').innerHTML =
+      '<div style="text-align:center;padding:20px;opacity:.5;font-size:13px;">Cargando proyectos...</div>';
+
+    // Cargar desde Master si hay URL configurada
+    if (MASTER_URL && MASTER_URL !== 'PEGA_AQUI_URL_MAESTRO') {
+      try {
+        const r = await fetch(`${MASTER_URL}?action=listProjects&pwd=${MASTER_PWD}`);
+        const j = await r.json();
+        if (j.ok) { renderProjectList(j.data); return; }
+      } catch(e) {}
+    }
+
+    // Fallback: usar el proyecto hardcoded (Algámitas 2026)
+    renderProjectList([{
+      id:          'default',
+      nombre:      'Campamento Algámitas 2026',
+      entidad:     'ACPA · Colegio San José SSCC',
+      fechaInicio: '2026-06-01',
+      fechaFin:    '2026-06-07',
+      scriptUrl:   SCRIPT_URL,
+      activo:      'activo'
+    }]);
+  }
+
+  function renderProjectList(projects) {
+    const list = document.getElementById('projList');
+    if (!projects.length) {
+      list.innerHTML = '<div style="text-align:center;padding:20px;opacity:.5;font-size:13px;">Sin proyectos. Crea el primero.</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    projects.forEach(p => {
+      const card = document.createElement('div');
+      card.style.cssText = `display:flex;align-items:center;gap:14px;padding:14px 16px;
+        border-radius:14px;border:1.5px solid #d9ceb8;background:#fdfaf5;
+        cursor:pointer;transition:all .15s;margin-bottom:10px;`;
+      card.onmouseenter = () => { card.style.borderColor='#2D5016'; card.style.background='#f0f7eb'; };
+      card.onmouseleave = () => { card.style.borderColor='#d9ceb8'; card.style.background='#fdfaf5'; };
+
+      const fechaStr = p.fechaInicio
+        ? new Date(p.fechaInicio).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})
+        : '';
+
+      card.innerHTML = `
+        <div style="width:44px;height:44px;border-radius:12px;background:#2D5016;
+          display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🏕</div>
+        <div style="flex:1;">
+          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;">${p.nombre}</div>
+          <div style="font-size:12px;opacity:.5;margin-top:2px;">${p.entidad||''}${fechaStr?' · '+fechaStr:''}</div>
+        </div>
+        <div style="font-size:20px;opacity:.3;">›</div>
+      `;
+      card.addEventListener('click', () => selectProject(p));
+      list.appendChild(card);
+    });
+  }
+
+  async function selectProject(project) {
+    currentProject = project;
+
+    // Actualizar SCRIPT_URL dinámicamente con la URL del proyecto seleccionado
+    if (project.scriptUrl && project.scriptUrl.startsWith('http')) {
+      window._activeScriptUrl = project.scriptUrl;
+    } else {
+      window._activeScriptUrl = SCRIPT_URL; // fallback al hardcoded
+    }
+
+    // Cerrar selector
+    document.getElementById('projectOverlay').style.display = 'none';
+
+    // Actualizar título visible
+    const heroTitle = document.querySelector('.hero h1');
+    if (heroTitle) heroTitle.textContent = project.nombre;
+    const heroSub = document.querySelector('.hero-sub');
+    if (heroSub && project.entidad) heroSub.textContent = project.entidad;
+
+    // Guardar proyecto activo en sesión
+    try { sessionStorage.setItem('campapp-project', JSON.stringify(project)); } catch(e) {}
+
+    // Arrancar app
+    initApp();
+  }
+
+  function openNewProjectForm() {
+    document.getElementById('newProjForm').style.display =
+      document.getElementById('newProjForm').style.display === 'none' ? 'block' : 'none';
+  }
+
+  async function createProject() {
+    const nombre  = document.getElementById('npNombre').value.trim();
+    const entidad = document.getElementById('npEntidad').value.trim();
+    const fi      = document.getElementById('npFechaInicio').value;
+    const ff      = document.getElementById('npFechaFin').value;
+
+    if (!nombre) { alert('El nombre del proyecto es obligatorio.'); return; }
+
+    const btn = document.getElementById('btnCreateProj');
+    btn.textContent = 'Creando...'; btn.disabled = true;
+
+    if (MASTER_URL && MASTER_URL !== 'PEGA_AQUI_URL_MAESTRO') {
+      try {
+        const r = await fetch(MASTER_URL, {
+          method: 'POST',
+          body: JSON.stringify({ pwd: MASTER_PWD, action: 'createProject',
+            nombre, entidad, fechaInicio: fi, fechaFin: ff })
+        });
+        const j = await r.json();
+        if (j.ok) {
+          alert(`Proyecto creado. \n\nSheet ID: ${j.sheetId}\n\n${j.message}`);
+          btn.textContent = 'Crear proyecto'; btn.disabled = false;
+          document.getElementById('newProjForm').style.display = 'none';
+          showProjectSelector();
+          return;
+        }
+      } catch(e) {}
+    }
+
+    // Sin conexión al maestro: crear proyecto local (solo en este dispositivo)
+    const localProj = {
+      id: 'local_' + Date.now(), nombre, entidad,
+      fechaInicio: fi, fechaFin: ff, scriptUrl: '', activo: 'activo'
+    };
+    selectProject(localProj);
+    btn.textContent = 'Crear proyecto'; btn.disabled = false;
+  }
+
   function initApp() {
     // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
+    // Init PIN y dark mode
+    initPinMonitor();
+    initDarkMode();
+    // Limpiar fotos legacy de localStorage
+    try { localStorage.removeItem('camp-monitores-fotos'); } catch(e) {}
 
     // Cargar TODOS los datos desde Sheets
     (async () => {
@@ -3002,11 +3538,21 @@
       const mobSub = document.getElementById('mobSubTotal');
       if (mobSub) mobSub.textContent = total + ' inscritos';
       const heroNum = document.querySelector('.hero-stat .num');
-      if (heroNum) heroNum.textContent = total;
+      if (heroNum) {
+        const activeCount = getAllEditParticipants().length; // already filtered
+        const allCount = getAllEditParticipants(true).length;
+        heroNum.textContent = activeCount;
+        // Add inactive note if any
+        const heroLbl = document.querySelector('.hero-stat .lbl');
+        if (heroLbl && allCount > activeCount) {
+          heroLbl.textContent = 'Participantes (' + (allCount - activeCount) + ' inactivos)';
+        }
+      }
       const dnavPart = document.getElementById('dnav-sub-participantes');
       if (dnavPart) dnavPart.textContent = total + ' inscritos';
       const dnavMon = document.getElementById('dnav-sub-monitores');
       if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
+    loadAsistencia();
     })();
 
     // Actualizar contadores móvil (inicial con datos base)
@@ -3022,6 +3568,7 @@
     if (dnavPart) dnavPart.textContent = getAllEditParticipants().length + ' inscritos';
     const dnavMon = document.getElementById('dnav-sub-monitores');
     if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
+    loadAsistencia();
     // Arranque normal de la app (preload fichas, render tablas, etc.)
     renderEditTable();
     renderMonitorGrid();
@@ -3030,7 +3577,7 @@
     renderGruposClase();
     renderMedResumen();
 
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
+    if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
       setStatus('local'); cacheLoaded = true;
     } else {
       setStatus('loading');
@@ -3045,12 +3592,18 @@
   // gruposEdit se inicializa dentro de initApp() para garantizar que grupos ya está cargado
   let gruposEdit = {};
 
-  function getAllEditParticipants() {
+  function getAllEditParticipants(includeInactive = false) {
     const all = [];
     Object.entries(gruposEdit).forEach(([gid, g]) => {
       g.participantes.forEach(p => all.push({...p, gid}));
     });
-    return all.sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+    const filtered = includeInactive ? all : all.filter(p => p.activo !== false);
+    return filtered.sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+  }
+
+  // Alias explícito para búsquedas (incluye inactivos)
+  function getAllParticipantsAll() {
+    return getAllEditParticipants(true);
   }
 
   function getMonitorOptions(selectedId) {
@@ -3239,7 +3792,9 @@
     msg.textContent = '⏳ Sincronizando con Sheets…';
     msg.style.opacity = '1';
     syncAllParticipantesSheets().then(() => {
-      msg.textContent = `✔ ${total} participantes guardados en Sheets`;
+      const totalActivos = getAllEditParticipants().length;
+      const totalTodos = getAllEditParticipants(true).length;
+      msg.textContent = `✔ ${totalActivos} activos / ${totalTodos} total`;
       setTimeout(() => msg.style.opacity = '0', 3000);
     }).catch(() => {
       msg.textContent = `✔ ${total} participantes guardados (sin conexión a Sheets)`;
@@ -3262,7 +3817,12 @@
   }
 
   function saveMonitoresStorage() {
-    sheetsSet('monitores', monitoresData);
+    // Strip any legacy foto data before sending to Sheets
+    const monForSheets = monitoresData.map(m => {
+      const {foto, ...rest} = m;
+      return rest;
+    });
+    sheetsSet('monitores', monForSheets);
   }
 
   function monitorInitials(m) {
@@ -3298,21 +3858,9 @@
       const div = document.createElement('div');
       div.className = 'monitor-card';
 
-      // Photo HTML
-      const photoHtml = m.foto
-        ? `<img class="monitor-photo" src="${m.foto}" alt="Foto"/>`
-        : `<div class="monitor-photo-placeholder" onclick="document.getElementById('photoInput-${i}').click()">${monitorInitials(m)}</div>`;
-
       div.innerHTML = `
         <button class="monitor-del-btn" onclick="deleteMonitor(${i})" title="Eliminar">🗑</button>
-
-        <div class="monitor-photo-wrap">
-          ${photoHtml}
-          <div class="monitor-photo-upload-btn" onclick="document.getElementById('photoInput-${i}').click()" title="Cambiar foto">📷</div>
-          <input type="file" id="photoInput-${i}" accept="image/*" style="display:none"
-            onchange="uploadMonitorPhoto(event,${i})"/>
-        </div>
-
+        <div class="monitor-avatar">${monitorInitials(m)}</div>
         <div class="monitor-name">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
         <div class="monitor-rol">${escHtml(m.rol)}</div>
 
@@ -3343,29 +3891,7 @@
     });
   }
 
-  function uploadMonitorPhoto(e, i) {
-    const file = e.target.files[0];
-    if (!file) return;
-    // Resize to max 200x200 via canvas to keep data small
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const MAX = 200;
-        const ratio = Math.min(MAX/img.width, MAX/img.height);
-        canvas.width  = Math.round(img.width  * ratio);
-        canvas.height = Math.round(img.height * ratio);
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-        monitoresData[i].foto = dataUrl;
-        saveMonitoresStorage();
-        renderMonitorGrid();
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
+  // uploadMonitorPhoto eliminada - avatars con iniciales
 
   function updateMonitor(i, field, val) {
     monitoresData[i][field] = val;
@@ -3634,13 +4160,18 @@
     if (screen === 'alumnos') renderMobAlumnos();
     if (screen === 'buscar') { document.getElementById('mobBuscarInput').value = ''; document.getElementById('mobBuscarResults').innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;text-align:center;">Escribe al menos 2 caracteres.</div>'; setTimeout(() => document.getElementById('mobBuscarInput').focus(), 100); }
     if (screen === 'monitores') { renderMobMonitores(); }
-    if (screen === 'grupos') renderMobGrupos();
+    if (screen === 'grupos') { renderMobGruposMain(); showMobGTab('camp'); }
     if (screen === 'observaciones') renderMobObs();
     if (screen === 'medico') renderMobMedico();
     if (screen === 'cabanas') renderMobCabanas();
+    if (screen === 'historial') { loadHistorial(); renderMobHistorial(); }
+    if (screen === 'asistencia') { loadAsistencia(); renderMobAsistencia(); }
+    if (screen === 'guardia') renderMobGuardia();
     if (screen === 'edicion') renderMobEdicion();
     if (screen === 'obsalumnos') { renderMobObsAlumnos(); }
     if (screen === 'programacion') { populateProgFiltros(); renderMobProgLista(); }
+    if (screen === 'recomendaciones') { /* static HTML */ }
+    if (screen === 'evaluacion') { /* static HTML */ }
   }
 
   function mobBack() {
@@ -3656,8 +4187,10 @@
     const q = (document.getElementById('mobAlumnoSearch').value || '').toLowerCase().trim();
     const container = document.getElementById('mobAlumnosList');
     container.innerHTML = '';
-    let lista = getAllEditParticipants();
-    if (q.length >= 2) lista = lista.filter(p => (p.apellidos + ' ' + p.nombre).toLowerCase().includes(q));
+    // Solo activos en el listado principal; búsqueda explícita incluye todos
+    let lista = q.length >= 2
+      ? getAllParticipantsAll().filter(p => (p.apellidos + ' ' + p.nombre).toLowerCase().includes(q))
+      : getAllEditParticipants();
 
     lista.forEach(p => {
       const g = gruposEdit[p.gid] || grupos[p.gid];
@@ -3708,7 +4241,7 @@
     const q = document.getElementById('mobBuscarInput').value.toLowerCase().trim();
     const container = document.getElementById('mobBuscarResults');
     if (q.length < 2) { container.innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;text-align:center;">Escribe al menos 2 caracteres.</div>'; return; }
-    const results = getAllEditParticipants().filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q))
+    const results = getAllParticipantsAll().filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q))
       .sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
     if (!results.length) { container.innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;text-align:center;">Sin resultados.</div>'; return; }
     container.innerHTML = '';
@@ -3740,9 +4273,7 @@
     }
 
     monitoresData.forEach((m, i) => {
-      const fotoHtml = m.foto
-        ? `<img src="${m.foto}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:3px solid #4A7C2F;flex-shrink:0;" onclick="document.getElementById('mobPhotoInput-${i}').click()"/>`
-        : `<div onclick="document.getElementById('mobPhotoInput-${i}').click()" style="width:52px;height:52px;border-radius:50%;background:#2D5016;color:white;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex-shrink:0;border:3px solid #4A7C2F;cursor:pointer;">${monitorInitials(m)}</div>`;
+      const fotoHtml = `<div style="width:52px;height:52px;border-radius:50%;background:#2D5016;color:white;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex-shrink:0;border:3px solid #4A7C2F;">${monitorInitials(m)}</div>`;
 
       const div = document.createElement('div');
       div.style.cssText = 'background:white;border-radius:16px;padding:16px;margin-bottom:12px;border:1.5px solid #d9ceb8;';
@@ -3750,8 +4281,6 @@
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
           <div style="position:relative;">
             ${fotoHtml}
-            <div onclick="document.getElementById('mobPhotoInput-${i}').click()" style="position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:#4A7C2F;color:white;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid white;cursor:pointer;">📷</div>
-            <input type="file" id="mobPhotoInput-${i}" accept="image/*" style="display:none" onchange="uploadMonitorPhoto(event,${i})"/>
           </div>
           <div style="flex:1;">
             <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
@@ -3807,33 +4336,10 @@
   }
 
   function renderMobGrupos() {
-    const container = document.getElementById('mobGruposList');
-    if (!container) return;
-    container.innerHTML = '';
-    const asignados = monitoresData.filter(m => m.grupoAsignado);
-    if (!asignados.length) { container.innerHTML = '<div style="padding:20px;font-size:13px;opacity:.4;">Asigna un grupo a cada monitor en la sección Monitores.</div>'; return; }
-    asignados.forEach(m => {
-      const gid = m.grupoAsignado;
-      const g = gruposEdit[gid] || grupos[gid];
-      if (!g) return;
-      const sorted = [...g.participantes].sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
-      const div = document.createElement('div');
-      div.style.cssText = 'background:var(--blanco);border-radius:16px;padding:16px;margin-bottom:12px;border:1.5px solid var(--crema-oscuro);';
-      div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <div style="width:10px;height:10px;border-radius:50%;background:${g.hex};flex-shrink:0"></div>
-          <div style="font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;color:var(--verde-bosque);">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
-          <div style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:${g.hex}22;color:${g.hex};">${g.label}</div>
-        </div>
-        ${sorted.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--crema-oscuro);">
-          <div style="width:26px;height:26px;border-radius:50%;background:${g.hex};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0">${getInitials(p.nombre,p.apellidos)}</div>
-          <span style="font-size:13px;font-weight:600">${escHtml(p.apellidos)}</span>&nbsp;<span style="font-size:12px;opacity:.6">${escHtml(p.nombre)}</span>
-        </div>`).join('')}
-      `;
-      container.appendChild(div);
-    });
+    // Redirige a la implementación completa
+    renderMobGruposMain();
+    showMobGTab('camp');
   }
-
   function renderMobObs() {
     const container = document.getElementById('mobObsList');
     if (!container) return;
@@ -4008,6 +4514,10 @@
       // Alumnos del grupo
       const alumnosDelGrupo = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
       const monitoresDelGrupo = monitoresData.filter(m => (g.monitores||[]).includes(m.id));
+      const conAlertas = alumnosDelGrupo.filter(p => {
+        const d = fichasCache[String(p.n)] || (() => { try { const r=localStorage.getItem('ficha-'+p.n); return r?JSON.parse(r):{};} catch(e){return{};} })();
+        return d && (d.alergias||d.medicacion);
+      }).length;
 
       // PDF list HTML
       const pdfListHtml = (g.pdfs||[]).map((pdf, pi) => `
@@ -4057,8 +4567,10 @@
               ? '<span style="font-size:12px;opacity:.35;font-style:italic;">Sin alumnos asignados. Usa el buscador.</span>'
               : alumnosDelGrupo.map(p => {
                   const pg = gruposEdit[p.gid]||grupos[p.gid];
-                  return `<div class="draggable-chip" style="background:${pg.hex}22;color:${pg.hex};border-color:${pg.hex}44;cursor:default;">
+                  const medA = getMedAlert(p.n);
+                  return `<div class="draggable-chip" style="background:${pg.hex}22;color:${pg.hex};border-color:${pg.hex}44;cursor:default;display:inline-flex;align-items:center;gap:4px;">
                     <span>${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}</span>
+                    ${medA}
                     <span class="chip-x" onclick="removeAlumnoFromGrupo(${g.id},${p.n})">✕</span>
                   </div>`;
                 }).join('')}
@@ -4794,9 +5306,9 @@
 
   // Carga participantes desde Sheets y los fusiona con los del código fuente
   async function loadParticipantesFromSheets() {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
+    const _url = getActiveScriptUrl(); if (!_url || _url === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
     try {
-      const r = await fetch(SCRIPT_URL + '?action=getParticipantes&pwd=' + PASSWORD);
+      const r = await fetch(getActiveScriptUrl() + '?action=getParticipantes&pwd=' + PASSWORD);
       const j = await r.json();
       if (!j.ok || !j.data || !j.data.length) return;
 
@@ -4845,7 +5357,7 @@
 
   // Guarda un participante individual en Sheets
   async function saveParticipanteSheets(p) {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return true;
+    if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return true;
     try {
       const params = new URLSearchParams({
         action: 'saveParticipante', pwd: PASSWORD,
@@ -4853,7 +5365,7 @@
         gid: p.gid || 'g6', grupo: p.grupo || '❓',
         grupoCamp: p.grupoCamp || '', monitorId: p.monitorId || '',
       });
-      const r = await fetch(SCRIPT_URL + '?' + params.toString());
+      const r = await fetch(getActiveScriptUrl() + '?' + params.toString());
       const j = await r.json();
       return j.ok;
     } catch(e) { console.error('Error guardando participante:', e); return false; }
@@ -4861,9 +5373,9 @@
 
   // Elimina un participante en Sheets (lo marca como BAJA)
   async function deleteParticipanteSheets(n) {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return true;
+    if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return true;
     try {
-      const r = await fetch(SCRIPT_URL + '?action=deleteParticipante&pwd=' + PASSWORD + '&n=' + n);
+      const r = await fetch(getActiveScriptUrl() + '?action=deleteParticipante&pwd=' + PASSWORD + '&n=' + n);
       const j = await r.json();
       return j.ok;
     } catch(e) { console.error('Error eliminando participante:', e); return false; }
@@ -4871,10 +5383,10 @@
 
   // Sincroniza toda la lista de golpe (útil al guardar cambios masivos)
   async function syncAllParticipantesSheets() {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
+    const _url = getActiveScriptUrl(); if (!_url || _url === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
     const lista = getAllEditParticipants();
     try {
-      const r = await fetch(SCRIPT_URL, {
+      const r = await fetch(getActiveScriptUrl(), {
         method: 'POST',
         body: JSON.stringify({
           pwd: PASSWORD,
@@ -4977,7 +5489,7 @@
     const results = document.getElementById('obsAluResults');
     if (q.length < 2) { results.classList.remove('visible'); return; }
 
-    const found = getAllEditParticipants()
+    const found = getAllParticipantsAll()
       .filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q))
       .slice(0, 8);
 
@@ -4986,13 +5498,15 @@
     results.innerHTML = '';
     found.forEach(p => {
       const g = gruposEdit[p.gid]||grupos[p.gid];
+      const isInact = p.activo === false;
       const div = document.createElement('div');
       div.className = 'obs-alu-result-item';
+      div.style.opacity = isInact ? '0.6' : '1';
       div.innerHTML = `
         <div class="obs-alu-avatar" style="background:${g?g.hex:'#999'};width:30px;height:30px;font-size:11px;">${getInitials(p.nombre,p.apellidos)}</div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:600">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:600">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}${isInact?' <span style="font-size:10px;padding:1px 5px;border-radius:5px;background:#C0392B22;color:#C0392B;">no asiste</span>':''}</div>
         <div style="font-size:11px;opacity:.45">${g?g.label:''}</div></div>
-        <button onclick="openAddNota(${p.n})" style="padding:5px 12px;border-radius:8px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Nota</button>
+        <button onclick="openAddNota(${p.n})" style="padding:5px 12px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Nota</button>
       `;
       results.appendChild(div);
     });
@@ -5290,12 +5804,18 @@
   let syncTimers  = {};   // clave → setTimeout handle
 
   // Lee un valor de Sheets (con caché local como fallback)
+  // Helper: URL activa del proyecto seleccionado
+  function getActiveScriptUrl() {
+    return window._activeScriptUrl || SCRIPT_URL;
+  }
+
   async function sheetsGet(key) {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
+    const url = getActiveScriptUrl();
+    if (!url || url === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
       try { return JSON.parse(localStorage.getItem('camp-' + key) || 'null'); } catch(e) { return null; }
     }
     try {
-      const r = await fetch(`${SCRIPT_URL}?action=getConfig&key=${key}&pwd=${PASSWORD}`);
+      const r = await fetch(`${getActiveScriptUrl()}?action=getConfig&key=${key}&pwd=${PASSWORD}`);
       const j = await r.json();
       if (j.ok && j.data !== null) {
         // Cache local
@@ -5315,9 +5835,9 @@
     // Debounce: espera 1.5s antes de enviar a Sheets
     clearTimeout(syncTimers[key]);
     syncTimers[key] = setTimeout(async () => {
-      if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
+      const _url = getActiveScriptUrl(); if (!_url || _url === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
       try {
-        await fetch(SCRIPT_URL, {
+        await fetch(getActiveScriptUrl(), {
           method: 'POST',
           body: JSON.stringify({ pwd: PASSWORD, action: 'saveConfig', key, value })
         });
@@ -5331,17 +5851,19 @@
 
   // Carga TODOS los datos al arrancar
   async function loadAllFromSheets() {
-    if (SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
+    if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
       // Modo offline: solo localStorage
       loadFromLocalStorage();
       return;
     }
     try {
       showSyncIndicator('⏳ Cargando datos…', 'loading');
-      const r = await fetch(`${SCRIPT_URL}?action=getAllConfig&pwd=${PASSWORD}`);
+      const r = await fetch(`${getActiveScriptUrl()}?action=getAllConfig&pwd=${PASSWORD}`);
       const j = await r.json();
       if (j.ok && j.data) {
-        if (j.data.monitores)  monitoresData = j.data.monitores.length  ? j.data.monitores  : monitoresData;
+        if (j.data.monitores && j.data.monitores.length) {
+          monitoresData = j.data.monitores;
+        }
         if (j.data.grupos)     gruposCamp    = j.data.grupos.length     ? j.data.grupos     : gruposCamp;
         if (j.data.obs)        obsData       = j.data.obs.length        ? j.data.obs        : obsData;
         if (j.data.prog)       progData      = j.data.prog.length       ? j.data.prog       : progData;
@@ -5434,11 +5956,21 @@
       // 4. Actualizar contadores
       const total = getAllEditParticipants().length;
       const heroNum = document.querySelector('.hero-stat .num');
-      if (heroNum) heroNum.textContent = total;
+      if (heroNum) {
+        const activeCount = getAllEditParticipants().length; // already filtered
+        const allCount = getAllEditParticipants(true).length;
+        heroNum.textContent = activeCount;
+        // Add inactive note if any
+        const heroLbl = document.querySelector('.hero-stat .lbl');
+        if (heroLbl && allCount > activeCount) {
+          heroLbl.textContent = 'Participantes (' + (allCount - activeCount) + ' inactivos)';
+        }
+      }
       const dnavPart = document.getElementById('dnav-sub-participantes');
       if (dnavPart) dnavPart.textContent = total + ' inscritos';
       const dnavMon = document.getElementById('dnav-sub-monitores');
       if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
+    loadAsistencia();
       const mobTotal = document.getElementById('mobTotal');
       if (mobTotal) mobTotal.textContent = total;
       const mobSub = document.getElementById('mobSubTotal');
@@ -5479,7 +6011,8 @@
     const container = document.getElementById('mobEdicionList');
     if (!container) return;
     const q = (document.getElementById('mobEdicionSearch')?.value||'').toLowerCase().trim();
-    let lista = getAllEditParticipants();
+    // Edición: mostrar todos (activos e inactivos) para poder reactivarlos
+    let lista = getAllEditParticipants(true);
     if (q.length >= 2) lista = lista.filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q));
 
     container.innerHTML = '';
@@ -5524,7 +6057,7 @@
     if (!res) return;
     if (q.length < 2) { res.style.display='none'; return; }
 
-    const found = getAllEditParticipants()
+    const found = getAllParticipantsAll()
       .filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q))
       .slice(0,6);
 
@@ -5619,7 +6152,7 @@
     }
     obsAlumnos[n].notas.unshift({
       id: Date.now(), fecha: new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
-      texto, mood, monitor: 'Monitor'
+      texto, mood, monitor: getMonitorActivoNombre()
     });
     saveObsAlumnos();
     textarea.value = '';
@@ -5696,6 +6229,7 @@
                   return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f5f0e8;border-radius:8px;">
                     <div style="width:24px;height:24px;border-radius:50%;background:${pg?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
                     <span style="flex:1;font-size:12px;font-weight:600;">${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}</span>
+                    ${getMedAlert(p.n)}
                     <button onclick="removeAlumnoFromGrupo(${g.id},${p.n});renderMobGruposMain()" style="width:22px;height:22px;border-radius:6px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:11px;">✕</button>
                   </div>`;
                 }).join('')}
@@ -6050,6 +6584,1337 @@
     }
   }
 
+
+  // ══════════════════════════════════════════════════════════════
+  //  CONTROL DE ASISTENCIA DIARIA
+  // ══════════════════════════════════════════════════════════════
+  // asistenciaData: { 'YYYY-MM-DD': { [alumnoN]: 'presente'|'ausente'|'justificado' } }
+  let asistenciaData = {};
+  let asistFecha = new Date();
+
+  function loadAsistencia() {
+    try { asistenciaData = JSON.parse(localStorage.getItem('camp-asistencia') || '{}'); } catch(e) {}
+    // Also try from Sheets config
+    if (getActiveScriptUrl() && getActiveScriptUrl().startsWith('http')) {
+      sheetsGet('asistencia').then(data => {
+        if (data) { asistenciaData = data; renderAsistencia(); }
+      }).catch(() => {});
+    }
+  }
+
+  function saveAsistencia() {
+    try { localStorage.setItem('camp-asistencia', JSON.stringify(asistenciaData)); } catch(e) {}
+    sheetsSet('asistencia', asistenciaData);
+  }
+
+  function asistNavDay(delta) {
+    asistFecha.setDate(asistFecha.getDate() + delta);
+    renderAsistencia();
+  }
+
+  function asistGoToday() {
+    asistFecha = new Date();
+    renderAsistencia();
+  }
+
+  function getAsistFechaStr() {
+    return dateToStr(asistFecha);
+  }
+
+  function marcarAsistencia(n, estado, btn) {
+    const ds = getAsistFechaStr();
+    if (!asistenciaData[ds]) asistenciaData[ds] = {};
+
+    // Toggle: si ya está marcado con el mismo estado, quitar
+    if (asistenciaData[ds][n] === estado) {
+      delete asistenciaData[ds][n];
+    } else {
+      asistenciaData[ds][n] = estado;
+    }
+    saveAsistencia();
+
+    // Update buttons in the row
+    const row = btn.closest('.asist-alumno-row');
+    if (row) {
+      row.querySelectorAll('.asist-btn').forEach(b => {
+        b.classList.remove('presente','ausente','justif');
+      });
+      const current = asistenciaData[ds][n];
+      if (current) {
+        const target = row.querySelector(`.asist-btn[data-estado="${current}"]`);
+        if (target) target.classList.add(current === 'justificado' ? 'justif' : current);
+      }
+    }
+    updateAsistStats();
+  }
+
+  function marcarTodosPresentes() {
+    const ds = getAsistFechaStr();
+    if (!asistenciaData[ds]) asistenciaData[ds] = {};
+    getAllEditParticipants().forEach(p => {
+      asistenciaData[ds][p.n] = 'presente';
+    });
+    saveAsistencia();
+    renderAsistencia();
+  }
+
+  function updateAsistStats() {
+    const ds = getAsistFechaStr();
+    const day = asistenciaData[ds] || {};
+    const total = getAllEditParticipants().length;
+    const presente  = Object.values(day).filter(v => v==='presente').length;
+    const ausente   = Object.values(day).filter(v => v==='ausente').length;
+    const justif    = Object.values(day).filter(v => v==='justificado').length;
+    const sinMarcar = total - presente - ausente - justif;
+
+    const s = n => document.getElementById(n);
+    if (s('asistCountPresente'))  s('asistCountPresente').textContent  = presente  + ' presente' + (presente!==1?'s':'');
+    if (s('asistCountAusente'))   s('asistCountAusente').textContent   = ausente   + ' ausente' + (ausente!==1?'s':'');
+    if (s('asistCountJustif'))    s('asistCountJustif').textContent    = justif    + ' justificado' + (justif!==1?'s':'');
+    if (s('asistCountSin'))       s('asistCountSin').textContent       = sinMarcar + ' sin marcar';
+    if (s('asistDayStats'))       s('asistDayStats').textContent       = presente + '/' + total + ' presentes';
+  }
+
+  function renderAsistencia() {
+    const ds = getAsistFechaStr();
+    const day = asistenciaData[ds] || {};
+
+    // Title
+    const titleEl = document.getElementById('asistDayTitle');
+    if (titleEl) {
+      const TODAY = dateToStr(new Date());
+      const isToday = ds === TODAY;
+      titleEl.textContent = asistFecha.toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      if (isToday) titleEl.textContent = '📅 Hoy · ' + titleEl.textContent;
+    }
+
+    updateAsistStats();
+
+    const lista = document.getElementById('asistLista');
+    if (!lista) return;
+    lista.innerHTML = '';
+
+    // Group by gruposCamp, then ungrouped
+    const alumnosPorGrupo = [];
+
+    if (gruposCamp.length) {
+      gruposCamp.forEach(g => {
+        const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
+        if (alumnos.length) alumnosPorGrupo.push({nombre: g.nombre, color: g.color, alumnos});
+      });
+      // Sin grupo campamento
+      const asignadosIds = new Set(gruposCamp.flatMap(g => g.alumnos||[]));
+      const sinGrupo = getAllEditParticipants().filter(p => !asignadosIds.has(p.n));
+      if (sinGrupo.length) alumnosPorGrupo.push({nombre:'Sin grupo asignado', color:'#aaa', alumnos: sinGrupo});
+    } else {
+      // Sin grupos campamento - agrupar por curso
+      Object.entries(gruposEdit).forEach(([gid, g]) => {
+        const alumnos = getAllEditParticipants().filter(p => p.gid === gid);
+        if (alumnos.length) alumnosPorGrupo.push({nombre: g.label, color: g.hex, alumnos});
+      });
+    }
+
+    alumnosPorGrupo.forEach(({nombre, color, alumnos}) => {
+      const sorted = [...alumnos].sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+      const presentes = sorted.filter(p => day[p.n] === 'presente').length;
+
+      const section = document.createElement('div');
+      section.className = 'asist-grupo-section';
+      section.innerHTML = `
+        <div class="asist-grupo-header">
+          <div class="asist-grupo-color" style="background:${color}"></div>
+          <div class="asist-grupo-nombre">${escHtml(nombre)}</div>
+          <div class="asist-grupo-count">${presentes}/${sorted.length}</div>
+          <button class="asist-btn-all" onclick="marcarGrupoPresentes('${nombre}',${JSON.stringify(sorted.map(p=>p.n))})">✅ Todos</button>
+        </div>
+      `;
+
+      sorted.forEach(p => {
+        const estado = day[p.n] || '';
+        const g = gruposEdit[p.gid]||grupos[p.gid];
+        const hasMedical = hasFichaData(p.n);
+        const row = document.createElement('div');
+        row.className = 'asist-alumno-row';
+        row.innerHTML = `
+          <div class="asist-alumno-avatar" style="background:${g?.hex||'#888'}">${getInitials(p.nombre,p.apellidos)}</div>
+          <div style="flex:1;">
+            <div class="asist-alumno-nombre" style="display:flex;align-items:center;gap:6px;">
+              ${escHtml(p.apellidos)}, ${escHtml(p.nombre)}
+              ${getMedAlert(p.n)}
+            </div>
+            <div class="asist-alumno-meta">${g?.label||''}</div>
+          </div>
+          <div class="asist-toggle">
+            <button class="asist-btn presente ${estado==='presente'?'presente':''}" data-estado="presente"
+              onclick="marcarAsistencia(${p.n},'presente',this)" title="Presente">✅</button>
+            <button class="asist-btn ausente ${estado==='ausente'?'ausente':''}" data-estado="ausente"
+              onclick="marcarAsistencia(${p.n},'ausente',this)" title="Ausente">❌</button>
+            <button class="asist-btn justif ${estado==='justificado'?'justif':''}" data-estado="justificado"
+              onclick="marcarAsistencia(${p.n},'justificado',this)" title="Justificado">⚠️</button>
+          </div>
+        `;
+        section.appendChild(row);
+      });
+      lista.appendChild(section);
+    });
+  }
+
+  function marcarGrupoPresentes(nombreGrupo, ns) {
+    const ds = getAsistFechaStr();
+    if (!asistenciaData[ds]) asistenciaData[ds] = {};
+    ns.forEach(n => asistenciaData[ds][n] = 'presente');
+    saveAsistencia();
+    renderAsistencia();
+  }
+
+  function exportAsistenciaCSV() {
+    const ds = getAsistFechaStr();
+    const day = asistenciaData[ds] || {};
+    const rows = [['Apellidos','Nombre','Curso','Grupo','Estado']];
+    getAllEditParticipants(true).forEach(p => {
+      const g = gruposEdit[p.gid]||grupos[p.gid];
+      const gc = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
+      rows.push([p.apellidos, p.nombre, g?.label||'', gc?.nombre||'', day[p.n]||'Sin marcar']);
+    });
+    const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('
+');
+    const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'asistencia_' + ds + '.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  PANEL DE GUARDIA
+  // ══════════════════════════════════════════════════════════════
+  function renderGuardia() {
+    const now = new Date();
+    const todayStr = dateToStr(now);
+    const horaActual = now.getHours() * 60 + now.getMinutes(); // minutos desde medianoche
+
+    // ── Turno actual ──
+    const guardiaAhora = document.getElementById('guardiaAhora');
+    if (guardiaAhora) {
+      const actividadActual = progData.filter(a => {
+        if (!actividadEnFecha(a, todayStr)) return false;
+        if (!a.horaInicio) return false;
+        const [h1,m1] = (a.horaInicio||'00:00').split(':').map(Number);
+        const [h2,m2] = (a.horaFin||'23:59').split(':').map(Number);
+        const ini = h1*60+m1, fin = h2*60+m2;
+        return horaActual >= ini && horaActual <= fin;
+      });
+
+      if (actividadActual.length) {
+        guardiaAhora.innerHTML = actividadActual.map(a => {
+          const monitoresAct = (a.monitores||[]).map(mid => monitoresData.find(m=>String(m.id)===String(mid))).filter(Boolean);
+          const color = (typeof TIPO_COLORS !== 'undefined' ? TIPO_COLORS[a.tipo] : null) || '#4A7C2F';
+          return `<div style="background:${color};border-radius:16px;padding:20px 24px;color:white;margin-bottom:12px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.75;margin-bottom:6px;">🔴 EN CURSO AHORA</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;margin-bottom:8px;">${escHtml(a.nombre||TIPO_LABELS[a.tipo]||'')}</div>
+            <div style="font-size:13px;opacity:.8;">⏰ ${a.horaInicio} → ${a.horaFin} ${a.lugar?'· 📍'+escHtml(a.lugar):''}</div>
+            ${monitoresAct.length?`<div style="font-size:12px;opacity:.75;margin-top:8px;">👤 ${monitoresAct.map(m=>escHtml(m.nombre)+' '+escHtml(m.apellidos)).join(' · ')}</div>`:''}
+          </div>`;
+        }).join('');
+      } else {
+        guardiaAhora.innerHTML = `<div style="background:var(--crema);border-radius:16px;padding:20px 24px;border:1.5px solid var(--crema-oscuro);text-align:center;opacity:.5;font-size:14px;">Sin actividad programada ahora mismo</div>`;
+      }
+    }
+
+    // ── Actividades de hoy ──
+    const guardiaHoy = document.getElementById('guardiaHoy');
+    if (guardiaHoy) {
+      const hoy = progData.filter(a => actividadEnFecha(a, todayStr))
+        .sort((a,b) => (a.horaInicio||'').localeCompare(b.horaInicio||''));
+
+      if (!hoy.length) {
+        guardiaHoy.innerHTML = '<div style="font-size:13px;opacity:.4;padding:12px 0;">Sin actividades programadas para hoy.</div>';
+      } else {
+        guardiaHoy.innerHTML = hoy.map(a => {
+          const [h1,m1] = (a.horaInicio||'00:00').split(':').map(Number);
+          const ini = h1*60+m1;
+          const isPast = horaActual > ini;
+          const isCurrent = actividadEnFecha(a, todayStr) && (() => {
+            const [h2,m2]=(a.horaFin||'23:59').split(':').map(Number);
+            return horaActual>=ini && horaActual<=h2*60+m2;
+          })();
+          const color = (typeof TIPO_COLORS !== 'undefined' ? TIPO_COLORS[a.tipo] : null) || '#4A7C2F';
+          const monitoresAct = (a.monitores||[]).map(mid=>monitoresData.find(m=>String(m.id)===String(mid))).filter(Boolean);
+          const gruposAct = (a.grupos||[]).map(gid=>gruposCamp.find(g=>String(g.id)===String(gid))).filter(Boolean);
+          return `<div style="display:flex;gap:12px;padding:12px 16px;border-radius:12px;margin-bottom:8px;
+            background:${isCurrent?color+'11':'white'};border:1.5px solid ${isCurrent?color:'var(--crema-oscuro)'};
+            opacity:${isPast&&!isCurrent?'.5':'1'};">
+            <div style="text-align:center;min-width:48px;flex-shrink:0;">
+              <div style="font-size:13px;font-weight:700;color:${color};">${a.horaInicio||'--'}</div>
+              <div style="font-size:10px;opacity:.45;">${a.horaFin||''}</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.5px;">${TIPO_LABELS[a.tipo]||a.tipo}</div>
+              <div style="font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;color:var(--verde-bosque);">${escHtml(a.nombre||'')}</div>
+              ${monitoresAct.length?`<div style="font-size:11px;opacity:.5;margin-top:2px;">👤 ${monitoresAct.map(m=>escHtml(m.nombre)).join(', ')}</div>`:''}
+              ${gruposAct.length?`<div style="font-size:11px;opacity:.5;">🏕 ${gruposAct.map(g=>escHtml(g.nombre)).join(', ')}</div>`:''}
+            </div>
+            ${isCurrent?`<div style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;background:${color};color:white;height:fit-content;flex-shrink:0;">EN CURSO</div>`:''}
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // ── Recordatorios médicos ──
+    const guardiaMedico = document.getElementById('guardiaMedico');
+    if (guardiaMedico) {
+      const conMedicacion = getAllEditParticipants().filter(p => {
+        const d = fichasCache[String(p.n)] || (() => { try { const r=localStorage.getItem('ficha-'+p.n); return r?JSON.parse(r):{};} catch(e){return{};} })();
+        return d.medicacion && d.medicacion.trim();
+      });
+      if (!conMedicacion.length) {
+        guardiaMedico.innerHTML = '<div style="font-size:13px;opacity:.4;padding:12px 0;">Sin alumnos con medicación registrada.</div>';
+      } else {
+        guardiaMedico.innerHTML = conMedicacion.map(p => {
+          const d = fichasCache[String(p.n)] || (() => { try { const r=localStorage.getItem('ficha-'+p.n); return r?JSON.parse(r):{};} catch(e){return{};} })();
+          const g = gruposEdit[p.gid]||grupos[p.gid];
+          const gc = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
+          return `<div style="background:white;border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:4px solid #E67E22;border:1px solid var(--crema-oscuro);border-left:4px solid #E67E22;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <div style="width:30px;height:30px;border-radius:50%;background:${g?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+              <div><div style="font-weight:700;font-size:13px;">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
+              <div style="font-size:11px;opacity:.45;">${g?.label||''} ${gc?'· '+escHtml(gc.nombre):''}</div></div>
+            </div>
+            <div style="font-size:13px;color:#444;">💊 ${escHtml(d.medicacion)}</div>
+            ${d.alergias?`<div style="font-size:12px;color:#E67E22;margin-top:4px;">⚠️ ${escHtml(d.alergias)}</div>`:''}
+          </div>`;
+        }).join('');
+      }
+    }
+  }
+
+  // Auto-refresh guardia every 5 minutes
+  setInterval(() => {
+    if (document.getElementById('tab-guardia')?.classList.contains('active')) renderGuardia();
+  }, 300000);
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  ASISTENCIA + GUARDIA MÓVIL
+  // ══════════════════════════════════════════════════════════════
+  function renderMobAsistencia() {
+    const ds = getAsistFechaStr();
+    const day = asistenciaData[ds] || {};
+
+    // Date display
+    const dateEl = document.getElementById('mobAsistDate');
+    if (dateEl) dateEl.textContent = asistFecha.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+
+    // Stats
+    const total = getAllEditParticipants().length;
+    const presente  = Object.values(day).filter(v=>v==='presente').length;
+    const ausente   = Object.values(day).filter(v=>v==='ausente').length;
+    const justif    = Object.values(day).filter(v=>v==='justificado').length;
+    const s = n => document.getElementById(n);
+    if (s('mobAsistP')) s('mobAsistP').textContent = presente + ' ✅';
+    if (s('mobAsistA')) s('mobAsistA').textContent = ausente  + ' ❌';
+    if (s('mobAsistJ')) s('mobAsistJ').textContent = justif   + ' ⚠️';
+
+    const lista = document.getElementById('mobAsistLista');
+    if (!lista) return;
+    lista.innerHTML = '';
+
+    // Group by gruposCamp
+    const groups = [];
+    if (gruposCamp.length) {
+      gruposCamp.forEach(g => {
+        const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
+        if (alumnos.length) groups.push({nombre:g.nombre, color:g.color, alumnos});
+      });
+      const asignadosIds = new Set(gruposCamp.flatMap(g=>g.alumnos||[]));
+      const sin = getAllEditParticipants().filter(p=>!asignadosIds.has(p.n));
+      if (sin.length) groups.push({nombre:'Sin grupo', color:'#aaa', alumnos:sin});
+    } else {
+      Object.entries(gruposEdit).forEach(([gid,g]) => {
+        const alumnos = getAllEditParticipants().filter(p=>p.gid===gid);
+        if (alumnos.length) groups.push({nombre:g.label, color:g.hex, alumnos});
+      });
+    }
+
+    groups.forEach(({nombre, color, alumnos}) => {
+      const sorted = [...alumnos].sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+      const presentes = sorted.filter(p=>day[p.n]==='presente').length;
+
+      const header = document.createElement('div');
+      header.style.cssText = `display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f5f0e8;border-radius:10px;margin-bottom:6px;margin-top:12px;`;
+      header.innerHTML = `
+        <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+        <div style="flex:1;font-size:12px;font-weight:700;color:#2D5016;">${escHtml(nombre)}</div>
+        <span style="font-size:11px;opacity:.5;">${presentes}/${sorted.length}</span>
+      `;
+      lista.appendChild(header);
+
+      sorted.forEach(p => {
+        const estado = day[p.n] || '';
+        const g = gruposEdit[p.gid]||grupos[p.gid];
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f5f0e8;';
+        row.innerHTML = `
+          <div style="width:28px;height:28px;border-radius:50%;background:${g?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+          <div style="flex:1;font-size:13px;font-weight:600;">${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}</div>
+          <div style="display:flex;gap:4px;">
+            <button onclick="marcarAsistencia(${p.n},'presente',this);renderMobAsistStats()" data-estado="presente"
+              style="width:32px;height:32px;border-radius:8px;border:1.5px solid ${estado==='presente'?'#27AE60':'#d9ceb8'};background:${estado==='presente'?'#27AE6022':'white'};font-size:14px;cursor:pointer;">✅</button>
+            <button onclick="marcarAsistencia(${p.n},'ausente',this);renderMobAsistStats()" data-estado="ausente"
+              style="width:32px;height:32px;border-radius:8px;border:1.5px solid ${estado==='ausente'?'#C0392B':'#d9ceb8'};background:${estado==='ausente'?'#C0392B22':'white'};font-size:14px;cursor:pointer;">❌</button>
+            <button onclick="marcarAsistencia(${p.n},'justificado',this);renderMobAsistStats()" data-estado="justificado"
+              style="width:32px;height:32px;border-radius:8px;border:1.5px solid ${estado==='justificado'?'#E67E22':'#d9ceb8'};background:${estado==='justificado'?'#E67E2222':'white'};font-size:14px;cursor:pointer;">⚠️</button>
+          </div>
+        `;
+        lista.appendChild(row);
+      });
+    });
+  }
+
+  function renderMobAsistStats() {
+    const ds = getAsistFechaStr();
+    const day = asistenciaData[ds] || {};
+    const s = n => document.getElementById(n);
+    if (s('mobAsistP')) s('mobAsistP').textContent = Object.values(day).filter(v=>v==='presente').length + ' ✅';
+    if (s('mobAsistA')) s('mobAsistA').textContent = Object.values(day).filter(v=>v==='ausente').length + ' ❌';
+    if (s('mobAsistJ')) s('mobAsistJ').textContent = Object.values(day).filter(v=>v==='justificado').length + ' ⚠️';
+    updateAsistStats();
+  }
+
+  function renderMobGuardia() {
+    renderGuardia(); // reuse desktop render
+    const c = document.getElementById('mobGuardiaContent');
+    if (!c) return;
+    // Copy content from desktop panels to mobile
+    const ahora = document.getElementById('guardiaAhora')?.innerHTML || '';
+    const hoy   = document.getElementById('guardiaHoy')?.innerHTML || '';
+    const med   = document.getElementById('guardiaMedico')?.innerHTML || '';
+    c.innerHTML = `
+      <div style="margin-bottom:16px;">${ahora}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;margin-bottom:10px;">📋 Actividades de hoy</div>
+      <div style="margin-bottom:16px;">${hoy}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;margin-bottom:10px;">💊 Medicación</div>
+      ${med}
+    `;
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  ALERTA MÉDICA EN GRUPOS - función centralizada
+  // ══════════════════════════════════════════════════════════════
+  function getMedAlert(n) {
+    // Check fichasCache first, then localStorage
+    const d = fichasCache[String(n)] || (() => {
+      try { const r = localStorage.getItem('ficha-'+n); return r ? JSON.parse(r) : {}; } catch(e) { return {}; }
+    })();
+    if (!d || (!d.alergias && !d.medicacion && !d.observaciones)) return '';
+
+    const alerts = [];
+    if (d.alergias && d.alergias.trim())   alerts.push('⚠️ ' + d.alergias.trim().slice(0,30));
+    if (d.medicacion && d.medicacion.trim()) alerts.push('💊 ' + d.medicacion.trim().slice(0,30));
+
+    if (!alerts.length) return '';
+
+    const tooltip = alerts.join(' · ');
+    const color = d.alergias ? '#C0392B' : '#E67E22';
+    return `<span title="${escHtml(tooltip)}" style="font-size:11px;cursor:help;flex-shrink:0;"
+      onclick="event.stopPropagation();showMedAlertTooltip(${n},this)">
+      ${d.alergias ? '🔴' : '🟡'}
+    </span>`;
+  }
+
+  // Tooltip médico expandido al hacer clic en el icono
+  function showMedAlertTooltip(n, el) {
+    // Remove any existing tooltip
+    document.querySelectorAll('.med-tooltip-popup').forEach(t => t.remove());
+    const d = fichasCache[String(n)] || (() => {
+      try { const r = localStorage.getItem('ficha-'+n); return r ? JSON.parse(r) : {}; } catch(e) { return {}; }
+    })();
+    const p = getAllEditParticipants(true).find(x => x.n === n);
+    if (!d || !p) return;
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'med-tooltip-popup';
+    tooltip.style.cssText = `position:fixed;z-index:9999;background:white;border-radius:14px;padding:16px 18px;
+      box-shadow:0 8px 32px rgba(0,0,0,.2);max-width:280px;font-family:'DM Sans',sans-serif;font-size:13px;
+      border-left:4px solid ${d.alergias?'#C0392B':'#E67E22'};`;
+    tooltip.innerHTML = `
+      <div style="font-weight:700;color:#2D5016;margin-bottom:8px;">🩺 ${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
+      ${d.alergias?`<div style="color:#C0392B;margin-bottom:4px;"><strong>⚠️ Alergias:</strong> ${escHtml(d.alergias)}</div>`:''}
+      ${d.medicacion?`<div style="color:#E67E22;margin-bottom:4px;"><strong>💊 Medicación:</strong> ${escHtml(d.medicacion)}</div>`:''}
+      ${d.observaciones?`<div style="opacity:.7;"><strong>📋</strong> ${escHtml(d.observaciones)}</div>`:''}
+      <div style="margin-top:10px;font-size:11px;opacity:.4;">Pulsa en cualquier lugar para cerrar</div>
+    `;
+    // Position near the icon
+    const rect = el.getBoundingClientRect();
+    tooltip.style.top = Math.min(rect.bottom + 8, window.innerHeight - 200) + 'px';
+    tooltip.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 296)) + 'px';
+    document.body.appendChild(tooltip);
+
+    // Close on click anywhere
+    setTimeout(() => {
+      document.addEventListener('click', () => tooltip.remove(), {once: true});
+    }, 100);
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  EXPORTAR PROGRAMACIÓN A PDF
+  // ══════════════════════════════════════════════════════════════
+  let exportOpt = 'semana';
+
+  function openExportModal() {
+    document.getElementById('exportModal').classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeExportModal() {
+    document.getElementById('exportModal').classList.remove('visible');
+    document.body.style.overflow = '';
+  }
+  function selectExportOpt(opt, el) {
+    exportOpt = opt;
+    document.querySelectorAll('.export-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function ejecutarExport() {
+    closeExportModal();
+    const printArea = document.getElementById('printArea');
+
+    switch (exportOpt) {
+      case 'semana':   printArea.innerHTML = buildPrintSemana();   break;
+      case 'lista':    printArea.innerHTML = buildPrintLista();    break;
+      case 'grupo':    printArea.innerHTML = buildPrintPorGrupo(); break;
+      case 'monitor':  printArea.innerHTML = buildPrintPorMonitor(); break;
+    }
+
+    // Trigger print after a short delay to allow render
+    setTimeout(() => {
+      window.print();
+      // Clean up after printing
+      setTimeout(() => { printArea.innerHTML = ''; }, 1000);
+    }, 300);
+  }
+
+  // ── Cabecera común para todos los PDFs ──
+  function printHeader(titulo, subtitulo) {
+    const now = new Date().toLocaleDateString('es-ES', {day:'numeric',month:'long',year:'numeric'});
+    return `
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #2D5016;">
+        <div style="width:48px;height:48px;border-radius:50%;background:#2D5016;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;flex-shrink:0;">🏕</div>
+        <div style="flex:1;">
+          <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:#2D5016;">${titulo}</div>
+          <div style="font-size:12px;opacity:.5;margin-top:2px;">${subtitulo} · Generado ${now}</div>
+        </div>
+        <div style="text-align:right;font-size:11px;opacity:.4;">Campamento Algámitas 2026<br>ACPA · Colegio San José SSCC</div>
+      </div>`;
+  }
+
+  // ── Vista semanal ──
+  function buildPrintSemana() {
+    const monday = getWeekStart(calFecha.getTime ? calFecha : new Date());
+    const DIAS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const HORAS = [];
+    for (let h=8; h<=22; h++) HORAS.push(String(h).padStart(2,'0')+':00');
+
+    const dias = [];
+    for (let i=0;i<7;i++) { const d=new Date(monday); d.setDate(monday.getDate()+i); dias.push(d); }
+    const todayStr = dateToStr(new Date());
+
+    let html = `<div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#222;">`;
+    html += printHeader('Programación semanal', monday.toLocaleDateString('es-ES',{day:'numeric',month:'long'}) + ' – ' + dias[6].toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'}));
+
+    // Color legend
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">`;
+    Object.entries(TIPO_LABELS).forEach(([k,v]) => {
+      const color = TIPO_COLORS[k] || '#4A7C2F';
+      html += `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;"><span style="width:10px;height:10px;border-radius:3px;background:${color};display:inline-block;"></span>${v}</span>`;
+    });
+    html += '</div>';
+
+    // Table
+    html += `<table style="width:100%;border-collapse:collapse;font-size:10px;">`;
+    html += '<tr><th style="width:38px;background:#f5f0e8;border:1px solid #d9ceb8;padding:4px;"></th>';
+    dias.forEach(d => {
+      const isToday = dateToStr(d) === todayStr;
+      html += `<th style="text-align:center;background:${isToday?'#2D5016':'#f5f0e8'};color:${isToday?'white':'#2D5016'};border:1px solid #d9ceb8;padding:5px;font-size:11px;">
+        <div style="font-weight:700;">${DIAS_ES[d.getDay()]}</div>
+        <div style="font-size:13px;font-weight:900;">${d.getDate()}</div>
+      </th>`;
+    });
+    html += '</tr>';
+
+    HORAS.forEach(hora => {
+      html += `<tr><td style="text-align:right;padding:3px 5px;font-size:9px;color:#888;background:#f9f7f3;border:1px solid #ede8de;white-space:nowrap;">${hora}</td>`;
+      dias.forEach(d => {
+        const ds = dateToStr(d);
+        const hNum = parseInt(hora);
+        const acts = progData.filter(a => actividadEnFecha(a,ds) && a.horaInicio && parseInt(a.horaInicio)===hNum);
+        html += `<td style="vertical-align:top;padding:2px;border:1px solid #ede8de;min-height:28px;">`;
+        acts.forEach(a => {
+          const color = TIPO_COLORS[a.tipo] || '#4A7C2F';
+          const monNom = (a.monitores||[]).map(mid=>{const m=monitoresData.find(m=>String(m.id)===String(mid));return m?m.nombre:'';}).filter(Boolean).join(', ');
+          html += `<div style="background:${color};color:white;border-radius:3px;padding:2px 4px;margin-bottom:1px;font-size:9px;line-height:1.3;">
+            <div style="font-weight:700;">${escHtml((a.nombre||'').slice(0,20))}</div>
+            ${a.horaFin?`<div style="opacity:.8;">${a.horaInicio}–${a.horaFin}</div>`:''}
+            ${monNom?`<div style="opacity:.7;">👤${monNom.slice(0,15)}</div>`:''}
+          </div>`;
+        });
+        html += '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</table></div>';
+    return html;
+  }
+
+  // ── Lista completa ──
+  function buildPrintLista() {
+    const sorted = [...progData].sort((a,b) => {
+      const di = DIAS_ORDER.indexOf(a.dias?.[0]||'') - DIAS_ORDER.indexOf(b.dias?.[0]||'');
+      return di !== 0 ? di : (a.fechaInicio||'').localeCompare(b.fechaInicio||'') || (a.horaInicio||'').localeCompare(b.horaInicio||'');
+    });
+
+    let html = `<div style="font-family:'DM Sans',sans-serif;font-size:12px;color:#222;">`;
+    html += printHeader('Programación completa', sorted.length + ' actividades');
+
+    html += `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="background:#2D5016;color:white;">
+        <th style="padding:7px 10px;text-align:left;font-size:10px;letter-spacing:.5px;">TIPO</th>
+        <th style="padding:7px 10px;text-align:left;">ACTIVIDAD</th>
+        <th style="padding:7px 10px;text-align:left;">DÍAS</th>
+        <th style="padding:7px 10px;text-align:left;">FECHA</th>
+        <th style="padding:7px 10px;text-align:left;">HORARIO</th>
+        <th style="padding:7px 10px;text-align:left;">GRUPOS</th>
+        <th style="padding:7px 10px;text-align:left;">MONITOR/ES</th>
+        <th style="padding:7px 10px;text-align:left;">LUGAR</th>
+      </tr></thead><tbody>`;
+
+    sorted.forEach((a, i) => {
+      const color = TIPO_COLORS[a.tipo] || '#4A7C2F';
+      const diasStr = (a.dias||[]).map(d=>DIAS_LABELS[d]?.slice(0,3)||d).join(', ');
+      const gruposNom = (a.grupos||[]).map(gid=>{const g=gruposCamp.find(g=>String(g.id)===String(gid));return g?g.nombre:'';}).filter(Boolean).join(', ');
+      const monNom = (a.monitores||[]).map(mid=>{const m=monitoresData.find(m=>String(m.id)===String(mid));return m?(m.nombre+' '+m.apellidos[0]+'.').trim():'';}).filter(Boolean).join(', ');
+      const rowBg = i % 2 === 0 ? 'white' : '#faf8f5';
+      html += `<tr style="background:${rowBg};border-bottom:1px solid #ede8de;">
+        <td style="padding:6px 10px;"><span style="background:${color};color:white;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;white-space:nowrap;">${TIPO_LABELS[a.tipo]||a.tipo}</span></td>
+        <td style="padding:6px 10px;font-weight:600;">${escHtml(a.nombre||'')}</td>
+        <td style="padding:6px 10px;font-size:10px;">${diasStr}</td>
+        <td style="padding:6px 10px;font-size:10px;">${a.fechaInicio||''}${a.fechaFin&&a.fechaFin!==a.fechaInicio?'→'+a.fechaFin:''}</td>
+        <td style="padding:6px 10px;font-size:10px;white-space:nowrap;">${a.horaInicio||''}${a.horaFin?' → '+a.horaFin:''}</td>
+        <td style="padding:6px 10px;font-size:10px;">${gruposNom}</td>
+        <td style="padding:6px 10px;font-size:10px;">${monNom}</td>
+        <td style="padding:6px 10px;font-size:10px;">${escHtml(a.lugar||'')}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  // ── Por grupo campamento ──
+  function buildPrintPorGrupo() {
+    let html = `<div style="font-family:'DM Sans',sans-serif;font-size:12px;color:#222;">`;
+    html += printHeader('Programación por grupos', gruposCamp.length + ' grupos');
+
+    gruposCamp.forEach(g => {
+      const acts = progData.filter(a => (a.grupos||[]).includes(String(g.id)))
+        .sort((a,b) => (a.horaInicio||'').localeCompare(b.horaInicio||''));
+      if (!acts.length) return;
+
+      html += `<div style="break-inside:avoid;margin-bottom:20px;">
+        <div style="background:${g.color};color:white;border-radius:8px 8px 0 0;padding:10px 14px;font-weight:700;font-size:13px;">
+          🏕 ${escHtml(g.nombre)} · ${acts.length} actividad${acts.length!==1?'es':''}
+          ${g.cabana?` · 🏠 ${escHtml(g.cabana)}`:''}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;border:1px solid #d9ceb8;border-top:none;">
+          <thead><tr style="background:#f5f0e8;">
+            <th style="padding:5px 10px;text-align:left;font-size:9px;letter-spacing:.5px;">TIPO</th>
+            <th style="padding:5px 10px;text-align:left;">ACTIVIDAD</th>
+            <th style="padding:5px 10px;text-align:left;">DÍAS / FECHA</th>
+            <th style="padding:5px 10px;text-align:left;">HORARIO</th>
+            <th style="padding:5px 10px;text-align:left;">MONITOR</th>
+          </tr></thead><tbody>`;
+
+      acts.forEach((a,i) => {
+        const color = TIPO_COLORS[a.tipo] || '#4A7C2F';
+        const diasStr = (a.dias||[]).map(d=>DIAS_LABELS[d]?.slice(0,3)||d).join(', ');
+        const monNom = (a.monitores||[]).map(mid=>{const m=monitoresData.find(m=>String(m.id)===String(mid));return m?m.nombre:'';}).filter(Boolean).join(', ');
+        html += `<tr style="background:${i%2===0?'white':'#faf8f5'};border-bottom:1px solid #ede8de;">
+          <td style="padding:5px 10px;"><span style="background:${color};color:white;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;">${TIPO_LABELS[a.tipo]||a.tipo}</span></td>
+          <td style="padding:5px 10px;font-weight:600;">${escHtml(a.nombre||'')}</td>
+          <td style="padding:5px 10px;font-size:10px;">${diasStr}${a.fechaInicio?' · '+a.fechaInicio:''}</td>
+          <td style="padding:5px 10px;font-size:10px;white-space:nowrap;">${a.horaInicio||''}${a.horaFin?' → '+a.horaFin:''}</td>
+          <td style="padding:5px 10px;font-size:10px;">${monNom}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // ── Por monitor ──
+  function buildPrintPorMonitor() {
+    let html = `<div style="font-family:'DM Sans',sans-serif;font-size:12px;color:#222;">`;
+    html += printHeader('Programación por monitores', monitoresData.length + ' monitores');
+
+    monitoresData.forEach(m => {
+      const acts = progData.filter(a => (a.monitores||[]).includes(String(m.id)))
+        .sort((a,b) => {
+          const di = DIAS_ORDER.indexOf(a.dias?.[0]||'') - DIAS_ORDER.indexOf(b.dias?.[0]||'');
+          return di !== 0 ? di : (a.horaInicio||'').localeCompare(b.horaInicio||'');
+        });
+      if (!acts.length) return;
+
+      const gruposAsig = gruposCamp.filter(g => (g.monitores||[]).includes(m.id));
+      html += `<div style="break-inside:avoid;margin-bottom:20px;">
+        <div style="background:#2D5016;color:white;border-radius:8px 8px 0 0;padding:10px 14px;">
+          <div style="font-weight:700;font-size:13px;">👤 ${escHtml(m.nombre)} ${escHtml(m.apellidos)} · ${escHtml(m.rol)}</div>
+          ${gruposAsig.length?`<div style="font-size:11px;opacity:.75;margin-top:3px;">🏕 ${gruposAsig.map(g=>escHtml(g.nombre)).join(', ')}</div>`:''}
+          ${m.tel?`<div style="font-size:11px;opacity:.75;">📞 ${escHtml(m.tel)}</div>`:''}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;border:1px solid #d9ceb8;border-top:none;">
+          <thead><tr style="background:#f5f0e8;">
+            <th style="padding:5px 10px;text-align:left;font-size:9px;letter-spacing:.5px;">TIPO</th>
+            <th style="padding:5px 10px;text-align:left;">ACTIVIDAD</th>
+            <th style="padding:5px 10px;text-align:left;">DÍAS</th>
+            <th style="padding:5px 10px;text-align:left;">HORARIO</th>
+            <th style="padding:5px 10px;text-align:left;">GRUPOS</th>
+            <th style="padding:5px 10px;text-align:left;">LUGAR</th>
+          </tr></thead><tbody>`;
+
+      acts.forEach((a,i) => {
+        const color = TIPO_COLORS[a.tipo] || '#4A7C2F';
+        const diasStr = (a.dias||[]).map(d=>DIAS_LABELS[d]?.slice(0,3)||d).join(', ');
+        const gruposNom = (a.grupos||[]).map(gid=>{const g=gruposCamp.find(g=>String(g.id)===String(gid));return g?g.nombre:'';}).filter(Boolean).join(', ');
+        html += `<tr style="background:${i%2===0?'white':'#faf8f5'};border-bottom:1px solid #ede8de;">
+          <td style="padding:5px 10px;"><span style="background:${color};color:white;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;">${TIPO_LABELS[a.tipo]||a.tipo}</span></td>
+          <td style="padding:5px 10px;font-weight:600;">${escHtml(a.nombre||'')}</td>
+          <td style="padding:5px 10px;font-size:10px;">${diasStr}</td>
+          <td style="padding:5px 10px;font-size:10px;white-space:nowrap;">${a.horaInicio||''}${a.horaFin?' → '+a.horaFin:''}</td>
+          <td style="padding:5px 10px;font-size:10px;">${gruposNom}</td>
+          <td style="padding:5px 10px;font-size:10px;">${escHtml(a.lugar||'')}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  HISTORIAL DE CAMBIOS
+  // ══════════════════════════════════════════════════════════════
+  const HIST_MAX = 200; // máximo de entradas a conservar
+  let historialData = [];
+  let histFiltroActivo = '';
+
+  const HIST_TIPOS = {
+    alumno:       { color: '#4A90D9', label: 'Alumno'       },
+    monitor:      { color: '#27AE60', label: 'Monitor'      },
+    grupo:        { color: '#8E44AD', label: 'Grupo'        },
+    ficha:        { color: '#E67E22', label: 'Ficha médica' },
+    asistencia:   { color: '#16A085', label: 'Asistencia'   },
+    programacion: { color: '#2D5016', label: 'Programación' },
+    obs:          { color: '#C0392B', label: 'Nota'         },
+    sistema:      { color: '#95A5A6', label: 'Sistema'      },
+  };
+
+  function loadHistorial() {
+    try { historialData = JSON.parse(localStorage.getItem('camp-historial') || '[]'); } catch(e) { historialData = []; }
+  }
+
+  function saveHistorialStorage() {
+    try { localStorage.setItem('camp-historial', JSON.stringify(historialData.slice(0, HIST_MAX))); } catch(e) {}
+  }
+
+  function logCambio(tipo, accion, detalle) {
+    const ahora = new Date();
+    const entrada = {
+      id:      Date.now(),
+      tipo,
+      accion,
+      detalle: detalle || '',
+      fecha:   ahora.toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric'}),
+      hora:    ahora.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'}),
+      ts:      ahora.getTime(),
+    };
+    historialData.unshift(entrada); // más reciente primero
+    if (historialData.length > HIST_MAX) historialData = historialData.slice(0, HIST_MAX);
+    saveHistorialStorage();
+
+    // Si la pestaña historial está abierta, actualizar en tiempo real
+    if (document.getElementById('tab-historial')?.classList.contains('active')) {
+      renderHistorial();
+    }
+    // Update mobile badge if exists
+    const mobBadge = document.getElementById('mobHistBadge');
+    if (mobBadge) { mobBadge.textContent = historialData.length; mobBadge.style.display = 'inline'; }
+  }
+
+  function tiempoRelativo(ts) {
+    const diff = Date.now() - ts;
+    const min = Math.floor(diff / 60000);
+    const h   = Math.floor(diff / 3600000);
+    const d   = Math.floor(diff / 86400000);
+    if (min < 1)  return 'ahora mismo';
+    if (min < 60) return `hace ${min} min`;
+    if (h < 24)   return `hace ${h}h`;
+    if (d < 7)    return `hace ${d} día${d!==1?'s':''}`;
+    return new Date(ts).toLocaleDateString('es-ES', {day:'numeric',month:'short'});
+  }
+
+  function filterHistorial(tipo, btn) {
+    histFiltroActivo = tipo;
+    document.querySelectorAll('.hist-filtro-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderHistorial();
+  }
+
+  function renderHistorial() {
+    loadHistorial();
+    const lista = document.getElementById('historialLista');
+    if (!lista) return;
+
+    const filtered = histFiltroActivo
+      ? historialData.filter(e => e.tipo === histFiltroActivo)
+      : historialData;
+
+    const countEl = document.getElementById('histCount');
+    if (countEl) countEl.textContent = filtered.length + ' registro' + (filtered.length!==1?'s':'');
+
+    if (!filtered.length) {
+      lista.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">' +
+        (histFiltroActivo ? 'Sin registros de este tipo.' : 'El historial registrará los cambios a partir de ahora.') +
+        '</div>';
+      return;
+    }
+
+    lista.innerHTML = '';
+    filtered.forEach(e => {
+      const tipo = HIST_TIPOS[e.tipo] || HIST_TIPOS.sistema;
+      const div = document.createElement('div');
+      div.className = 'hist-item';
+      div.innerHTML = `
+        <div class="hist-dot" style="background:${tipo.color}"></div>
+        <div class="hist-content">
+          <div class="hist-accion">
+            <span class="hist-tipo-badge" style="background:${tipo.color}22;color:${tipo.color};">${tipo.label}</span>
+            ${escHtml(e.accion)}
+          </div>
+          ${e.detalle ? `<div class="hist-meta">${escHtml(e.detalle)}</div>` : ''}
+          <div class="hist-meta">${e.fecha} · ${e.hora}</div>
+        </div>
+        <div class="hist-tiempo">${tiempoRelativo(e.ts)}</div>
+      `;
+      lista.appendChild(div);
+    });
+  }
+
+  function clearHistorial() {
+    if (!confirm('¿Eliminar todo el historial de cambios?')) return;
+    historialData = [];
+    saveHistorialStorage();
+    renderHistorial();
+  }
+
+  // ── Interceptar funciones de guardado para loguear ──
+
+  // Guardar ficha médica
+  const _origSaveFichaData = saveFichaData;
+  async function saveFichaData(n, data) {
+    const result = await _origSaveFichaData(n, data);
+    const p = getAllEditParticipants(true).find(x => x.n === n);
+    const nombre = p ? p.apellidos + ', ' + p.nombre : 'N#' + n;
+    const detalles = [];
+    if (data.contacto)      detalles.push('Contacto');
+    if (data.alergias)      detalles.push('Alergias');
+    if (data.medicacion)    detalles.push('Medicación');
+    if (data.observaciones) detalles.push('Observaciones');
+    logCambio('ficha', 'Ficha actualizada: ' + nombre,
+      detalles.length ? 'Campos: ' + detalles.join(', ') : '');
+    return result;
+  }
+
+  // Guardar participante
+  const _origSaveParticipanteSheets = saveParticipanteSheets;
+  async function saveParticipanteSheets(p) {
+    const result = await _origSaveParticipanteSheets(p);
+    logCambio('alumno', 'Participante guardado: ' + p.apellidos + ', ' + p.nombre,
+      p.gid ? 'Curso: ' + (gruposEdit[p.gid]?.label || p.gid) : '');
+    return result;
+  }
+
+  // Eliminar participante
+  const _origDeleteAlumno = deleteAlumno;
+  function deleteAlumno(n, gid) {
+    const p = getAllEditParticipants(true).find(x => x.n === n);
+    const nombre = p ? p.apellidos + ', ' + p.nombre : 'N#' + n;
+    _origDeleteAlumno(n, gid);
+    logCambio('alumno', 'Participante eliminado: ' + nombre, 'Marcado como baja');
+  }
+
+  // Guardar monitores
+  const _origSaveMonitores = saveMonitores;
+  function saveMonitores() {
+    _origSaveMonitores();
+    logCambio('monitor', monitoresData.length + ' monitores guardados',
+      monitoresData.map(m => m.nombre + ' ' + m.apellidos).join(', ').slice(0,60));
+  }
+
+  // Guardar grupos campamento
+  const _origSaveGruposCamp = saveGruposCamp;
+  function saveGruposCamp() {
+    _origSaveGruposCamp();
+    logCambio('grupo', gruposCamp.length + ' grupos guardados',
+      gruposCamp.map(g => g.nombre).join(', ').slice(0,60));
+  }
+
+  // Guardar actividad programación
+  const _origSaveProgActividad = saveProgActividad;
+  function saveProgActividad() {
+    const isEdit = !!editingProgId;
+    _origSaveProgActividad();
+    const nombre = document.getElementById('pNombre')?.value || 'Actividad';
+    const tipo   = document.getElementById('pTipo')?.value || '';
+    logCambio('programacion',
+      (isEdit ? 'Actividad editada: ' : 'Actividad añadida: ') + nombre,
+      TIPO_LABELS[tipo] || tipo);
+  }
+
+  // Guardar observaciones
+  const _origSaveObs = saveObs;
+  function saveObs(i, btn) {
+    _origSaveObs(i, btn);
+    const obs = obsData[i];
+    logCambio('obs', 'Observación guardada: ' + (obs?.titulo || 'Nota ' + (i+1)), '');
+  }
+
+  // Añadir nota de alumno
+  const _origAddNota = addNota;
+  function addNota(n, btn) {
+    _origAddNota(n, btn);
+    const p = getAllEditParticipants(true).find(x => x.n === n);
+    const nombre = p ? p.apellidos + ', ' + p.nombre : 'N#' + n;
+    logCambio('obs', 'Nota añadida: ' + nombre, '');
+  }
+
+  // Marcar asistencia
+  const _origMarcarAsistencia = marcarAsistencia;
+  function marcarAsistencia(n, estado, btn) {
+    _origMarcarAsistencia(n, estado, btn);
+    const p = getAllEditParticipants(true).find(x => x.n === n);
+    const nombre = p ? p.apellidos + ', ' + p.nombre : 'N#' + n;
+    const ds = getAsistFechaStr();
+    const estadoStr = {presente:'✅ Presente', ausente:'❌ Ausente', justificado:'⚠️ Justificado'}[estado] || estado;
+    logCambio('asistencia', estadoStr + ': ' + nombre, 'Fecha: ' + ds);
+  }
+
+  // Sync con Sheets
+  const _origSheetsSet = sheetsSet;
+  function sheetsSet(key, value) {
+    _origSheetsSet(key, value);
+    // Solo loguear ciertos tipos para no saturar
+    const tipoMap = { monitores:'monitor', grupos:'grupo', obs:'obs', prog:'programacion', obsAlumnos:'obs', asistencia:'asistencia' };
+    if (tipoMap[key]) {
+      logCambio('sistema', 'Sincronizado con Sheets: ' + key, '');
+    }
+  }
+
+
+  function renderMobHistorial() {
+    loadHistorial();
+    const lista = document.getElementById('mobHistorialLista');
+    if (!lista) return;
+    const filtered = histFiltroActivo
+      ? historialData.filter(e => e.tipo === histFiltroActivo)
+      : historialData;
+
+    if (!filtered.length) {
+      lista.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin registros aún.</div>';
+      return;
+    }
+    lista.innerHTML = '';
+    filtered.slice(0,100).forEach(e => {
+      const tipo = HIST_TIPOS[e.tipo] || HIST_TIPOS.sistema;
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid #f0ebe0;align-items:flex-start;';
+      div.innerHTML = `
+        <div style="width:8px;height:8px;border-radius:50%;background:${tipo.color};flex-shrink:0;margin-top:5px;"></div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;color:#333;">
+            <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:${tipo.color}22;color:${tipo.color};margin-right:5px;">${tipo.label}</span>
+            ${escHtml(e.accion)}
+          </div>
+          ${e.detalle?`<div style="font-size:11px;opacity:.45;margin-top:2px;">${escHtml(e.detalle)}</div>`:''}
+          <div style="font-size:10px;opacity:.35;margin-top:2px;">${e.fecha} · ${e.hora}</div>
+        </div>
+        <div style="font-size:10px;opacity:.3;white-space:nowrap;flex-shrink:0;">${tiempoRelativo(e.ts)}</div>
+      `;
+      lista.appendChild(div);
+    });
+  }
+
+  function filterHistorialMob(tipo, btn) {
+    histFiltroActivo = tipo;
+    document.querySelectorAll('#mob-historial .hist-filtro-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderMobHistorial();
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  F. MODO OSCURO
+  // ══════════════════════════════════════════════════════════════
+  function initDarkMode() {
+    const saved = localStorage.getItem('camp-dark-mode');
+    if (saved === 'true') applyDarkMode(true);
+  }
+
+  function applyDarkMode(isDark) {
+    document.body.classList.toggle('dark-mode', isDark);
+    const btn = document.getElementById('darkToggle');
+    if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+    try { localStorage.setItem('camp-dark-mode', isDark); } catch(e) {}
+  }
+
+  function toggleDarkMode() {
+    const isDark = !document.body.classList.contains('dark-mode');
+    applyDarkMode(isDark);
+    logCambio('sistema', isDark ? 'Modo oscuro activado' : 'Modo claro activado', '');
+  }
+
+  // Init dark mode on load
+  initDarkMode();
+
+  // ══════════════════════════════════════════════════════════════
+  //  G. PIN RÁPIDO DE MONITOR
+  // ══════════════════════════════════════════════════════════════
+  let monitorActivo = null; // { nombre, id, pin }
+
+  function initPinMonitor() {
+    const saved = localStorage.getItem('camp-monitor-activo');
+    if (saved) {
+      try { monitorActivo = JSON.parse(saved); } catch(e) {}
+    }
+    renderPinIndicator();
+  }
+
+  function renderPinIndicator() {
+    let indicator = document.getElementById('pinIndicator');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'pinIndicator';
+      indicator.style.cssText = `position:fixed;top:16px;right:16px;z-index:600;
+        display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;
+        background:var(--verde-bosque);color:white;border-radius:20px;
+        font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+        cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:all .2s;`;
+      indicator.onclick = () => openPinModal();
+      document.body.appendChild(indicator);
+    }
+    if (monitorActivo) {
+      indicator.innerHTML = `<div style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);
+        display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">
+        ${(monitorActivo.nombre||'?')[0].toUpperCase()}</div>
+        ${escHtml(monitorActivo.nombre)}
+        <span style="opacity:.6;font-size:10px;">▼</span>`;
+      indicator.style.opacity = '1';
+      const mobName = document.getElementById('mobPinName');
+      if (mobName) mobName.textContent = monitorActivo.nombre;
+      const mobDark = document.getElementById('mobDarkIcon');
+      if (mobDark) mobDark.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    } else {
+      indicator.innerHTML = `👤 <span style="opacity:.75;">Identificarse</span>`;
+      indicator.style.opacity = '0.8';
+      const mobName = document.getElementById('mobPinName');
+      if (mobName) mobName.textContent = 'Identificarse';
+    }
+  }
+
+  function openPinModal() {
+    // Create pin modal if not exists
+    let modal = document.getElementById('pinModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'pinModal';
+      modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);
+        z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;`;
+      modal.onclick = e => { if (e.target === modal) closePinModal(); };
+      document.body.appendChild(modal);
+    }
+
+    const monitoresConPin = monitoresData.filter(m => m.rol !== 'Cocinero/a');
+    modal.innerHTML = `
+      <div style="background:var(--blanco);border-radius:20px;padding:28px;max-width:340px;width:100%;
+        box-shadow:0 24px 64px rgba(0,0,0,.25);font-family:'DM Sans',sans-serif;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:#2D5016;margin-bottom:6px;">👤 Identificación rápida</div>
+        <div style="font-size:13px;opacity:.5;margin-bottom:20px;">Selecciona tu nombre e introduce tu PIN de 4 dígitos</div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:6px;">Monitor/a</label>
+          <select id="pinSelectMonitor" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+            <option value="">— Selecciona tu nombre —</option>
+            ${monitoresConPin.map(m => `<option value="${m.id}" ${monitorActivo?.id===m.id?'selected':''}>${escHtml(m.nombre)} ${escHtml(m.apellidos)} · ${escHtml(m.rol)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:6px;">PIN (4 dígitos)</label>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            ${[0,1,2,3].map(i => `<input type="password" id="pinDigit${i}" maxlength="1" inputmode="numeric" pattern="[0-9]"
+              style="width:52px;height:56px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;outline:none;"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'');if(this.value&&${i}<3)document.getElementById('pinDigit${i+1}').focus()"
+              onkeydown="if(event.key==='Backspace'&&!this.value&&${i}>0){document.getElementById('pinDigit${i-1}').focus()}"
+            />`).join('')}
+          </div>
+          <div id="pinError" style="color:#E05A4A;font-size:12px;text-align:center;margin-top:8px;display:none;">PIN incorrecto. Inténtalo de nuevo.</div>
+          <div style="font-size:11px;opacity:.4;text-align:center;margin-top:6px;">Si no tienes PIN aún, déjalo en blanco y pulsa Entrar</div>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button onclick="closePinModal()" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid #d9ceb8;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">Cancelar</button>
+          <button onclick="confirmarPin()" style="flex:2;padding:10px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Entrar</button>
+        </div>
+        ${monitorActivo ? `<button onclick="cerrarSesionMonitor()" style="width:100%;margin-top:10px;padding:8px;border-radius:10px;border:1.5px solid #E05A4A;background:transparent;color:#E05A4A;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Cerrar sesión de monitor</button>` : ''}
+      </div>`;
+    modal.style.display = 'flex';
+    // Focus first digit
+    setTimeout(() => document.getElementById('pinDigit0')?.focus(), 100);
+  }
+
+  function closePinModal() {
+    const modal = document.getElementById('pinModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function confirmarPin() {
+    const monitorId = document.getElementById('pinSelectMonitor').value;
+    if (!monitorId) {
+      document.getElementById('pinError').textContent = 'Selecciona tu nombre primero.';
+      document.getElementById('pinError').style.display = 'block';
+      return;
+    }
+    const m = monitoresData.find(x => String(x.id) === String(monitorId));
+    if (!m) return;
+
+    const pinIntro = [0,1,2,3].map(i => document.getElementById('pinDigit'+i).value).join('');
+    const pinGuardado = m.pin || '';
+
+    // Si no tiene PIN, establecerlo; si tiene PIN, verificarlo
+    if (!pinGuardado) {
+      if (pinIntro.length === 4) {
+        // Establecer PIN nuevo
+        m.pin = pinIntro;
+        saveMonitoresStorage();
+        showSyncIndicator('✔ PIN establecido para ' + m.nombre, 'ok');
+      }
+      // Acceso sin PIN también permitido
+    } else {
+      if (pinIntro !== pinGuardado) {
+        document.getElementById('pinError').style.display = 'block';
+        [0,1,2,3].forEach(i => { document.getElementById('pinDigit'+i).value=''; });
+        document.getElementById('pinDigit0').focus();
+        return;
+      }
+    }
+
+    monitorActivo = { id: m.id, nombre: m.nombre, rol: m.rol };
+    try { localStorage.setItem('camp-monitor-activo', JSON.stringify(monitorActivo)); } catch(e) {}
+    closePinModal();
+    renderPinIndicator();
+    logCambio('sistema', 'Monitor identificado: ' + m.nombre + ' ' + m.apellidos, m.rol);
+    showSyncIndicator('✔ Bienvenido/a, ' + m.nombre, 'ok');
+  }
+
+  function cerrarSesionMonitor() {
+    monitorActivo = null;
+    try { localStorage.removeItem('camp-monitor-activo'); } catch(e) {}
+    closePinModal();
+    renderPinIndicator();
+    logCambio('sistema', 'Monitor cerró sesión', '');
+  }
+
+  // Helper para obtener nombre del monitor activo en logs
+  function getMonitorActivoNombre() {
+    return monitorActivo?.nombre || 'Monitor';
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  H. RESUMEN DIARIO AUTOMÁTICO
+  // ══════════════════════════════════════════════════════════════
+  function generarResumenDiario() {
+    const hoy = dateToStr(new Date());
+    const ahora = new Date();
+    const horaStr = ahora.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+    const fechaStr = ahora.toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+    // Asistencia del día
+    const dayAsist = asistenciaData[hoy] || {};
+    const totalActivos = getAllEditParticipants().length;
+    const presentes  = Object.values(dayAsist).filter(v=>v==='presente').length;
+    const ausentes   = Object.values(dayAsist).filter(v=>v==='ausente').length;
+    const justif     = Object.values(dayAsist).filter(v=>v==='justificado').length;
+    const sinMarcar  = totalActivos - presentes - ausentes - justif;
+
+    // Actividades del día
+    const actHoy = progData.filter(a => actividadEnFecha(a, hoy))
+      .sort((a,b) => (a.horaInicio||'').localeCompare(b.horaInicio||''));
+
+    // Notas de hoy
+    const notasHoy = [];
+    Object.entries(obsAlumnos).forEach(([n, d]) => {
+      (d.notas||[]).filter(nota => nota.fecha && nota.fecha.includes(ahora.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'}))).forEach(nota => {
+        const p = getAllEditParticipants(true).find(x=>x.n===parseInt(n));
+        if (p) notasHoy.push({alumno: p.apellidos+', '+p.nombre, nota});
+      });
+    });
+
+    // Cambios del historial de hoy
+    const cambiosHoy = historialData.filter(e => {
+      const d = new Date(e.ts);
+      return d.toDateString() === ahora.toDateString();
+    });
+
+    // Alertas médicas activas
+    const conMedAlerta = getAllEditParticipants().filter(p => {
+      const d = fichasCache[String(p.n)] || (() => { try{const r=localStorage.getItem('ficha-'+p.n);return r?JSON.parse(r):{};}catch(e){return{};} })();
+      return d.alergias && d.alergias.trim();
+    });
+
+    // Build HTML del resumen
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = `
+      <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:#222;padding:20px;max-width:800px;margin:0 auto;">
+        <!-- Cabecera -->
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:14px;border-bottom:3px solid #2D5016;">
+          <div style="width:52px;height:52px;border-radius:50%;background:#2D5016;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;flex-shrink:0;">🏕</div>
+          <div style="flex:1;">
+            <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#2D5016;">Resumen del día</div>
+            <div style="font-size:13px;opacity:.5;margin-top:2px;text-transform:capitalize;">${fechaStr} · Generado a las ${horaStr}</div>
+          </div>
+          <div style="text-align:right;font-size:11px;opacity:.4;">Campamento Algámitas 2026<br>ACPA · Colegio San José SSCC</div>
+        </div>
+
+        <!-- Asistencia -->
+        <div style="background:#f5f0e8;border-radius:14px;padding:16px 20px;margin-bottom:16px;">
+          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;margin-bottom:12px;">✅ Asistencia</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+            <div style="text-align:center;background:white;border-radius:10px;padding:12px;border-left:3px solid #27AE60;">
+              <div style="font-size:28px;font-weight:900;color:#27AE60;">${presentes}</div>
+              <div style="font-size:11px;opacity:.5;">Presentes</div>
+            </div>
+            <div style="text-align:center;background:white;border-radius:10px;padding:12px;border-left:3px solid #C0392B;">
+              <div style="font-size:28px;font-weight:900;color:#C0392B;">${ausentes}</div>
+              <div style="font-size:11px;opacity:.5;">Ausentes</div>
+            </div>
+            <div style="text-align:center;background:white;border-radius:10px;padding:12px;border-left:3px solid #E67E22;">
+              <div style="font-size:28px;font-weight:900;color:#E67E22;">${justif}</div>
+              <div style="font-size:11px;opacity:.5;">Justificados</div>
+            </div>
+            <div style="text-align:center;background:white;border-radius:10px;padding:12px;border-left:3px solid #bbb;">
+              <div style="font-size:28px;font-weight:900;color:#bbb;">${sinMarcar}</div>
+              <div style="font-size:11px;opacity:.5;">Sin marcar</div>
+            </div>
+          </div>
+          ${ausentes > 0 ? `<div style="margin-top:12px;font-size:12px;">
+            <strong>Ausentes:</strong> ${getAllEditParticipants().filter(p=>dayAsist[p.n]==='ausente').map(p=>p.apellidos+' '+p.nombre).join(', ')}
+          </div>` : ''}
+          ${justif > 0 ? `<div style="margin-top:6px;font-size:12px;">
+            <strong>Justificados:</strong> ${getAllEditParticipants().filter(p=>dayAsist[p.n]==='justificado').map(p=>p.apellidos+' '+p.nombre).join(', ')}
+          </div>` : ''}
+        </div>
+
+        <!-- Actividades del día -->
+        <div style="background:#f5f0e8;border-radius:14px;padding:16px 20px;margin-bottom:16px;">
+          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;margin-bottom:12px;">📅 Actividades de hoy (${actHoy.length})</div>
+          ${actHoy.length ? actHoy.map(a => {
+            const color = TIPO_COLORS[a.tipo] || '#4A7C2F';
+            const monNom = (a.monitores||[]).map(mid=>{const m=monitoresData.find(m=>String(m.id)===String(mid));return m?m.nombre:'';}).filter(Boolean).join(', ');
+            return `<div style="display:flex;gap:10px;padding:8px 12px;background:white;border-radius:8px;margin-bottom:6px;border-left:3px solid ${color};">
+              <div style="min-width:44px;text-align:center;">
+                <div style="font-size:11px;font-weight:700;color:${color};">${a.horaInicio||'--'}</div>
+                <div style="font-size:10px;opacity:.4;">${a.horaFin||''}</div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:700;">${escHtml(a.nombre||'')}</div>
+                <div style="font-size:11px;opacity:.5;">${TIPO_LABELS[a.tipo]||a.tipo}${monNom?' · 👤 '+monNom:''}${a.lugar?' · 📍'+a.lugar:''}</div>
+              </div>
+            </div>`;
+          }).join('') : '<div style="font-size:12px;opacity:.4;">Sin actividades programadas para hoy.</div>'}
+        </div>
+
+        <!-- Notas del día -->
+        ${notasHoy.length ? `
+        <div style="background:#f5f0e8;border-radius:14px;padding:16px 20px;margin-bottom:16px;">
+          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;margin-bottom:12px;">🗒 Notas de alumnos de hoy (${notasHoy.length})</div>
+          ${notasHoy.map(({alumno,nota}) => {
+            const moodCol = {bien:'#27AE60',regular:'#E67E22',mal:'#C0392B'}[nota.mood]||'#27AE60';
+            const moodIco = {bien:'😊',regular:'😐',mal:'😟'}[nota.mood]||'';
+            return `<div style="padding:8px 12px;background:white;border-radius:8px;margin-bottom:6px;border-left:3px solid ${moodCol};">
+              <div style="font-size:11px;font-weight:700;opacity:.5;margin-bottom:2px;">${escHtml(alumno)}</div>
+              <div style="font-size:12px;">${moodIco} ${escHtml(nota.texto)}</div>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+        <!-- Alertas médicas -->
+        ${conMedAlerta.length ? `
+        <div style="background:#FFF5F5;border-radius:14px;padding:16px 20px;margin-bottom:16px;border:1.5px solid #F8D7DA;">
+          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#C0392B;margin-bottom:12px;">⚠️ Recordatorio médico (${conMedAlerta.length} alumnos con alergias)</div>
+          ${conMedAlerta.map(p => {
+            const d = fichasCache[String(p.n)] || (() => { try{const r=localStorage.getItem('ficha-'+p.n);return r?JSON.parse(r):{};}catch(e){return{};} })();
+            const g = gruposEdit[p.gid]||grupos[p.gid];
+            return `<div style="padding:7px 12px;background:white;border-radius:8px;margin-bottom:5px;display:flex;gap:10px;align-items:center;">
+              <div style="flex:1;"><strong>${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</strong> <span style="font-size:11px;opacity:.4;">${g?.label||''}</span></div>
+              <div style="font-size:11px;color:#C0392B;">${escHtml(d.alergias||'')}</div>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+        <!-- Cambios del día -->
+        <div style="background:#f5f0e8;border-radius:14px;padding:16px 20px;">
+          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;margin-bottom:12px;">📜 Actividad del sistema hoy (${cambiosHoy.length} acciones)</div>
+          ${cambiosHoy.length ? cambiosHoy.slice(0,10).map(e => {
+            const tipo = HIST_TIPOS[e.tipo] || HIST_TIPOS.sistema;
+            return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #ede8de;font-size:11px;">
+              <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:${tipo.color}22;color:${tipo.color};white-space:nowrap;">${tipo.label}</span>
+              <span style="flex:1;">${escHtml(e.accion)}</span>
+              <span style="opacity:.35;white-space:nowrap;">${e.hora}</span>
+            </div>`;
+          }).join('') + (cambiosHoy.length > 10 ? `<div style="font-size:11px;opacity:.4;margin-top:6px;">... y ${cambiosHoy.length-10} más</div>` : '')
+          : '<div style="font-size:12px;opacity:.4;">Sin actividad registrada.</div>'}
+        </div>
+
+        <div style="text-align:center;margin-top:20px;font-size:10px;opacity:.35;">
+          Campamento Algámitas 2026 · ACPA Colegio San José SSCC · ${fechaStr}
+        </div>
+      </div>
+    `;
+
+    // Show preview modal
+    let modal = document.getElementById('resumenModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'resumenModal';
+      modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:3000;display:flex;flex-direction:column;`;
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+      <div style="background:var(--blanco);padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:1.5px solid var(--crema-oscuro);">
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;flex:1;">📋 Resumen del día — ${ahora.toLocaleDateString('es-ES',{day:'numeric',month:'long'})}</div>
+        <button onclick="window.print();setTimeout(()=>{document.getElementById('printArea').innerHTML='';document.getElementById('resumenModal').style.display='none';},1000)"
+          style="padding:8px 16px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">🖨 Imprimir / PDF</button>
+        <button onclick="document.getElementById('resumenModal').style.display='none';document.getElementById('printArea').innerHTML=''"
+          style="padding:8px 14px;border-radius:10px;border:1.5px solid #d9ceb8;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">Cerrar</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:0;">${printArea.innerHTML}</div>
+    `;
+    modal.style.display = 'flex';
+  }
+
 </script>
 
 
@@ -6235,6 +8100,31 @@
         <div class="mob-label">Evaluación</div>
         <div class="mob-sub">2025</div>
       </div>
+      <div class="mob-card" onclick="mobGo('asistencia')">
+        <div class="mob-icon">✅</div>
+        <div class="mob-label">Asistencia</div>
+        <div class="mob-sub">Control diario</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('historial')">
+        <div class="mob-icon">📜</div>
+        <div class="mob-label">Historial</div>
+        <div class="mob-sub">Cambios</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('guardia')">
+        <div class="mob-icon">🔔</div>
+        <div class="mob-label">Guardia</div>
+        <div class="mob-sub">Turno actual</div>
+      </div>
+      <div class="mob-card" onclick="openPinModal()" style="border-color:var(--verde-claro);">
+        <div class="mob-icon">🔑</div>
+        <div class="mob-label">Mi perfil</div>
+        <div class="mob-sub" id="mobPinName">Identificarse</div>
+      </div>
+      <div class="mob-card" onclick="toggleDarkMode()" id="mobDarkBtn">
+        <div class="mob-icon" id="mobDarkIcon">🌙</div>
+        <div class="mob-label">Modo</div>
+        <div class="mob-sub">Oscuro/Claro</div>
+      </div>
       <div class="mob-card" onclick="actualizarApp(this)" style="border-color:#4A7C2F;grid-column:1/-1;">
         <div class="mob-icon" id="refreshIconMob">🔄</div>
         <div class="mob-label">Actualizar datos</div>
@@ -6267,6 +8157,53 @@
       <div id="mobObsAluResults" style="display:none;background:white;border:1.5px solid #d9ceb8;border-radius:12px;margin-top:4px;max-height:200px;overflow-y:auto;"></div>
     </div>
     <div id="mobObsAluList" style="padding:12px 16px;"></div>
+  </div>
+
+  <!-- PANTALLA HISTORIAL MOB -->
+  <div class="mob-screen" id="mob-historial">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">📜 Historial</div>
+      <button onclick="clearHistorial()" style="padding:5px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-size:11px;font-weight:600;cursor:pointer;color:#C0392B;">Limpiar</button>
+    </div>
+    <div style="padding:10px 14px;background:#f5f0e8;border-bottom:1px solid #d9ceb8;display:flex;gap:6px;overflow-x:auto;">
+      <button class="hist-filtro-btn active" onclick="filterHistorialMob('',this)" style="white-space:nowrap;font-size:11px;">Todos</button>
+      <button class="hist-filtro-btn" onclick="filterHistorialMob('alumno',this)" style="white-space:nowrap;font-size:11px;">👥</button>
+      <button class="hist-filtro-btn" onclick="filterHistorialMob('ficha',this)" style="white-space:nowrap;font-size:11px;">🩺</button>
+      <button class="hist-filtro-btn" onclick="filterHistorialMob('asistencia',this)" style="white-space:nowrap;font-size:11px;">✅</button>
+      <button class="hist-filtro-btn" onclick="filterHistorialMob('programacion',this)" style="white-space:nowrap;font-size:11px;">📅</button>
+      <button class="hist-filtro-btn" onclick="filterHistorialMob('grupo',this)" style="white-space:nowrap;font-size:11px;">🏕</button>
+    </div>
+    <div id="mobHistorialLista" style="padding:0;"></div>
+  </div>
+
+  <!-- PANTALLA ASISTENCIA MOB -->
+  <div class="mob-screen" id="mob-asistencia">
+    <div class="mob-topbar" style="background:#2D5016;">
+      <div class="mob-back" onclick="mobBack()" style="border-color:rgba(255,255,255,.3);color:white;">←</div>
+      <div class="mob-topbar-title" style="color:white;">✅ Asistencia</div>
+      <button onclick="asistNavDay(-1)" style="padding:5px 10px;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);background:transparent;color:white;font-size:12px;font-weight:600;cursor:pointer;">◀</button>
+      <div id="mobAsistDate" style="color:white;font-size:11px;font-weight:700;"></div>
+      <button onclick="asistNavDay(1)" style="padding:5px 10px;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);background:transparent;color:white;font-size:12px;font-weight:600;cursor:pointer;">▶</button>
+    </div>
+    <div style="display:flex;gap:8px;padding:10px 14px;background:#f5f0e8;border-bottom:1px solid #d9ceb8;font-size:11px;font-weight:600;flex-wrap:wrap;">
+      <span style="color:#27AE60;" id="mobAsistP">0 ✅</span>
+      <span style="color:#C0392B;" id="mobAsistA">0 ❌</span>
+      <span style="color:#E67E22;" id="mobAsistJ">0 ⚠️</span>
+      <button onclick="marcarTodosPresentes();renderMobAsistencia()" style="margin-left:auto;padding:4px 10px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:600;cursor:pointer;">✅ Todos</button>
+    </div>
+    <div id="mobAsistLista" style="padding:10px 14px;"></div>
+  </div>
+
+  <!-- PANTALLA GUARDIA MOB -->
+  <div class="mob-screen" id="mob-guardia">
+    <div class="mob-topbar">
+      <div class="mob-back" onclick="mobBack()">←</div>
+      <div class="mob-topbar-title">🔔 Panel de guardia</div>
+      <button onclick="renderGuardia();renderMobGuardia()" style="padding:5px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-size:11px;font-weight:600;cursor:pointer;">🔄</button>
+      <button onclick="generarResumenDiario()" style="padding:5px 10px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:600;cursor:pointer;">📋</button>
+    </div>
+    <div id="mobGuardiaContent" style="padding:12px 16px;"></div>
   </div>
 
   <!-- PANTALLA CABAÑAS MOB -->
@@ -6481,6 +8418,59 @@
   </div>
 
 </div>
+
+
+<!-- ══ MODAL EXPORTAR PROGRAMACIÓN ══ -->
+<div class="export-modal-overlay" id="exportModal" onclick="if(event.target===this)closeExportModal()">
+  <div class="export-modal">
+    <h3>📄 Exportar programación</h3>
+
+    <div class="export-option selected" id="expOptSemana" onclick="selectExportOpt('semana',this)">
+      <div class="export-option-icon">📅</div>
+      <div>
+        <div class="export-option-title">Vista semanal</div>
+        <div class="export-option-sub">Cuadrícula Lun–Dom × horas · Formato A4 apaisado</div>
+      </div>
+    </div>
+    <div class="export-option" id="expOptLista" onclick="selectExportOpt('lista',this)">
+      <div class="export-option-icon">📋</div>
+      <div>
+        <div class="export-option-title">Lista completa</div>
+        <div class="export-option-sub">Todas las actividades ordenadas por día y hora</div>
+      </div>
+    </div>
+    <div class="export-option" id="expOptGrupo" onclick="selectExportOpt('grupo',this)">
+      <div class="export-option-icon">🏕</div>
+      <div>
+        <div class="export-option-title">Por grupo campamento</div>
+        <div class="export-option-sub">Actividades filtradas para cada grupo</div>
+      </div>
+    </div>
+    <div class="export-option" id="expOptMonitor" onclick="selectExportOpt('monitor',this)">
+      <div class="export-option-icon">👤</div>
+      <div>
+        <div class="export-option-title">Por monitor</div>
+        <div class="export-option-sub">Actividades y turnos de cada monitor</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding:12px 14px;background:#f5f0e8;border-radius:10px;font-size:12px;color:#666;line-height:1.5;">
+      💡 Se abrirá el diálogo de impresión del navegador. Selecciona <strong>"Guardar como PDF"</strong> como destino para obtener el archivo.
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+      <button onclick="closeExportModal()" style="padding:10px 20px;border-radius:12px;border:1.5px solid #d9ceb8;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">Cancelar</button>
+      <button onclick="ejecutarExport()" style="padding:10px 22px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🖨 Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ÁREA DE IMPRESIÓN (generada dinámicamente) ══ -->
+<div id="printArea"></div>
+
+
+<!-- Botón modo oscuro -->
+<button class="dark-toggle" id="darkToggle" onclick="toggleDarkMode()" title="Modo oscuro / claro">🌙</button>
 
 </body>
 </html>
