@@ -57,7 +57,7 @@ TYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Campamento Algámitas 2026 · ACPA San José SSCC</title>
+<title>CampApp · Gestión de campamentos</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -3367,7 +3367,7 @@ TYPE html>
   //  LOGIN
   // ══════════════════════════════════════════════════════════════
   const APP_PASSWORD   = 'algamitas2026'; // contraseña de acceso compartida
-  const MASTER_URL     = 'https://script.google.com/macros/s/AKfycbyrST-HCXCBiohwMeRt7zNvXTxKdqgiAIvvvLgUFgOeFgasJsfc5563QSGRK6pHViu69w/exec';  // URL del Apps Script maestro
+  const MASTER_URL     = 'PEGA_AQUI_URL_MAESTRO';  // URL del Apps Script maestro
   const MASTER_PWD     = 'campapp2026';             // contraseña del maestro
   let   currentProject = null; // proyecto activo
 
@@ -5724,7 +5724,7 @@ TYPE html>
       const pg = gruposEdit[p.gid]||grupos[p.gid];
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--crema-oscuro);';
-      row.onmouseenter = () => row.style.background = 'var(--blanco)';
+      row.onmouseenter = () => row.style.background = '#FDFAF5';
       row.onmouseleave = () => row.style.background = '';
       row.innerHTML = `
         <div style="width:28px;height:28px;border-radius:50%;background:${pg?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0">${getInitials(p.nombre,p.apellidos)}</div>
@@ -6776,8 +6776,7 @@ TYPE html>
       const gc = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
       rows.push([p.apellidos, p.nombre, g?.label||'', gc?.nombre||'', day[p.n]||'Sin marcar']);
     });
-    const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('
-');
+    const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
     const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
