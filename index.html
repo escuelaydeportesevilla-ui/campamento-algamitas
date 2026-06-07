@@ -976,7 +976,6 @@ TYPE html>
 
 /* ── LOGIN ── */
 .login-overlay {
-  display:none !important;
   display:flex; position:fixed; inset:0;
   background:#0C160F;
   z-index:9000; align-items:center; justify-content:center;
@@ -3533,7 +3532,7 @@ TYPE html>
     // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
     // Init PIN y dark mode
-    // PIN eliminado
+    initPinMonitor();
     initDarkMode();
     // Limpiar fotos legacy de localStorage
     try { localStorage.removeItem('camp-monitores-fotos'); } catch(e) {}
@@ -6168,7 +6167,7 @@ TYPE html>
     }
     obsAlumnos[n].notas.unshift({
       id: Date.now(), fecha: new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
-      texto, mood, monitor: /* getMonitorActivoNombre() eliminado */
+      texto, mood, monitor: getMonitorActivoNombre()
     });
     saveObsAlumnos();
     textarea.value = '';
@@ -7609,10 +7608,155 @@ TYPE html>
   // ══════════════════════════════════════════════════════════════
   let monitorActivo = null; // { nombre, id, pin }
 
-  
-/* SISTEMA PIN ELIMINADO COMPLETAMENTE */
+  function initPinMonitor() {
+    const saved = localStorage.getItem('camp-monitor-activo');
+    if (saved) {
+      try { monitorActivo = JSON.parse(saved); } catch(e) {}
+    }
+    renderPinIndicator();
+  }
 
-// ══════════════════════════════════════════════════════════════
+  function renderPinIndicator() {
+    let indicator = document.getElementById('pinIndicator');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'pinIndicator';
+      indicator.style.cssText = `position:fixed;top:16px;right:16px;z-index:600;
+        display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;
+        background:var(--verde-bosque);color:white;border-radius:20px;
+        font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+        cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:all .2s;`;
+      indicator.onclick = () => openPinModal();
+      document.body.appendChild(indicator);
+    }
+    if (monitorActivo) {
+      indicator.innerHTML = `<div style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);
+        display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">
+        ${(monitorActivo.nombre||'?')[0].toUpperCase()}</div>
+        ${escHtml(monitorActivo.nombre)}
+        <span style="opacity:.6;font-size:10px;">▼</span>`;
+      indicator.style.opacity = '1';
+      const mobName = document.getElementById('mobPinName');
+      if (mobName) mobName.textContent = monitorActivo.nombre;
+      const mobDark = document.getElementById('mobDarkIcon');
+      if (mobDark) mobDark.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    } else {
+      indicator.innerHTML = `👤 <span style="opacity:.75;">Identificarse</span>`;
+      indicator.style.opacity = '0.8';
+      const mobName = document.getElementById('mobPinName');
+      if (mobName) mobName.textContent = 'Identificarse';
+    }
+  }
+
+  function openPinModal() {
+    // Create pin modal if not exists
+    let modal = document.getElementById('pinModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'pinModal';
+      modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);
+        z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;`;
+      modal.onclick = e => { if (e.target === modal) closePinModal(); };
+      document.body.appendChild(modal);
+    }
+
+    const monitoresConPin = monitoresData.filter(m => m.rol !== 'Cocinero/a');
+    modal.innerHTML = `
+      <div style="background:var(--blanco);border-radius:20px;padding:28px;max-width:340px;width:100%;
+        box-shadow:0 24px 64px rgba(0,0,0,.25);font-family:'DM Sans',sans-serif;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:#2D5016;margin-bottom:6px;">👤 Identificación rápida</div>
+        <div style="font-size:13px;opacity:.5;margin-bottom:20px;">Selecciona tu nombre e introduce tu PIN de 4 dígitos</div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:6px;">Monitor/a</label>
+          <select id="pinSelectMonitor" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+            <option value="">— Selecciona tu nombre —</option>
+            ${monitoresConPin.map(m => `<option value="${m.id}" ${monitorActivo?.id===m.id?'selected':''}>${escHtml(m.nombre)} ${escHtml(m.apellidos)} · ${escHtml(m.rol)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.45;display:block;margin-bottom:6px;">PIN (4 dígitos)</label>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            ${[0,1,2,3].map(i => `<input type="password" id="pinDigit${i}" maxlength="1" inputmode="numeric" pattern="[0-9]"
+              style="width:52px;height:56px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;outline:none;"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'');if(this.value&&${i}<3)document.getElementById('pinDigit${i+1}').focus()"
+              onkeydown="if(event.key==='Backspace'&&!this.value&&${i}>0){document.getElementById('pinDigit${i-1}').focus()}"
+            />`).join('')}
+          </div>
+          <div id="pinError" style="color:#E05A4A;font-size:12px;text-align:center;margin-top:8px;display:none;">PIN incorrecto. Inténtalo de nuevo.</div>
+          <div style="font-size:11px;opacity:.4;text-align:center;margin-top:6px;">Si no tienes PIN aún, déjalo en blanco y pulsa Entrar</div>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button onclick="closePinModal()" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid #d9ceb8;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">Cancelar</button>
+          <button onclick="confirmarPin()" style="flex:2;padding:10px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Entrar</button>
+        </div>
+        ${monitorActivo ? `<button onclick="cerrarSesionMonitor()" style="width:100%;margin-top:10px;padding:8px;border-radius:10px;border:1.5px solid #E05A4A;background:transparent;color:#E05A4A;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Cerrar sesión de monitor</button>` : ''}
+      </div>`;
+    modal.style.display = 'flex';
+    // Focus first digit
+    setTimeout(() => document.getElementById('pinDigit0')?.focus(), 100);
+  }
+
+  function closePinModal() {
+    const modal = document.getElementById('pinModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function confirmarPin() {
+    const monitorId = document.getElementById('pinSelectMonitor').value;
+    if (!monitorId) {
+      document.getElementById('pinError').textContent = 'Selecciona tu nombre primero.';
+      document.getElementById('pinError').style.display = 'block';
+      return;
+    }
+    const m = monitoresData.find(x => String(x.id) === String(monitorId));
+    if (!m) return;
+
+    const pinIntro = [0,1,2,3].map(i => document.getElementById('pinDigit'+i).value).join('');
+    const pinGuardado = m.pin || '';
+
+    // Si no tiene PIN, establecerlo; si tiene PIN, verificarlo
+    if (!pinGuardado) {
+      if (pinIntro.length === 4) {
+        // Establecer PIN nuevo
+        m.pin = pinIntro;
+        saveMonitoresStorage();
+        showSyncIndicator('✔ PIN establecido para ' + m.nombre, 'ok');
+      }
+      // Acceso sin PIN también permitido
+    } else {
+      if (pinIntro !== pinGuardado) {
+        document.getElementById('pinError').style.display = 'block';
+        [0,1,2,3].forEach(i => { document.getElementById('pinDigit'+i).value=''; });
+        document.getElementById('pinDigit0').focus();
+        return;
+      }
+    }
+
+    monitorActivo = { id: m.id, nombre: m.nombre, rol: m.rol };
+    try { localStorage.setItem('camp-monitor-activo', JSON.stringify(monitorActivo)); } catch(e) {}
+    closePinModal();
+    renderPinIndicator();
+    logCambio('sistema', 'Monitor identificado: ' + m.nombre + ' ' + m.apellidos, m.rol);
+    showSyncIndicator('✔ Bienvenido/a, ' + m.nombre, 'ok');
+  }
+
+  function cerrarSesionMonitor() {
+    monitorActivo = null;
+    try { localStorage.removeItem('camp-monitor-activo'); } catch(e) {}
+    closePinModal();
+    renderPinIndicator();
+    logCambio('sistema', 'Monitor cerró sesión', '');
+  }
+
+  // Helper para obtener nombre del monitor activo en logs
+  function getMonitorActivoNombre() {
+    return monitorActivo?.nombre || 'Monitor';
+  }
+
+  // ══════════════════════════════════════════════════════════════
   //  H. RESUMEN DIARIO AUTOMÁTICO
   // ══════════════════════════════════════════════════════════════
   function generarResumenDiario() {
@@ -7985,7 +8129,7 @@ TYPE html>
         <div class="mob-label">Guardia</div>
         <div class="mob-sub">Turno actual</div>
       </div>
-      <div class="mob-card" onclick="/* openPinModal() eliminado */" style="border-color:var(--verde-claro);">
+      <div class="mob-card" onclick="openPinModal()" style="border-color:var(--verde-claro);">
         <div class="mob-icon">🔑</div>
         <div class="mob-label">Mi perfil</div>
         <div class="mob-sub" id="mobPinName">Identificarse</div>
@@ -8344,11 +8488,3 @@ TYPE html>
 
 </body>
 </html>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  document.querySelectorAll('.login-overlay').forEach(e=>e.style.display='none');
-  document.body.style.overflow='auto';
-});
-</script>
