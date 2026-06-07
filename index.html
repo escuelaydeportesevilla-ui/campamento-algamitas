@@ -976,6 +976,7 @@ TYPE html>
 
 /* ── LOGIN ── */
 .login-overlay {
+  display:none !important;
   display:flex; position:fixed; inset:0;
   background:#0C160F;
   z-index:9000; align-items:center; justify-content:center;
@@ -8343,3 +8344,11 @@ TYPE html>
 
 </body>
 </html>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.login-overlay').forEach(e=>e.style.display='none');
+  document.body.style.overflow='auto';
+});
+</script>
