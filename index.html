@@ -5259,17 +5259,8 @@
   }
 
   function clickDia(btn) {
-    if (event) event.stopPropagation();
-    const wasActive = btn.classList.contains('activo');
     btn.classList.toggle('activo');
-    if (!wasActive) {
-      btn.style.cssText = 'background:#2D5016;color:white;border-color:#2D5016;padding:7px 14px;border-radius:20px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;';
-    } else {
-      btn.style.cssText = 'background:D9CEB8;color:#444;border-color:#D9CEB8;padding:7px 14px;border-radius:20px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid #D9CEB8;';
-      btn.style.background = '#f5f0e8';
-      btn.style.color = '#555';
-      btn.style.borderColor = '#c8bfa8';
-    }
+    applyDiaStyle(btn, btn.classList.contains('activo'));
   }
 
   function seleccionarTodosLosDias() {
