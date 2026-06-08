@@ -5686,7 +5686,8 @@
   });
 
   function openAddNota(n) {
-    const p = getAllEditParticipants().find(x => x.n === n);
+    // Buscar en TODOS los participantes (incluye inactivos)
+    const p = getAllEditParticipants(true).find(x => x.n === n);
     if (!p) return;
     const g = gruposEdit[p.gid]||grupos[p.gid];
 
@@ -5694,12 +5695,12 @@
     document.getElementById('obsAluSearch').value = '';
     document.getElementById('obsAluResults').classList.remove('visible');
 
-    // Registrar alumno si no tiene notas aún
+    // Registrar alumno si no tiene entrada en obsAlumnos
     if (!obsAlumnos[n]) {
       obsAlumnos[n] = { apellidos:p.apellidos, nombre:p.nombre, gid:p.gid, notas:[] };
     }
 
-    // Si la tarjeta ya existe en el DOM, abrir su formulario directamente
+    // Si la tarjeta ya existe en el DOM, abrir su formulario
     const existingCard = document.getElementById('obscard-'+n);
     if (existingCard) {
       existingCard.scrollIntoView({behavior:'smooth', block:'start'});
@@ -5708,7 +5709,7 @@
       return;
     }
 
-    // Si no existe (alumno sin notas previas), crear tarjeta temporal con el formulario abierto
+    // Crear tarjeta nueva con el formulario abierto
     const container = document.getElementById('obsAluContainer');
     const hex = g?.hex || '#888';
     const tempCard = document.createElement('div');
@@ -5736,14 +5737,13 @@
             style="padding:8px 18px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
             Guardar nota
           </button>
-          <button onclick="this.closest('.obs-alu-card').remove();delete obsAlumnos[${n}]"
+          <button onclick="this.closest('.obs-alu-card').remove();if(!obsAlumnos[${n}]?.notas?.length)delete obsAlumnos[${n}]"
             style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">
             Cancelar
           </button>
         </div>
       </div>
     `;
-    // Insertar al principio del contenedor
     container.insertBefore(tempCard, container.firstChild);
     tempCard.scrollIntoView({behavior:'smooth', block:'start'});
     setTimeout(() => tempCard.querySelector('textarea').focus(), 100);
@@ -5755,7 +5755,7 @@
     if (!texto) return;
     const mood = form.querySelector('.mood-btn.selected')?.dataset.mood || 'bien';
     if (!obsAlumnos[n]) {
-      const p = getAllEditParticipants().find(x => x.n === n);
+      const p = getAllEditParticipants(true).find(x => x.n === n);
       if (p) obsAlumnos[n] = { apellidos:p.apellidos, nombre:p.nombre, gid:p.gid, notas:[] };
     }
     obsAlumnos[n].notas.unshift({
