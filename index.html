@@ -2149,10 +2149,13 @@
           <option value="g4">4º Primaria</option>
           <option value="g5">5º Primaria</option>
           <option value="g6">6º Primaria</option>
+          <option value="g7">1º ESO</option>
+          <option value="g8">2º ESO</option>
         </select>
         <select id="filtroActivo" onchange="renderEditTable()" style="padding:7px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
-          <option value="">Todos</option>
+          <option value="">Activos + pendientes</option>
           <option value="activo">✅ Activos</option>
+          <option value="pendiente">⏳ Pendientes de revisar</option>
           <option value="inactivo">⛔ No activos</option>
         </select>
       </div>
@@ -2795,7 +2798,7 @@
   // ══════════════════════════════════════════════════════════════
   //  CONFIGURACIÓN — pega aquí la URL de tu Apps Script desplegado
   // ══════════════════════════════════════════════════════════════
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTAgBqa76aPTZZLX4b1rWNcqcwutP58HnqKbZy8IWDxunAK31yQ69kmCJVM_DFIj8ktQ/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjhRBmKZNw9KsfK6aP5dDjlGQML_VkZBTSG8y0ImkNQyOZBoxP2YJeKevBKFjKGd8Plw/exec';
   const PASSWORD   = 'algamitas2026';   // misma clave que en el .gs
   const MONITOR_ID = 'Coordinador Miguel Ángel';         // cambia por el nombre del monitor en cada dispositivo
 
@@ -2977,6 +2980,12 @@
         {n:130,apellidos:'Vargas Pérez',nombre:'Mario',grupo:'C'},
         {n:131,apellidos:'Venus Macías',nombre:'Amelia',grupo:'❓'},
       ]
+    },
+    g7:{ label:'1º de ESO', edad:'12–13 años', color:'var(--g7,#1ABC9C)', hex:'#1ABC9C',
+      participantes:[]
+    },
+    g8:{ label:'2º de ESO', edad:'13–14 años', color:'var(--g8,#E67E22)', hex:'#E67E22',
+      participantes:[]
     }
   };
 
@@ -3721,13 +3730,17 @@
     const tbody = document.getElementById('editTableBody');
     tbody.innerHTML = '';
     const filtroActivo = document.getElementById('filtroActivo')?.value || '';
-    // Incluir inactivos siempre en edición — el filtro decide qué mostrar
+    // Incluir todos (activos, inactivos, pendientes) — el filtro decide
     const lista = getAllEditParticipants(true).filter(p => {
       if (filtro && p.gid !== filtro) return false;
-      if (filtroActivo === 'activo'   && p.activo === false) return false;
-      if (filtroActivo === 'inactivo' && p.activo !== false) return false;
-      // Sin filtro de activo: mostrar solo activos por defecto
-      if (!filtroActivo && p.activo === false) return false;
+      const esPendiente = p.activo === 'pendiente' || p.activo === 'pending';
+      const esInactivo  = p.activo === false || p.activo === 'false' || p.activo === 'inactivo';
+      const esActivo    = !esPendiente && !esInactivo;
+      if (filtroActivo === 'activo'    && !esActivo)    return false;
+      if (filtroActivo === 'inactivo'  && !esInactivo)  return false;
+      if (filtroActivo === 'pendiente' && !esPendiente) return false;
+      // Sin filtro: mostrar activos y pendientes, ocultar inactivos
+      if (!filtroActivo && esInactivo) return false;
       return true;
     });
 
@@ -3737,7 +3750,8 @@
       tr.dataset.gid = p.gid;
 
       // Build otros grupos cell separately (can't nest template literals safely)
-      const activo = p.activo !== false; // por defecto true
+      const esPendiente = p.activo === 'pendiente' || p.activo === 'pending';
+      const activo = !esPendiente && p.activo !== false && p.activo !== 'false'; // por defecto true
       tr.style.opacity = activo ? '1' : '0.45';
       tr.innerHTML = `
         <td style="opacity:.4;font-size:11px">${i+1}</td>
@@ -3750,19 +3764,21 @@
             <option value="g4" ${p.gid==='g4'?'selected':''}>4º Prim.</option>
             <option value="g5" ${p.gid==='g5'?'selected':''}>5º Prim.</option>
             <option value="g6" ${p.gid==='g6'?'selected':''}>6º Prim.</option>
+            <option value="g7" ${p.gid==='g7'?'selected':''}>1º ESO</option>
+            <option value="g8" ${p.gid==='g8'?'selected':''}>2º ESO</option>
           </select>
         </td>
         <td><input value="${escHtml(p.grupo)}" placeholder="A/B/C/D" style="width:56px" onchange="updateAlumno(this,'grupo',${p.n},'${p.gid}')"/></td>
         <td style="text-align:center;">
           <button type="button"
             onclick="toggleActivoBtn(this,${p.n},'${p.gid}')"
-            data-activo="${activo?'1':'0'}"
-            title="${activo?'Activo — pulsa para desactivar':'Inactivo — pulsa para activar'}"
+            data-estado="${esPend?'pendiente':activo?'activo':'inactivo'}"
+            title="${esPend?'⏳ Pendiente — pulsa para activar':activo?'✅ Activo — pulsa para desactivar':'⛔ Inactivo — pulsa para activar'}"
             style="width:38px;height:22px;border-radius:11px;border:none;cursor:pointer;position:relative;
-              background:${activo?'#4A7C2F':'#c8bfa8'};transition:background .2s;flex-shrink:0;padding:0;">
+              background:${esPend?'#F39C12':activo?'#4A7C2F':'#c8bfa8'};transition:background .2s;flex-shrink:0;padding:0;">
             <span style="width:16px;height:16px;border-radius:50%;background:white;box-shadow:0 1px 3px rgba(0,0,0,.25);
               position:absolute;top:3px;transition:left .2s;
-              left:${activo?'19px':'3px'};"></span>
+              left:${esPend?'11px':activo?'19px':'3px'};"></span>
           </button>
         </td>
         <td>
@@ -3852,8 +3868,11 @@
 
     const lista = getAllEditParticipants(true).filter(p => {
       if (filtro && p.gid !== filtro) return false;
-      if (filtroAct === 'activo'   && p.activo === false) return false;
-      if (filtroAct === 'inactivo' && p.activo !== false) return false;
+      const _esPend = p.activo === 'pendiente' || p.activo === 'pending';
+      const _esInact = p.activo === false || p.activo === 'false';
+      if (filtroAct === 'activo'    && (_esPend || _esInact)) return false;
+      if (filtroAct === 'inactivo'  && !_esInact) return false;
+      if (filtroAct === 'pendiente' && !_esPend)  return false;
       return true;
     });
 
@@ -3863,7 +3882,8 @@
     const filas = lista.map((p, i) => {
       const g = gruposEdit[p.gid] || grupos[p.gid];
       const gcampAsig = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
-      const activo = p.activo !== false;
+      const esPendiente = p.activo === 'pendiente' || p.activo === 'pending';
+      const activo = !esPendiente && p.activo !== false && p.activo !== 'false';
       return `<tr class="${activo ? '' : 'inactivo'}">
         <td>${i+1}</td>
         <td>${escHtml(p.apellidos)}</td>
@@ -3871,8 +3891,8 @@
         <td>${g ? g.label : ''}</td>
         <td>${p.grupo && p.grupo !== '❓' ? p.grupo : '—'}</td>
         <td>${gcampAsig ? escHtml(gcampAsig.nombre) : '—'}</td>
-        <td style="text-align:center;font-weight:700;color:${activo ? '#2D5016' : '#C0392B'}">
-          ${activo ? '✅ Activo' : '⛔ No activo'}
+        <td style="text-align:center;font-weight:700;color:${esPendiente ? '#F39C12' : activo ? '#2D5016' : '#C0392B'}">
+          ${esPendiente ? '⏳ Pendiente' : activo ? '✅ Activo' : '⛔ No activo'}
         </td>
       </tr>`;
     }).join('');
@@ -5991,25 +6011,33 @@
 
 
   function toggleActivoBtn(btn, n, gid) {
-    const wasActivo = btn.dataset.activo === '1';
-    const nowActivo = !wasActivo;
+    const estado = btn.dataset.estado || 'activo';
+    // Ciclo: activo → inactivo → pendiente → activo
+    const nextEstado = estado === 'activo' ? 'inactivo'
+                     : estado === 'inactivo' ? 'pendiente'
+                     : 'activo';
 
-    // Update data
-    const p = gruposEdit[gid]?.participantes.find(x => x.n === n);
-    if (p) p.activo = nowActivo;
+    const p  = gruposEdit[gid]?.participantes.find(x => x.n === n);
     const pg = grupos[gid]?.participantes.find(x => x.n === n);
-    if (pg) pg.activo = nowActivo;
+    const newVal = nextEstado === 'activo' ? true : nextEstado === 'inactivo' ? false : 'pendiente';
+    if (p)  p.activo  = newVal;
+    if (pg) pg.activo = newVal;
 
-    // Update button visual
-    btn.dataset.activo = nowActivo ? '1' : '0';
-    btn.style.background = nowActivo ? '#4A7C2F' : '#c8bfa8';
-    btn.title = nowActivo ? 'Activo — pulsa para desactivar' : 'Inactivo — pulsa para activar';
+    btn.dataset.estado = nextEstado;
+    const colors = { activo:'#4A7C2F', inactivo:'#c8bfa8', pendiente:'#F39C12' };
+    const knobPos = { activo:'19px', inactivo:'3px', pendiente:'11px' };
+    const titles  = { activo:'✅ Activo — pulsa para desactivar', inactivo:'⛔ Inactivo — pulsa para activar', pendiente:'⏳ Pendiente — pulsa para activar' };
+    btn.style.background = colors[nextEstado];
+    btn.title = titles[nextEstado];
     const knob = btn.querySelector('span');
-    if (knob) knob.style.left = nowActivo ? '19px' : '3px';
+    if (knob) knob.style.left = knobPos[nextEstado];
 
-    // Dim row
     const row = btn.closest('tr');
-    if (row) row.style.opacity = nowActivo ? '1' : '0.45';
+    if (row) {
+      row.style.opacity = nextEstado === 'activo' ? '1' : nextEstado === 'pendiente' ? '0.85' : '0.45';
+      row.style.background = nextEstado === 'pendiente' ? '#fff8e1' : '';
+    }
+    logCambio('alumno', (p?.apellidos||'') + ', ' + (p?.nombre||''), 'Estado → ' + nextEstado);
   }
 
   // Keep old name for mobile compat
@@ -6245,7 +6273,8 @@
     container.innerHTML = '';
     lista.forEach(p => {
       const g = gruposEdit[p.gid]||grupos[p.gid];
-      const activo = p.activo !== false;
+      const esPendiente = p.activo === 'pendiente' || p.activo === 'pending';
+      const activo = !esPendiente && p.activo !== false && p.activo !== 'false';
       const gcampAsig = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
       const div = document.createElement('div');
       div.className = 'mob-alumno-item';
@@ -7945,6 +7974,8 @@
             <option value="g4">4º Primaria</option>
             <option value="g5">5º Primaria</option>
             <option value="g6">6º Primaria</option>
+            <option value="g7">1º ESO</option>
+            <option value="g8">2º ESO</option>
           </select>
         </div>
         <div class="ficha-field">
