@@ -3714,10 +3714,13 @@
     const tbody = document.getElementById('editTableBody');
     tbody.innerHTML = '';
     const filtroActivo = document.getElementById('filtroActivo')?.value || '';
-    const lista = getAllEditParticipants().filter(p => {
+    // Incluir inactivos siempre en edición — el filtro decide qué mostrar
+    const lista = getAllEditParticipants(true).filter(p => {
       if (filtro && p.gid !== filtro) return false;
-      if (filtroActivo === 'activo' && p.activo === false) return false;
+      if (filtroActivo === 'activo'   && p.activo === false) return false;
       if (filtroActivo === 'inactivo' && p.activo !== false) return false;
+      // Sin filtro de activo: mostrar solo activos por defecto
+      if (!filtroActivo && p.activo === false) return false;
       return true;
     });
 
