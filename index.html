@@ -1,64 +1,9 @@
-<!DOC
-
-  <!-- ══ SELECTOR DE PROYECTO ══ -->
-  <div class="project-overlay" id="projectOverlay">
-    <div class="project-box">
-      <div class="project-box-header">
-        <div class="project-app-icon">🏕</div>
-        <div>
-          <div class="project-app-name">CampApp</div>
-          <div class="project-app-tagline">Gestión de campamentos y tiempo libre</div>
-        </div>
-      </div>
-
-      <div class="project-section-title">Selecciona un proyecto</div>
-      <div id="projList"></div>
-
-      <div class="project-section-title">¿Nuevo proyecto?</div>
-      <button onclick="openNewProjectForm()"
-        style="width:100%;padding:11px;border-radius:12px;border:1.5px dashed #7FB069;
-          background:transparent;color:#2D5016;font-family:'DM Sans',sans-serif;
-          font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;"
-        onmouseenter="this.style.background='#f0f7eb'" onmouseleave="this.style.background='transparent'">
-        ➕ Crear nuevo proyecto
-      </button>
-
-      <div class="new-proj-form" id="newProjForm">
-        <label>Nombre del proyecto *</label>
-        <input type="text" id="npNombre" placeholder="Ej. Campamento Verano 2027"/>
-        <label>Entidad organizadora</label>
-        <input type="text" id="npEntidad" placeholder="Ej. Colegio San José SSCC"/>
-        <div class="new-proj-date-row">
-          <div>
-            <label>Fecha de inicio</label>
-            <input type="date" id="npFechaInicio"/>
-          </div>
-          <div>
-            <label>Fecha de fin</label>
-            <input type="date" id="npFechaFin"/>
-          </div>
-        </div>
-        <label>URL del Apps Script *</label>
-        <input type="url" id="npScriptUrl" placeholder="https://script.google.com/macros/s/..."/>
-        <p style="font-size:11px;color:#e07a3b;margin:4px 0 10px;line-height:1.5;">
-          Cada proyecto necesita su propio Google Sheet y Apps Script. 
-          Copia la URL de implementación y pégala aquí.
-        </p>
-        <button id="btnCreateProj" onclick="createProject()"
-          style="width:100%;padding:10px;border-radius:12px;border:none;
-            background:#2D5016;color:white;font-family:'DM Sans',sans-serif;
-            font-size:13px;font-weight:700;cursor:pointer;">
-          Guardar proyecto
-        </button>
-      </div>
-    </div>
-  </div>
-
-TYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏕</text></svg>">
 <title>CampApp · Gestión de campamentos</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -1847,6 +1792,62 @@ TYPE html>
 </head>
 <body>
 
+
+  <!-- ══ SELECTOR DE PROYECTO ══ -->
+  <div class="project-overlay" id="projectOverlay">
+    <div class="project-box">
+      <div class="project-box-header">
+        <div class="project-app-icon">🏕</div>
+        <div>
+          <div class="project-app-name">CampApp</div>
+          <div class="project-app-tagline">Gestión de campamentos y tiempo libre</div>
+        </div>
+      </div>
+
+      <div class="project-section-title">Selecciona un proyecto</div>
+      <div id="projList"></div>
+
+      <div class="project-section-title">¿Nuevo proyecto?</div>
+      <button onclick="openNewProjectForm()"
+        style="width:100%;padding:11px;border-radius:12px;border:1.5px dashed #7FB069;
+          background:transparent;color:#2D5016;font-family:'DM Sans',sans-serif;
+          font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;"
+        onmouseenter="this.style.background='#f0f7eb'" onmouseleave="this.style.background='transparent'">
+        ➕ Crear nuevo proyecto
+      </button>
+
+      <div class="new-proj-form" id="newProjForm">
+        <label>Nombre del proyecto *</label>
+        <input type="text" id="npNombre" placeholder="Ej. Campamento Verano 2027"/>
+        <label>Entidad organizadora</label>
+        <input type="text" id="npEntidad" placeholder="Ej. Colegio San José SSCC"/>
+        <div class="new-proj-date-row">
+          <div>
+            <label>Fecha de inicio</label>
+            <input type="date" id="npFechaInicio"/>
+          </div>
+          <div>
+            <label>Fecha de fin</label>
+            <input type="date" id="npFechaFin"/>
+          </div>
+        </div>
+        <label>URL del Apps Script *</label>
+        <input type="url" id="npScriptUrl" placeholder="https://script.google.com/macros/s/..."/>
+        <p style="font-size:11px;color:#e07a3b;margin:4px 0 10px;line-height:1.5;">
+          Cada proyecto necesita su propio Google Sheet y Apps Script. 
+          Copia la URL de implementación y pégala aquí.
+        </p>
+        <button id="btnCreateProj" onclick="createProject()"
+          style="width:100%;padding:10px;border-radius:12px;border:none;
+            background:#2D5016;color:white;font-family:'DM Sans',sans-serif;
+            font-size:13px;font-weight:700;cursor:pointer;">
+          Guardar proyecto
+        </button>
+      </div>
+    </div>
+  </div>
+
+
 <!-- ══ LOGIN ══ -->
 <div id="loginOverlay" class="login-overlay">
   <div class="login-box">
@@ -2787,7 +2788,7 @@ TYPE html>
   // ══════════════════════════════════════════════════════════════
   //  CONFIGURACIÓN — pega aquí la URL de tu Apps Script desplegado
   // ══════════════════════════════════════════════════════════════
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_ca_rtjxHsMP6WeMZsi9Jj1KtBwvul1qcij67eaip-Mr9JUoxadDQj_RUY90UGYFV/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzNUZ05GrELnV5WzLK3JO75OG9-__6g48lio6a80Olc0r2rsedtXqd6JaXcqDpXL_-WvA/exec';
   const PASSWORD   = 'algamitas2026';   // misma clave que en el .gs
   const MONITOR_ID = 'Coordinador Miguel Ángel';         // cambia por el nombre del monitor en cada dispositivo
 
@@ -3200,17 +3201,24 @@ TYPE html>
     document.getElementById('fNombre').value = p.nombre || '';
     document.getElementById('fCurso').value = p.gid || 'g6';
     document.getElementById('fGrupoClase').value = (p.grupo && p.grupo !== '❓') ? p.grupo : '';
-    document.getElementById('fGrupoCamp').value = p.grupoCamp || '';
+    // Populate grupo campamento (from gruposCamp assignment, not text field)
+    const gcampAsigFicha = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
+    document.getElementById('fGrupoCamp').value = gcampAsigFicha ? gcampAsigFicha.nombre : (p.grupoCamp || '');
 
     // Populate monitor select
     const monSel = document.getElementById('fMonitor');
+    // Determine effective monitorId (from participant or from grupo campamento)
+    const gcampForMon = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
+    const effectiveMonitorId = p.monitorId || 
+      (gcampForMon && gcampForMon.monitores && gcampForMon.monitores[0] ? String(gcampForMon.monitores[0]) : '');
+    
     monSel.innerHTML = '<option value="">Sin asignar</option>';
     monitoresData.forEach(m => {
       const label = (m.nombre + ' ' + m.apellidos).trim() || 'Monitor/a';
       const opt = document.createElement('option');
       opt.value = m.id;
       opt.textContent = label;
-      if (String(m.id) === String(p.monitorId)) opt.selected = true;
+      if (String(m.id) === String(effectiveMonitorId)) opt.selected = true;
       monSel.appendChild(opt);
     });
 
@@ -3395,7 +3403,7 @@ TYPE html>
     bar.style.background = s.bg;
     bar.textContent = s.msg;
     bar.style.display = 'block';
-    if (state === 'ok') setTimeout(() => bar.style.display = 'none', 4000);
+    if (state === 'ok') setTimeout(() => { bar.style.opacity = '0'; setTimeout(() => bar.style.display = 'none', 500); }, 5000);
   }
 
   // ── ARRANQUE ──────────────────────────────────────────────────
@@ -5880,11 +5888,16 @@ TYPE html>
     syncTimers[key] = setTimeout(async () => {
       const _url = getActiveScriptUrl(); if (!_url || _url === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') return;
       try {
-        await fetch(getActiveScriptUrl(), {
+        const _r = await fetch(getActiveScriptUrl(), {
           method: 'POST',
           body: JSON.stringify({ pwd: PASSWORD, action: 'saveConfig', key, value })
         });
-        showSyncIndicator('✔ Sincronizado', 'ok');
+        if (_r.ok) {
+          showSyncIndicator('✔ Guardado en Sheets', 'ok');
+        } else {
+          showSyncIndicator('⚠ Error al guardar ('+_r.status+')', 'warn');
+          console.warn('sheetsSet HTTP error:', _r.status, key);
+        }
       } catch(e) {
         showSyncIndicator('⚠ Sin conexión — guardado local', 'warn');
         console.warn('sheetsSet error', key, e);
