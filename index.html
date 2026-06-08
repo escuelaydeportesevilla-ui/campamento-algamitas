@@ -2132,6 +2132,7 @@
     <div class="edit-toolbar">
       <button class="edit-btn primary" onclick="addAlumno()">➕ Añadir alumno</button>
       <button class="edit-btn" onclick="saveAllAlumnos()">💾 Guardar cambios</button>
+      <button class="edit-btn" onclick="imprimirListaAlumnos()" title="Imprimir lista actual">🖨️ Imprimir</button>
       <span id="editSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;"></span>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <label style="font-size:12px;opacity:.6;">Curso:</label>
@@ -2145,7 +2146,7 @@
         </select>
         <select id="filtroActivo" onchange="renderEditTable()" style="padding:7px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
           <option value="">Todos</option>
-          <option value="activo">✅ Activos (van al campamento)</option>
+          <option value="activo">✅ Activos</option>
           <option value="inactivo">⛔ No activos</option>
         </select>
       </div>
@@ -2160,7 +2161,7 @@
             <th>Nombre</th>
             <th style="width:110px">Curso</th>
             <th style="width:70px">Gr. clase</th>
-            <th style="width:60px;text-align:center">Asiste</th>
+            <th style="width:60px;text-align:center">Activo</th>
             <th style="width:140px">Monitor campamento</th>
             <th>Otros grupos <span style="font-weight:400;opacity:.6;font-size:10px">(cabaña, lema…)</span></th>
             <th style="width:44px"></th>
@@ -3827,6 +3828,104 @@
     grupos[gid].participantes.push(nuevoP);
     const g = gruposEdit[gid] || grupos[gid];
     openFicha(nuevoP, g);
+  }
+
+  function imprimirListaAlumnos() {
+    const filtro     = document.getElementById('filtroGrupo').value;
+    const filtroAct  = document.getElementById('filtroActivo').value;
+    const filtroNom  = filtro
+      ? (gruposEdit[filtro]?.label || filtro)
+      : 'Todos los cursos';
+    const filtroActNom = filtroAct === 'activo'  ? '✅ Activos'
+                       : filtroAct === 'inactivo' ? '⛔ No activos'
+                       : 'Activos e inactivos';
+
+    const lista = getAllEditParticipants(true).filter(p => {
+      if (filtro && p.gid !== filtro) return false;
+      if (filtroAct === 'activo'   && p.activo === false) return false;
+      if (filtroAct === 'inactivo' && p.activo !== false) return false;
+      return true;
+    });
+
+    const totalActivos   = lista.filter(p => p.activo !== false).length;
+    const totalInactivos = lista.filter(p => p.activo === false).length;
+
+    const filas = lista.map((p, i) => {
+      const g = gruposEdit[p.gid] || grupos[p.gid];
+      const gcampAsig = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
+      const activo = p.activo !== false;
+      return `<tr class="${activo ? '' : 'inactivo'}">
+        <td>${i+1}</td>
+        <td>${escHtml(p.apellidos)}</td>
+        <td>${escHtml(p.nombre)}</td>
+        <td>${g ? g.label : ''}</td>
+        <td>${p.grupo && p.grupo !== '❓' ? p.grupo : '—'}</td>
+        <td>${gcampAsig ? escHtml(gcampAsig.nombre) : '—'}</td>
+        <td style="text-align:center;font-weight:700;color:${activo ? '#2D5016' : '#C0392B'}">
+          ${activo ? '✅ Activo' : '⛔ No activo'}
+        </td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lista de participantes — CampApp</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; color: #222; }
+  h1 { color: #2D5016; font-size: 1.4rem; margin-bottom: 4px; }
+  .meta { font-size: 12px; color: #888; margin-bottom: 16px; }
+  .resumen { display: flex; gap: 24px; margin-bottom: 16px; font-size: 13px; }
+  .res-item { padding: 8px 16px; border-radius: 8px; font-weight: 700; }
+  .res-total { background: #f0f7eb; color: #2D5016; }
+  .res-activos { background: #e8f5e9; color: #27AE60; }
+  .res-inactivos { background: #fdecea; color: #C0392B; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #2D5016; color: white; padding: 8px 10px; text-align: left; font-weight: 700; }
+  td { padding: 6px 10px; border-bottom: 1px solid #e8e0d0; }
+  tr:nth-child(even) td { background: #f9f6f0; }
+  tr.inactivo td { opacity: 0.55; }
+  @media print {
+    body { margin: 10px; }
+    .no-print { display: none; }
+    tr { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1>🏕 Lista de participantes — Campamento Algámitas 2026</h1>
+<div class="meta">Filtro: ${filtroNom} · ${filtroActNom} · Generado: ${new Date().toLocaleString('es-ES')}</div>
+<div class="resumen">
+  <div class="res-item res-total">Total: ${lista.length}</div>
+  <div class="res-item res-activos">✅ Activos: ${totalActivos}</div>
+  ${totalInactivos > 0 ? '<div class="res-item res-inactivos">⛔ No activos: ' + totalInactivos + '</div>' : ''}
+</div>
+<table>
+  <thead>
+    <tr>
+      <th style="width:36px">#</th>
+      <th>Apellidos</th>
+      <th>Nombre</th>
+      <th>Curso</th>
+      <th>Clase</th>
+      <th>Grupo campamento</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>${filas}</tbody>
+</table>
+<div class="no-print" style="margin-top:20px;text-align:center;">
+  <button onclick="window.print()" style="padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;">🖨️ Imprimir</button>
+  <button onclick="window.close()" style="margin-left:10px;padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 400);
   }
 
   function saveAllAlumnos() {
