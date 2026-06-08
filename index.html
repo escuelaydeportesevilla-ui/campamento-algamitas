@@ -1888,20 +1888,16 @@
   <p class="hero-sub">Planificación pedagógica · Basada en la evaluación 2025</p>
   <div class="hero-stats">
     <div class="hero-stat">
-      <span class="num">131</span>
-      <span class="lbl">Participantes</span>
+      <span class="num" id="statActivos">—</span>
+      <span class="lbl">✅ Activos</span>
     </div>
     <div class="hero-stat">
-      <span class="num">5</span>
-      <span class="lbl">Grupos de edad</span>
+      <span class="num" id="statPendientes">—</span>
+      <span class="lbl">⏳ Pendientes</span>
     </div>
     <div class="hero-stat">
-      <span class="num">9,0</span>
-      <span class="lbl">Valoración media 2025</span>
-    </div>
-    <div class="hero-stat">
-      <span class="num">2,9</span>
-      <span class="lbl">Monitores (sobre 3)</span>
+      <span class="num" id="statInactivos">—</span>
+      <span class="lbl">⛔ No activos</span>
     </div>
   </div>
 </div>
@@ -3599,6 +3595,16 @@
   }
 
 
+  function updateHeroStats() {
+    const todos      = getAllEditParticipants(true);
+    const activos    = todos.filter(p => { const ep=p.activo==='pendiente'||p.activo==='pending'; const ei=p.activo===false||p.activo==='false'; return !ep&&!ei; }).length;
+    const pendientes = todos.filter(p => p.activo==='pendiente'||p.activo==='pending').length;
+    const inactivos  = todos.filter(p => p.activo===false||p.activo==='false').length;
+    const sa=document.getElementById('statActivos');   if(sa) sa.textContent=activos;
+    const sp=document.getElementById('statPendientes');if(sp) sp.textContent=pendientes;
+    const si=document.getElementById('statInactivos'); if(si) si.textContent=inactivos;
+  }
+
   function initApp() {
     // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
@@ -3857,10 +3863,9 @@
     grupos[gid].participantes = grupos[gid].participantes.filter(x => x.n !== n);
     deleteParticipanteSheets(n);
     renderEditTable();
+    renderMobEdicion();
+    updateHeroStats();
     logCambio('alumno', 'Alumno eliminado (n=' + n + ')', '');
-    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-    const heroNum = document.querySelector('.hero-stat .num');
-    if (heroNum) heroNum.textContent = total;
   }
 
   function addAlumno() {
@@ -4001,6 +4006,7 @@
 
     renderGruposPorMonitor();
     renderGruposClase();
+    updateHeroStats();
     logCambio('alumno', 'Lista de participantes guardada', getAllEditParticipants().length + ' activos');
   }
 
@@ -6063,6 +6069,7 @@
       row.style.background = nextEstado === 'pendiente' ? '#fff8e1' : '';
     }
     logCambio('alumno', (p?.apellidos||'') + ', ' + (p?.nombre||''), 'Estado → ' + nextEstado);
+    updateHeroStats();
   }
 
   // Keep old name for mobile compat
@@ -6460,6 +6467,7 @@
     const next = cur==='activo'?false:cur==='inactivo'?'pendiente':true;
     if (pE) pE.activo=next; if (pB) pB.activo=next;
     logCambio('alumno',(p.apellidos||'')+', '+(p.nombre||''),'Estado → '+(next===true?'activo':next===false?'inactivo':'pendiente'));
+    updateHeroStats();
     renderMobEdicion();
   }
 
