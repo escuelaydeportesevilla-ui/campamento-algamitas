@@ -1434,6 +1434,12 @@
   .obs-nota-item.mood-mal { border-left-color:var(--rojo-suave); }
   .obs-nota-fecha { font-size:10px; opacity:.4; margin-bottom:4px; }
   .obs-nota-texto { font-size:13px; line-height:1.5; color:#444; }
+  .obs-nota-item { position: relative; }
+  .obs-nota-edit {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 13px; opacity: .5; transition: opacity .15s; padding: 2px 4px;
+  }
+  .obs-nota-edit:hover { opacity: 1; }
   .obs-nota-del { position:absolute; top:8px; right:8px; width:22px; height:22px; border-radius:6px; border:none; background:rgba(192,57,43,.1); color:var(--rojo-suave); cursor:pointer; font-size:11px; }
   .mood-selector { display:flex; gap:6px; margin-bottom:10px; }
   .mood-btn { padding:5px 12px; border-radius:20px; border:1.5px solid var(--crema-oscuro); background:var(--crema); font-size:13px; cursor:pointer; transition:all .15s; }
@@ -3370,6 +3376,7 @@
     const msg = document.getElementById('fichaSavedMsg');
     msg.classList.add('show');
     setTimeout(() => msg.classList.remove('show'), 2500);
+    logCambio('ficha', updatedP.apellidos + ', ' + updatedP.nombre, 'Ficha actualizada');
   }
 
   function closeFicha() {
@@ -3816,7 +3823,7 @@
     grupos[gid].participantes = grupos[gid].participantes.filter(x => x.n !== n);
     deleteParticipanteSheets(n);
     renderEditTable();
-    // Actualizar contador
+    logCambio('alumno', 'Alumno eliminado (n=' + n + ')', '');
     const total = getAllEditParticipants().length;
     const heroNum = document.querySelector('.hero-stat .num');
     if (heroNum) heroNum.textContent = total;
@@ -3956,6 +3963,7 @@
 
     renderGruposPorMonitor();
     renderGruposClase();
+    logCambio('alumno', 'Lista de participantes guardada', getAllEditParticipants().length + ' activos');
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -4079,6 +4087,7 @@
     msg.style.opacity = '1';
     setTimeout(() => msg.style.opacity = '0', 2500);
     renderGruposPorMonitor();
+    logCambio('monitor', 'Equipo de monitores actualizado', monitoresData.length + ' monitores');
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -4571,6 +4580,7 @@
     const msg = document.getElementById('gcSavedMsg');
     msg.textContent = '✔ Guardado'; msg.style.opacity = '1';
     setTimeout(() => msg.style.opacity = '0', 2500);
+    logCambio('grupo', 'Grupos campamento guardados', gruposCamp.length + ' grupos');
   }
 
 
@@ -5450,14 +5460,17 @@
     saveProgData();
     closeProgModal();
     if (progVistaCalendario) renderCalendario(); else renderProg();
+    logCambio('programacion', (editingProgId ? 'Actividad editada' : 'Actividad creada') + ': ' + (act.nombre || act.tipo), act.horaInicio ? act.horaInicio + ' – ' + act.horaFin : '');
   }
 
   function deleteProgActividad() {
     if (!editingProgId || !confirm('¿Eliminar esta actividad?')) return;
+    const delAct = progData.find(a => a.id === editingProgId);
     progData = progData.filter(a => a.id !== editingProgId);
     saveProgData();
     closeProgModal();
     if (progVistaCalendario) renderCalendario(); else renderProg();
+    logCambio('programacion', 'Actividad eliminada: ' + (delAct?.nombre || ''), '');
   }
 
 
@@ -5768,6 +5781,35 @@
     form.querySelector('textarea').value = '';
     form.style.display = 'none';
     renderObsAlumnos();
+    const pNota = getAllEditParticipants(true).find(x => x.n === n);
+    if (pNota) logCambio('obs', 'Nota añadida: ' + pNota.apellidos + ', ' + pNota.nombre, mood === 'bien' ? '😊 Bien' : mood === 'regular' ? '😐 Regular' : '😟 Atención');
+  }
+
+  function toggleEditNota(n, notaId) {
+    const form = document.getElementById('nota-edit-form-' + n + '-' + notaId);
+    if (!form) return;
+    const isOpen = form.style.display !== 'none';
+    form.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) {
+      setTimeout(() => form.querySelector('textarea').focus(), 50);
+    }
+  }
+
+  function saveEditNota(n, notaId, btn) {
+    const form = btn.closest('[id^="nota-edit-form-"]');
+    if (!form) return;
+    const newTexto = form.querySelector('textarea').value.trim();
+    const newMood  = form.querySelector('.mood-btn.selected')?.dataset.mood || 'bien';
+    if (!newTexto) { alert('La nota no puede estar vacía.'); return; }
+
+    if (!obsAlumnos[n]) return;
+    const nota = obsAlumnos[n].notas.find(x => x.id === notaId);
+    if (!nota) return;
+
+    nota.texto = newTexto;
+    nota.mood  = newMood;
+    saveObsAlumnos();
+    renderObsAlumnos();
   }
 
   function deleteNota(n, notaId) {
@@ -5841,10 +5883,26 @@
         <!-- Notas -->
         <div class="obs-alu-notas">
           ${notasFiltradas.map(nota => `
-            <div class="obs-nota-item mood-${nota.mood}">
-              <button class="obs-nota-del" onclick="deleteNota(${n},${nota.id})">🗑</button>
+            <div class="obs-nota-item mood-${nota.mood}" id="nota-item-${n}-${nota.id}">
+              <div style="display:flex;gap:6px;position:absolute;top:8px;right:8px;">
+                <button class="obs-nota-edit" onclick="toggleEditNota(${n},${nota.id})" title="Editar nota">✏️</button>
+                <button class="obs-nota-del" onclick="deleteNota(${n},${nota.id})" title="Eliminar nota">🗑</button>
+              </div>
               <div class="obs-nota-fecha">${nota.fecha} · ${escHtml(nota.monitor||'Monitor')} · ${nota.mood==='bien'?'😊 Bien':nota.mood==='regular'?'😐 Regular':'😟 Necesita atención'}</div>
-              <div class="obs-nota-texto">${escHtml(nota.texto)}</div>
+              <div class="obs-nota-texto" id="nota-texto-${n}-${nota.id}">${escHtml(nota.texto)}</div>
+              <!-- Formulario de edición (oculto) -->
+              <div id="nota-edit-form-${n}-${nota.id}" style="display:none;margin-top:10px;background:var(--blanco);border-radius:10px;padding:12px;border:1.5px solid var(--crema-oscuro);">
+                <div class="mood-selector" style="margin-bottom:8px;">
+                  <button class="mood-btn ${nota.mood==='bien'?'selected':''}" data-mood="bien" onclick="toggleMood(this)">😊 Bien</button>
+                  <button class="mood-btn ${nota.mood==='regular'?'selected':''}" data-mood="regular" onclick="toggleMood(this)">😐 Regular</button>
+                  <button class="mood-btn ${nota.mood==='mal'?'selected':''}" data-mood="mal" onclick="toggleMood(this)">😟 Atención</button>
+                </div>
+                <textarea rows="3" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;box-sizing:border-box;">${escHtml(nota.texto)}</textarea>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                  <button onclick="saveEditNota(${n},${nota.id},this)" style="padding:6px 14px;border-radius:8px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">💾 Guardar</button>
+                  <button onclick="toggleEditNota(${n},${nota.id})" style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--crema-oscuro);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">Cancelar</button>
+                </div>
+              </div>
             </div>`).join('')}
         </div>
       `;
@@ -6804,6 +6862,10 @@
       asistenciaData[ds][n] = estado;
     }
     saveAsistencia();
+    const pAsist = getAllEditParticipants().find(x => x.n === n);
+    if (pAsist && asistenciaData[getAsistFechaStr()]?.[n]) {
+      logCambio('asistencia', (pAsist.apellidos + ', ' + pAsist.nombre), asistenciaData[getAsistFechaStr()][n] + ' – ' + getAsistFechaStr());
+    }
 
     // Update buttons in the row
     const row = btn.closest('.asist-alumno-row');
