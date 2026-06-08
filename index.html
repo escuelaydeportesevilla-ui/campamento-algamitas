@@ -3600,7 +3600,7 @@
       renderObsGrid();
       renderGruposPorMonitor();
       renderGruposClase();
-      const total = getAllEditParticipants().length;
+      const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
       const mobTotal = document.getElementById('mobTotal');
       if (mobTotal) mobTotal.textContent = total;
       const mobSub = document.getElementById('mobSubTotal');
@@ -3624,7 +3624,7 @@
     })();
 
     // Actualizar contadores móvil (inicial con datos base)
-    const total = getAllEditParticipants().length;
+    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
     const mobTotal = document.getElementById('mobTotal');
     if (mobTotal) mobTotal.textContent = total;
     const mobSub = document.getElementById('mobSubTotal');
@@ -3633,7 +3633,7 @@
     if (mobMon) mobMon.textContent = monitoresData.length + ' monitores';
     // Desktop nav counters
     const dnavPart = document.getElementById('dnav-sub-participantes');
-    if (dnavPart) dnavPart.textContent = getAllEditParticipants().length + ' inscritos';
+    if (dnavPart) dnavPart.textContent = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length + ' inscritos';
     const dnavMon = document.getElementById('dnav-sub-monitores');
     if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
     loadAsistencia();
@@ -3829,7 +3829,7 @@
     el.style.transition = 'opacity .3s';
     setTimeout(() => el.remove(), 300);
     // Update hero count
-    const total = getAllEditParticipants().length;
+    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
     const heroNum = document.querySelector('.hero-stat .num');
     if (heroNum) heroNum.textContent = total;
   }
@@ -3841,7 +3841,7 @@
     deleteParticipanteSheets(n);
     renderEditTable();
     logCambio('alumno', 'Alumno eliminado (n=' + n + ')', '');
-    const total = getAllEditParticipants().length;
+    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
     const heroNum = document.querySelector('.hero-stat .num');
     if (heroNum) heroNum.textContent = total;
   }
@@ -3964,7 +3964,7 @@
     Object.entries(gruposEdit).forEach(([gid, g]) => {
       grupos[gid].participantes = g.participantes.map(p => ({...p}));
     });
-    const total = getAllEditParticipants().length;
+    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
     const heroNum = document.querySelector('.hero-stat .num');
     if (heroNum) heroNum.textContent = total;
 
@@ -3973,7 +3973,7 @@
     msg.textContent = '⏳ Sincronizando con Sheets…';
     msg.style.opacity = '1';
     syncAllParticipantesSheets().then(() => {
-      const totalActivos = getAllEditParticipants().length;
+      const totalActivos = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length;
       const totalTodos = getAllEditParticipants(true).length;
       msg.textContent = `✔ ${totalActivos} activos / ${totalTodos} total`;
       setTimeout(() => msg.style.opacity = '0', 3000);
@@ -4395,7 +4395,7 @@
 
     if (!lista.length) container.innerHTML = '<div style="padding:30px;text-align:center;font-size:13px;opacity:.4;">Sin resultados.</div>';
     // Update count
-    const total = getAllEditParticipants().length;
+    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
     const el = document.getElementById('mobTotal');
     if (el) el.textContent = total;
     const sub = document.getElementById('mobSubTotal');
@@ -5518,6 +5518,12 @@
       j.data.forEach(sheetP => {
         const n = parseInt(sheetP.n);
         const gid = sheetP.gid || 'g6';
+        // Parse activo: 'true'/true → true, 'false'/false → false, 'pendiente' → 'pendiente'
+        const activoRaw = sheetP.activo;
+        const activoVal = activoRaw === 'pendiente' || activoRaw === 'pending' ? 'pendiente'
+                        : activoRaw === false || activoRaw === 'false' || activoRaw === 'BAJA' ? false
+                        : true;  // true, 'true', undefined → activo
+
         const updated = {
           n, gid,
           apellidos: sheetP.apellidos || '',
@@ -5525,6 +5531,7 @@
           grupo:     sheetP.grupo     || '❓',
           grupoCamp: sheetP.grupoCamp || '',
           monitorId: sheetP.monitorId || '',
+          activo:    activoVal,
         };
 
         // Si ya existe en base, actualizar
@@ -6210,7 +6217,7 @@
       if (activeId === 'monitores')     renderMedResumen();
 
       // 4. Actualizar contadores
-      const total = getAllEditParticipants().length;
+      const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
       const heroNum = document.querySelector('.hero-stat .num');
       if (heroNum) {
         const activeCount = getAllEditParticipants().length; // already filtered
@@ -6925,7 +6932,7 @@
   function updateAsistStats() {
     const ds = getAsistFechaStr();
     const day = asistenciaData[ds] || {};
-    const total = getAllEditParticipants().length;
+    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
     const presente  = Object.values(day).filter(v => v==='presente').length;
     const ausente   = Object.values(day).filter(v => v==='ausente').length;
     const justif    = Object.values(day).filter(v => v==='justificado').length;
@@ -7170,7 +7177,7 @@
     if (dateEl) dateEl.textContent = asistFecha.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
 
     // Stats
-    const total = getAllEditParticipants().length;
+    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
     const presente  = Object.values(day).filter(v=>v==='presente').length;
     const ausente   = Object.values(day).filter(v=>v==='ausente').length;
     const justif    = Object.values(day).filter(v=>v==='justificado').length;
@@ -7765,7 +7772,7 @@
 
     // Asistencia del día
     const dayAsist = asistenciaData[hoy] || {};
-    const totalActivos = getAllEditParticipants().length;
+    const totalActivos = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length;
     const presentes  = Object.values(dayAsist).filter(v=>v==='presente').length;
     const ausentes   = Object.values(dayAsist).filter(v=>v==='ausente').length;
     const justif     = Object.values(dayAsist).filter(v=>v==='justificado').length;
