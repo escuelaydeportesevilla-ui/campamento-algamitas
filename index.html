@@ -979,7 +979,7 @@ TYPE html>
 /* ── LOGIN ── */
 .login-overlay {
   display:flex; position:fixed; inset:0;
-  background:#0A1A08;
+  background:#2D5016;
   z-index:9000; align-items:center; justify-content:center;
 }
 .login-box {
@@ -1182,7 +1182,14 @@ TYPE html>
     .mob-screen.active { display: block; }
 
     /* Grid de botones principales */
-    .mob-grid {
+    .mob-section-label {
+    grid-column: 1 / -1;
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--verde-claro); opacity: .75; padding: 14px 4px 4px;
+    border-top: 1px solid rgba(255,255,255,.08); margin-top: 4px;
+  }
+  .mob-section-label:first-child { border-top: none; margin-top: 0; padding-top: 2px; }
+  .mob-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
@@ -1523,6 +1530,12 @@ TYPE html>
     gap: 12px;
     margin-bottom: 28px;
   }
+  .dnav-group-label {
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--verde-claro); opacity: .7; padding: 12px 8px 4px; width: 100%;
+    border-top: 1px solid rgba(255,255,255,.08); margin-top: 4px;
+  }
+  .dnav-group-label:first-child { border-top: none; margin-top: 0; padding-top: 4px; }
   .desktop-nav-btn {
     display: flex;
     flex-direction: column;
@@ -1883,6 +1896,8 @@ TYPE html>
 
   <!-- NAVEGACIÓN DESKTOP -->
   <div class="desktop-nav" id="desktopNav">
+    <!-- ── ALUMNOS ── -->
+    <div class="dnav-group-label">👥 Alumnos</div>
     <button class="desktop-nav-btn active-nav" onclick="showTab('participantes',event)" data-tab="participantes">
       <div class="dnav-icon">👥</div>
       <div class="dnav-label">Participantes</div>
@@ -1893,6 +1908,14 @@ TYPE html>
       <div class="dnav-label">Editar alumnos</div>
       <div class="dnav-sub">Lista completa</div>
     </button>
+    <button class="desktop-nav-btn" onclick="openBuscar()" data-tab="buscar" style="border-style:dashed;">
+      <div class="dnav-icon">🔍</div>
+      <div class="dnav-label">Buscar alumno</div>
+      <div class="dnav-sub">Por nombre</div>
+    </button>
+
+    <!-- ── ORGANIZACIÓN ── -->
+    <div class="dnav-group-label">🏕 Organización</div>
     <button class="desktop-nav-btn" onclick="showTab('monitores',event)" data-tab="monitores">
       <div class="dnav-icon">👤</div>
       <div class="dnav-label">Monitores</div>
@@ -1908,30 +1931,13 @@ TYPE html>
       <div class="dnav-label">Cabañas</div>
       <div class="dnav-sub">Alojamiento</div>
     </button>
+
+    <!-- ── PROGRAMACIÓN ── -->
+    <div class="dnav-group-label">📅 Programación</div>
     <button class="desktop-nav-btn" onclick="showTab('programacion',event)" data-tab="programacion">
       <div class="dnav-icon">📅</div>
       <div class="dnav-label">Programación</div>
       <div class="dnav-sub">Actividades</div>
-    </button>
-    <button class="desktop-nav-btn" onclick="showTab('observaciones',event)" data-tab="observaciones">
-      <div class="dnav-icon">📝</div>
-      <div class="dnav-label">Observaciones</div>
-      <div class="dnav-sub">Coordinación</div>
-    </button>
-    <button class="desktop-nav-btn" onclick="showTab('obsalumnos',event)" data-tab="obsalumnos">
-      <div class="dnav-icon">🗒</div>
-      <div class="dnav-label">Notas alumnos</div>
-      <div class="dnav-sub">Individual</div>
-    </button>
-    <button class="desktop-nav-btn" onclick="showTab('recomendaciones',event)" data-tab="recomendaciones">
-      <div class="dnav-icon">🧭</div>
-      <div class="dnav-label">Recomendaciones</div>
-      <div class="dnav-sub">Pedagógicas</div>
-    </button>
-    <button class="desktop-nav-btn" onclick="showTab('historial',event)" data-tab="historial">
-      <div class="dnav-icon">📜</div>
-      <div class="dnav-label">Historial</div>
-      <div class="dnav-sub">Registro cambios</div>
     </button>
     <button class="desktop-nav-btn" onclick="showTab('asistencia',event)" data-tab="asistencia">
       <div class="dnav-icon">✅</div>
@@ -1943,15 +1949,36 @@ TYPE html>
       <div class="dnav-label">Guardia</div>
       <div class="dnav-sub">Turno actual</div>
     </button>
+
+    <!-- ── INFORMES ── -->
+    <div class="dnav-group-label">📋 Informes y seguimiento</div>
+    <button class="desktop-nav-btn" onclick="showTab('observaciones',event)" data-tab="observaciones">
+      <div class="dnav-icon">📝</div>
+      <div class="dnav-label">Observaciones</div>
+      <div class="dnav-sub">Coordinación</div>
+    </button>
+    <button class="desktop-nav-btn" onclick="showTab('obsalumnos',event)" data-tab="obsalumnos">
+      <div class="dnav-icon">🗒</div>
+      <div class="dnav-label">Notas alumnos</div>
+      <div class="dnav-sub">Individual</div>
+    </button>
+    <button class="desktop-nav-btn" onclick="showTab('historial',event)" data-tab="historial">
+      <div class="dnav-icon">📜</div>
+      <div class="dnav-label">Historial</div>
+      <div class="dnav-sub">Registro cambios</div>
+    </button>
+
+    <!-- ── OTROS ── -->
+    <div class="dnav-group-label">⚙️ Otros</div>
+    <button class="desktop-nav-btn" onclick="showTab('recomendaciones',event)" data-tab="recomendaciones">
+      <div class="dnav-icon">🧭</div>
+      <div class="dnav-label">Recomendaciones</div>
+      <div class="dnav-sub">Pedagógicas</div>
+    </button>
     <button class="desktop-nav-btn" onclick="showTab('evaluacion',event)" data-tab="evaluacion">
       <div class="dnav-icon">📊</div>
       <div class="dnav-label">Evaluación</div>
       <div class="dnav-sub">2025</div>
-    </button>
-    <button class="desktop-nav-btn" onclick="openBuscar()" data-tab="buscar" style="border-style:dashed;">
-      <div class="dnav-icon">🔍</div>
-      <div class="dnav-label">Buscar alumno</div>
-      <div class="dnav-sub">Por nombre</div>
     </button>
     <button class="desktop-nav-btn" onclick="actualizarApp(this)" data-tab="actualizar" id="btnActualizar" style="border-color:var(--verde-claro);">
       <div class="dnav-icon" id="refreshIcon">🔄</div>
@@ -7437,106 +7464,6 @@ TYPE html>
 
   // ── Interceptar funciones de guardado para loguear ──
 
-  // Guardar ficha médica
-  const _origSaveFichaData = saveFichaData;
-  async function saveFichaData(n, data) {
-    const result = await _origSaveFichaData(n, data);
-    const p = getAllEditParticipants(true).find(x => x.n === n);
-    const nombre = p ? p.apellidos + ', ' + p.nombre : 'N#' + n;
-    const detalles = [];
-    if (data.contacto)      detalles.push('Contacto');
-    if (data.alergias)      detalles.push('Alergias');
-    if (data.medicacion)    detalles.push('Medicación');
-    if (data.observaciones) detalles.push('Observaciones');
-    logCambio('ficha', 'Ficha actualizada: ' + nombre,
-      detalles.length ? 'Campos: ' + detalles.join(', ') : '');
-    return result;
-  }
-
-  // Guardar participante
-  const _origSaveParticipanteSheets = saveParticipanteSheets;
-  async function saveParticipanteSheets(p) {
-    const result = await _origSaveParticipanteSheets(p);
-    logCambio('alumno', 'Participante guardado: ' + p.apellidos + ', ' + p.nombre,
-      p.gid ? 'Curso: ' + (gruposEdit[p.gid]?.label || p.gid) : '');
-    return result;
-  }
-
-  // Eliminar participante
-  const _origDeleteAlumno = deleteAlumno;
-  function deleteAlumno(n, gid) {
-    const p = getAllEditParticipants(true).find(x => x.n === n);
-    const nombre = p ? p.apellidos + ', ' + p.nombre : 'N#' + n;
-    _origDeleteAlumno(n, gid);
-    logCambio('alumno', 'Participante eliminado: ' + nombre, 'Marcado como baja');
-  }
-
-  // Guardar monitores
-  const _origSaveMonitores = saveMonitores;
-  function saveMonitores() {
-    _origSaveMonitores();
-    logCambio('monitor', monitoresData.length + ' monitores guardados',
-      monitoresData.map(m => m.nombre + ' ' + m.apellidos).join(', ').slice(0,60));
-  }
-
-  // Guardar grupos campamento
-  const _origSaveGruposCamp = saveGruposCamp;
-  function saveGruposCamp() {
-    _origSaveGruposCamp();
-    logCambio('grupo', gruposCamp.length + ' grupos guardados',
-      gruposCamp.map(g => g.nombre).join(', ').slice(0,60));
-  }
-
-  // Guardar actividad programación
-  const _origSaveProgActividad = saveProgActividad;
-  function saveProgActividad() {
-    const isEdit = !!editingProgId;
-    _origSaveProgActividad();
-    const nombre = document.getElementById('pNombre')?.value || 'Actividad';
-    const tipo   = document.getElementById('pTipo')?.value || '';
-    logCambio('programacion',
-      (isEdit ? 'Actividad editada: ' : 'Actividad añadida: ') + nombre,
-      TIPO_LABELS[tipo] || tipo);
-  }
-
-  // Guardar observaciones
-  const _origSaveObs = saveObs;
-  function saveObs(i, btn) {
-    _origSaveObs(i, btn);
-    const obs = obsData[i];
-    logCambio('obs', 'Observación guardada: ' + (obs?.titulo || 'Nota ' + (i+1)), '');
-  }
-
-  // Añadir nota de alumno
-  const _origAddNota = addNota;
-  function addNota(n, btn) {
-    _origAddNota(n, btn);
-    const p = getAllEditParticipants(true).find(x => x.n === n);
-    const nombre = p ? p.apellidos + ', ' + p.nombre : 'N#' + n;
-    logCambio('obs', 'Nota añadida: ' + nombre, '');
-  }
-
-  // Marcar asistencia
-  const _origMarcarAsistencia = marcarAsistencia;
-  function marcarAsistencia(n, estado, btn) {
-    _origMarcarAsistencia(n, estado, btn);
-    const p = getAllEditParticipants(true).find(x => x.n === n);
-    const nombre = p ? p.apellidos + ', ' + p.nombre : 'N#' + n;
-    const ds = getAsistFechaStr();
-    const estadoStr = {presente:'✅ Presente', ausente:'❌ Ausente', justificado:'⚠️ Justificado'}[estado] || estado;
-    logCambio('asistencia', estadoStr + ': ' + nombre, 'Fecha: ' + ds);
-  }
-
-  // Sync con Sheets
-  const _origSheetsSet = sheetsSet;
-  function sheetsSet(key, value) {
-    _origSheetsSet(key, value);
-    // Solo loguear ciertos tipos para no saturar
-    const tipoMap = { monitores:'monitor', grupos:'grupo', obs:'obs', prog:'programacion', obsAlumnos:'obs', asistencia:'asistencia' };
-    if (tipoMap[key]) {
-      logCambio('sistema', 'Sincronizado con Sheets: ' + key, '');
-    }
-  }
 
 
   function renderMobHistorial() {
@@ -7904,6 +7831,9 @@ TYPE html>
   <!-- PANTALLA PRINCIPAL -->
   <div class="mob-screen active" id="mob-home">
     <div class="mob-grid">
+
+      <!-- ALUMNOS -->
+      <div class="mob-section-label">👥 Alumnos</div>
       <div class="mob-card accent" onclick="mobGo('alumnos')">
         <div class="mob-icon">👥</div>
         <div class="mob-label">Participantes</div>
@@ -7919,6 +7849,9 @@ TYPE html>
         <div class="mob-label">Buscar</div>
         <div class="mob-sub">Por nombre</div>
       </div>
+
+      <!-- ORGANIZACIÓN -->
+      <div class="mob-section-label">🏕 Organización</div>
       <div class="mob-card" onclick="mobGo('monitores')">
         <div class="mob-icon">👤</div>
         <div class="mob-label">Monitores</div>
@@ -7934,11 +7867,27 @@ TYPE html>
         <div class="mob-label">Cabañas</div>
         <div class="mob-sub">Alojamiento</div>
       </div>
+
+      <!-- PROGRAMACIÓN -->
+      <div class="mob-section-label">📅 Programación</div>
       <div class="mob-card accent" onclick="mobGo('programacion')">
         <div class="mob-icon">📅</div>
         <div class="mob-label">Programación</div>
         <div class="mob-sub">Actividades</div>
       </div>
+      <div class="mob-card" onclick="mobGo('asistencia')">
+        <div class="mob-icon">✅</div>
+        <div class="mob-label">Asistencia</div>
+        <div class="mob-sub">Control diario</div>
+      </div>
+      <div class="mob-card" onclick="mobGo('guardia')">
+        <div class="mob-icon">🔔</div>
+        <div class="mob-label">Guardia</div>
+        <div class="mob-sub">Turno actual</div>
+      </div>
+
+      <!-- INFORMES -->
+      <div class="mob-section-label">📋 Informes y seguimiento</div>
       <div class="mob-card" onclick="mobGo('observaciones')">
         <div class="mob-icon">📝</div>
         <div class="mob-label">Notas coord.</div>
@@ -7952,8 +7901,16 @@ TYPE html>
       <div class="mob-card" onclick="mobGo('medico')">
         <div class="mob-icon">🩺</div>
         <div class="mob-label">Médico</div>
-        <div class="mob-sub">Resumen</div>
+        <div class="mob-sub">Fichas y alertas</div>
       </div>
+      <div class="mob-card" onclick="mobGo('historial')">
+        <div class="mob-icon">📜</div>
+        <div class="mob-label">Historial</div>
+        <div class="mob-sub">Registro cambios</div>
+      </div>
+
+      <!-- OTROS -->
+      <div class="mob-section-label">⚙️ Otros</div>
       <div class="mob-card" onclick="mobGo('recomendaciones')">
         <div class="mob-icon">🧭</div>
         <div class="mob-label">Pedagógico</div>
@@ -7964,32 +7921,12 @@ TYPE html>
         <div class="mob-label">Evaluación</div>
         <div class="mob-sub">2025</div>
       </div>
-      <div class="mob-card" onclick="mobGo('asistencia')">
-        <div class="mob-icon">✅</div>
-        <div class="mob-label">Asistencia</div>
-        <div class="mob-sub">Control diario</div>
-      </div>
-      <div class="mob-card" onclick="mobGo('historial')">
-        <div class="mob-icon">📜</div>
-        <div class="mob-label">Historial</div>
-        <div class="mob-sub">Cambios</div>
-      </div>
-      <div class="mob-card" onclick="mobGo('guardia')">
-        <div class="mob-icon">🔔</div>
-        <div class="mob-label">Guardia</div>
-        <div class="mob-sub">Turno actual</div>
-      </div>
-
       <div class="mob-card" onclick="toggleDarkMode()" id="mobDarkBtn">
         <div class="mob-icon" id="mobDarkIcon">🌙</div>
         <div class="mob-label">Modo</div>
         <div class="mob-sub">Oscuro/Claro</div>
       </div>
-      <div class="mob-card" onclick="actualizarApp(this)" style="border-color:#4A7C2F;grid-column:1/-1;">
-        <div class="mob-icon" id="refreshIconMob">🔄</div>
-        <div class="mob-label">Actualizar datos</div>
-        <div class="mob-sub" id="refreshSubMob">Sincronizar con el servidor</div>
-      </div>
+
     </div>
   </div>
 
