@@ -16,8 +16,8 @@
 
       <div class="project-section-title">¿Nuevo proyecto?</div>
       <button onclick="openNewProjectForm()"
-        style="width:100%;padding:11px;border-radius:12px;border:1.5px dashed var(--verde-claro);
-          background:transparent;color:var(--verde-bosque);font-family:'DM Sans',sans-serif;
+        style="width:100%;padding:11px;border-radius:12px;border:1.5px dashed #7FB069;
+          background:transparent;color:#2D5016;font-family:'DM Sans',sans-serif;
           font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;"
         onmouseenter="this.style.background='#f0f7eb'" onmouseleave="this.style.background='transparent'">
         ➕ Crear nuevo proyecto
@@ -38,16 +38,18 @@
             <input type="date" id="npFechaFin"/>
           </div>
         </div>
-        <button id="btnCreateProj" onclick="createProject()"
-          style="margin-top:14px;width:100%;padding:10px;border-radius:12px;border:none;
-            background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;
-            font-size:13px;font-weight:700;cursor:pointer;">
-          Crear proyecto
-        </button>
-        <p style="font-size:11px;opacity:.45;margin-top:8px;line-height:1.5;">
-          Se creará un Google Sheet nuevo para este proyecto. 
-          Necesitarás configurar el Apps Script vinculado y pegar su URL en la configuración.
+        <label>URL del Apps Script *</label>
+        <input type="url" id="npScriptUrl" placeholder="https://script.google.com/macros/s/..."/>
+        <p style="font-size:11px;color:#e07a3b;margin:4px 0 10px;line-height:1.5;">
+          Cada proyecto necesita su propio Google Sheet y Apps Script. 
+          Copia la URL de implementación y pégala aquí.
         </p>
+        <button id="btnCreateProj" onclick="createProject()"
+          style="width:100%;padding:10px;border-radius:12px;border:none;
+            background:#2D5016;color:white;font-family:'DM Sans',sans-serif;
+            font-size:13px;font-weight:700;cursor:pointer;">
+          Guardar proyecto
+        </button>
       </div>
     </div>
   </div>
@@ -3382,8 +3384,6 @@ TYPE html>
   //  LOGIN
   // ══════════════════════════════════════════════════════════════
   const APP_PASSWORD   = 'algamitas2026'; // contraseña de acceso compartida
-  const MASTER_URL     = 'PEGA_AQUI_URL_MAESTRO';  // URL del Apps Script maestro
-  const MASTER_PWD     = 'campapp2026';             // contraseña del maestro
   let   currentProject = null; // proyecto activo
 
   function doLogin() {
@@ -3399,45 +3399,44 @@ TYPE html>
   }
 
   // ── Pantalla de selección de proyecto ──
-  async function showProjectSelector() {
-    document.getElementById('projectOverlay').style.display = 'flex';
-    document.getElementById('projList').innerHTML =
-      '<div style="text-align:center;padding:20px;opacity:.5;font-size:13px;">Cargando proyectos...</div>';
+  // Proyectos guardados en localStorage. Sin servidor externo.
 
-    // Cargar desde Master si hay URL configurada
-    if (MASTER_URL && MASTER_URL !== 'PEGA_AQUI_URL_MAESTRO') {
-      try {
-        const r = await fetch(`${MASTER_URL}?action=listProjects&pwd=${MASTER_PWD}`);
-        const j = await r.json();
-        if (j.ok) { renderProjectList(j.data); return; }
-      } catch(e) {}
-    }
-
-    // Fallback: usar el proyecto hardcoded (Algámitas 2026)
-    renderProjectList([{
-      id:          'default',
-      nombre:      'Campamento Algámitas 2026',
-      entidad:     'ACPA · Colegio San José SSCC',
+  function getProjects() {
+    const base = [{
+      id: 'algamitas2026',
+      nombre: 'Campamento Algámitas 2026',
+      entidad: 'ACPA · Colegio San José SSCC',
       fechaInicio: '2026-06-01',
-      fechaFin:    '2026-06-07',
-      scriptUrl:   SCRIPT_URL,
-      activo:      'activo'
-    }]);
+      fechaFin: '2026-06-07',
+      scriptUrl: SCRIPT_URL,
+      activo: 'activo',
+      base: true
+    }];
+    try {
+      const extra = JSON.parse(localStorage.getItem('campapp-projects') || '[]');
+      return [...base, ...extra];
+    } catch(e) { return base; }
+  }
+
+  function saveProjects(projects) {
+    // No guardar el proyecto base hardcodeado
+    const extras = projects.filter(p => !p.base);
+    try { localStorage.setItem('campapp-projects', JSON.stringify(extras)); } catch(e) {}
+  }
+
+  function showProjectSelector() {
+    document.getElementById('projectOverlay').style.display = 'flex';
+    renderProjectList(getProjects());
   }
 
   function renderProjectList(projects) {
     const list = document.getElementById('projList');
-    if (!projects.length) {
-      list.innerHTML = '<div style="text-align:center;padding:20px;opacity:.5;font-size:13px;">Sin proyectos. Crea el primero.</div>';
-      return;
-    }
-
     list.innerHTML = '';
     projects.forEach(p => {
       const card = document.createElement('div');
       card.style.cssText = `display:flex;align-items:center;gap:14px;padding:14px 16px;
         border-radius:14px;border:1.5px solid #d9ceb8;background:#fdfaf5;
-        cursor:pointer;transition:all .15s;margin-bottom:10px;`;
+        cursor:pointer;transition:all .15s;margin-bottom:10px;position:relative;`;
       card.onmouseenter = () => { card.style.borderColor='#2D5016'; card.style.background='#f0f7eb'; };
       card.onmouseleave = () => { card.style.borderColor='#d9ceb8'; card.style.background='#fdfaf5'; };
 
@@ -3445,88 +3444,91 @@ TYPE html>
         ? new Date(p.fechaInicio).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})
         : '';
 
+      const deleteBtn = p.base ? '' :
+        `<div onclick="event.stopPropagation();deleteProject('${p.id}')"
+          style="position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;
+            background:#fee;color:#c0392b;font-size:13px;display:flex;align-items:center;
+            justify-content:center;font-weight:700;cursor:pointer;" title="Eliminar proyecto">×</div>`;
+
       card.innerHTML = `
         <div style="width:44px;height:44px;border-radius:12px;background:#2D5016;
           display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🏕</div>
         <div style="flex:1;">
-          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;">${p.nombre}</div>
-          <div style="font-size:12px;opacity:.5;margin-top:2px;">${p.entidad||''}${fechaStr?' · '+fechaStr:''}</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;">
+            ${p.nombre}</div>
+          <div style="font-size:12px;opacity:.5;margin-top:2px;">
+            ${p.entidad||''}${fechaStr?' · '+fechaStr:''}</div>
+          ${p.scriptUrl && !p.scriptUrl.startsWith('http') ?
+            '<div style="font-size:11px;color:#e07a3b;margin-top:3px;">⚠️ Sin URL de Apps Script configurada</div>' : ''}
         </div>
         <div style="font-size:20px;opacity:.3;">›</div>
+        ${deleteBtn}
       `;
       card.addEventListener('click', () => selectProject(p));
       list.appendChild(card);
     });
   }
 
-  async function selectProject(project) {
+  function deleteProject(id) {
+    if (!confirm('¿Eliminar este proyecto? Los datos del Google Sheet no se borran.')) return;
+    const projects = getProjects().filter(p => p.id !== id);
+    saveProjects(projects);
+    renderProjectList(getProjects());
+  }
+
+  function selectProject(project) {
     currentProject = project;
-
-    // Actualizar SCRIPT_URL dinámicamente con la URL del proyecto seleccionado
-    if (project.scriptUrl && project.scriptUrl.startsWith('http')) {
-      window._activeScriptUrl = project.scriptUrl;
-    } else {
-      window._activeScriptUrl = SCRIPT_URL; // fallback al hardcoded
-    }
-
-    // Cerrar selector
+    window._activeScriptUrl = (project.scriptUrl && project.scriptUrl.startsWith('http'))
+      ? project.scriptUrl : SCRIPT_URL;
     document.getElementById('projectOverlay').style.display = 'none';
 
-    // Actualizar título visible
-    const heroTitle = document.querySelector('.hero h1');
+    // Actualizar hero
+    const heroTitle = document.getElementById('heroTitle');
     if (heroTitle) heroTitle.textContent = project.nombre;
     const heroSub = document.querySelector('.hero-sub');
     if (heroSub && project.entidad) heroSub.textContent = project.entidad;
 
-    // Guardar proyecto activo en sesión
     try { sessionStorage.setItem('campapp-project', JSON.stringify(project)); } catch(e) {}
-
-    // Arrancar app
     initApp();
   }
 
   function openNewProjectForm() {
-    document.getElementById('newProjForm').style.display =
-      document.getElementById('newProjForm').style.display === 'none' ? 'block' : 'none';
+    const form = document.getElementById('newProjForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
   }
 
-  async function createProject() {
-    const nombre  = document.getElementById('npNombre').value.trim();
-    const entidad = document.getElementById('npEntidad').value.trim();
-    const fi      = document.getElementById('npFechaInicio').value;
-    const ff      = document.getElementById('npFechaFin').value;
+  function createProject() {
+    const nombre     = document.getElementById('npNombre').value.trim();
+    const entidad    = document.getElementById('npEntidad').value.trim();
+    const fi         = document.getElementById('npFechaInicio').value;
+    const ff         = document.getElementById('npFechaFin').value;
+    const scriptUrl  = document.getElementById('npScriptUrl').value.trim();
 
     if (!nombre) { alert('El nombre del proyecto es obligatorio.'); return; }
-
-    const btn = document.getElementById('btnCreateProj');
-    btn.textContent = 'Creando...'; btn.disabled = true;
-
-    if (MASTER_URL && MASTER_URL !== 'PEGA_AQUI_URL_MAESTRO') {
-      try {
-        const r = await fetch(MASTER_URL, {
-          method: 'POST',
-          body: JSON.stringify({ pwd: MASTER_PWD, action: 'createProject',
-            nombre, entidad, fechaInicio: fi, fechaFin: ff })
-        });
-        const j = await r.json();
-        if (j.ok) {
-          alert(`Proyecto creado. \n\nSheet ID: ${j.sheetId}\n\n${j.message}`);
-          btn.textContent = 'Crear proyecto'; btn.disabled = false;
-          document.getElementById('newProjForm').style.display = 'none';
-          showProjectSelector();
-          return;
-        }
-      } catch(e) {}
+    if (!scriptUrl || !scriptUrl.startsWith('http')) {
+      alert('Pega la URL del Apps Script del nuevo proyecto.\nEs necesaria para guardar los datos.');
+      return;
     }
 
-    // Sin conexión al maestro: crear proyecto local (solo en este dispositivo)
-    const localProj = {
-      id: 'local_' + Date.now(), nombre, entidad,
-      fechaInicio: fi, fechaFin: ff, scriptUrl: '', activo: 'activo'
+    const newProject = {
+      id: 'proj_' + Date.now(),
+      nombre, entidad,
+      fechaInicio: fi, fechaFin: ff,
+      scriptUrl, activo: 'activo', base: false
     };
-    selectProject(localProj);
-    btn.textContent = 'Crear proyecto'; btn.disabled = false;
+
+    const projects = getProjects();
+    projects.push(newProject);
+    saveProjects(projects);
+
+    document.getElementById('newProjForm').style.display = 'none';
+    document.getElementById('npNombre').value = '';
+    document.getElementById('npEntidad').value = '';
+    document.getElementById('npScriptUrl').value = '';
+    renderProjectList(getProjects());
+    alert('Proyecto creado. Selecciónalo para comenzar.');
   }
+
 
   function initApp() {
     // Clonar grupos en gruposEdit para edición
