@@ -1134,6 +1134,14 @@
     border-top: 1px solid rgba(255,255,255,.08); margin-top: 4px;
   }
   .mob-section-label:first-child { border-top: none; margin-top: 0; padding-top: 2px; }
+  .mob-edit-panel {
+    animation: slideDown .2s ease;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .mob-edit-chevron { display: inline-block; transition: transform .2s ease; }
   .mob-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -6273,36 +6281,179 @@
   function renderMobEdicion() {
     const container = document.getElementById('mobEdicionList');
     if (!container) return;
-    const q = (document.getElementById('mobEdicionSearch')?.value||'').toLowerCase().trim();
-    // Edición: mostrar todos (activos e inactivos) para poder reactivarlos
-    let lista = getAllEditParticipants(true);
-    if (q.length >= 2) lista = lista.filter(p => (p.apellidos+' '+p.nombre).toLowerCase().includes(q));
+    const q          = (document.getElementById('mobEdicionSearch')?.value||'').toLowerCase().trim();
+    const filtCurso  = document.getElementById('mobFiltCurso')?.value  || '';
+    const filtEstado = document.getElementById('mobFiltEstado')?.value || '';
+
+    let lista = getAllEditParticipants(true).filter(p => {
+      const esPend  = p.activo === 'pendiente' || p.activo === 'pending';
+      const esInact = p.activo === false || p.activo === 'false';
+      const esAct   = !esPend && !esInact;
+      if (filtCurso  && p.gid !== filtCurso)             return false;
+      if (filtEstado === 'activo'    && !esAct)   return false;
+      if (filtEstado === 'pendiente' && !esPend)  return false;
+      if (filtEstado === 'inactivo'  && !esInact) return false;
+      if (!filtEstado && esInact) return false;
+      if (q.length >= 2 && !(p.apellidos+' '+p.nombre).toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    if (!lista.length) {
+      container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;opacity:.4;">Sin resultados.</div>';
+      return;
+    }
 
     container.innerHTML = '';
     lista.forEach(p => {
-      const g = gruposEdit[p.gid]||grupos[p.gid];
-      const esPendiente = p.activo === 'pendiente' || p.activo === 'pending';
-      const activo = !esPendiente && p.activo !== false && p.activo !== 'false';
-      const gcampAsig = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
-      const div = document.createElement('div');
-      div.className = 'mob-alumno-item';
-      div.style.opacity = activo ? '1' : '0.5';
-      div.innerHTML = `
-        <div class="mob-alumno-avatar" style="background:${g?.hex||'#888'}">${getInitials(p.nombre,p.apellidos)}</div>
-        <div class="mob-alumno-nombre" style="cursor:pointer">
-          <div class="ap">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
-          <div class="nm">${g?.label||''} ${p.grupo&&p.grupo!=='❓'?' · Gr.'+p.grupo:''} ${gcampAsig?' · '+escHtml(gcampAsig.nombre):''}</div>
+      const g          = gruposEdit[p.gid] || grupos[p.gid];
+      const gcampAsig  = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
+      const monAsig    = monitoresData.find(m => String(m.id) === String(p.monitorId));
+      const esPend     = p.activo === 'pendiente' || p.activo === 'pending';
+      const esAct      = !esPend && p.activo !== false && p.activo !== 'false';
+      const esInact    = !esPend && !esAct;
+      const medAlert   = getMedAlert(p.n);
+      const bgColor    = esPend ? '#fff8e1' : esAct ? 'white' : '#f8f8f8';
+      const toggleBg   = esPend ? '#F39C12' : esAct ? '#4A7C2F' : '#c8bfa8';
+      const toggleLeft = esPend ? '10px'    : esAct ? '17px'    : '4px';
+      const badge      = esPend
+        ? '<span style="font-size:10px;font-weight:700;color:#F39C12;background:#fff3cd;padding:1px 6px;border-radius:5px;">⏳ Pendiente</span>'
+        : esInact
+        ? '<span style="font-size:10px;font-weight:700;color:#C0392B;background:#fdecea;padding:1px 6px;border-radius:5px;">⛔ No activo</span>'
+        : '';
+
+      const card = document.createElement('div');
+      card.dataset.n = p.n;
+      card.style.cssText = 'background:'+bgColor+';border-bottom:1.5px solid #ede5d0;';
+
+      // ── FILA COMPACTA (siempre visible) ──
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;';
+      row.innerHTML = `
+        <div style="width:36px;height:36px;border-radius:10px;background:${g?.hex||'#888'};
+          display:flex;align-items:center;justify-content:center;color:white;font-weight:800;
+          font-size:13px;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${escHtml(p.apellidos)}, ${escHtml(p.nombre)}
+            ${medAlert?'<span style="font-size:12px;margin-left:3px;">'+medAlert+'</span>':''}
+          </div>
+          <div style="font-size:11px;opacity:.5;margin-top:1px;display:flex;align-items:center;gap:6px;">
+            <span>${g?g.label:'?'}</span>
+            ${gcampAsig?'<span style="color:'+( gcampAsig.hex||'#2D5016')+'">· '+escHtml(gcampAsig.nombre)+'</span>':''}
+            ${badge?badge:''}
+          </div>
         </div>
-        <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;">
-          <input type="checkbox" ${activo?'checked':''} onchange="toggleActivoMob(${p.n},'${p.gid}',this)" style="width:16px;height:16px;accent-color:#2D5016;"/>
-        </label>
-        <button class="mob-del-btn" onclick="mobDeleteAlumno(${p.n},'${p.gid}',this.closest('.mob-alumno-item'))">🗑</button>
+        <span style="font-size:16px;opacity:.3;transition:transform .2s;" class="mob-edit-chevron">›</span>
       `;
-      div.querySelector('.mob-alumno-nombre').addEventListener('click', () => openFicha(p, g||{hex:'#888',label:''}));
-      container.appendChild(div);
+      row.onclick = () => toggleMobEditCard(card);
+      card.appendChild(row);
+
+      // ── PANEL EXPANDIBLE (oculto por defecto) ──
+      const panel = document.createElement('div');
+      panel.className = 'mob-edit-panel';
+      panel.style.cssText = 'display:none;background:#f9f6f1;border-top:1px solid #e8e0d0;padding:14px 16px;';
+
+      // Campos editables
+      panel.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div>
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Apellidos</label>
+            <input value="${escHtml(p.apellidos)}" placeholder="Apellidos"
+              style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;
+                font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;"
+              onchange="updateAlumno(this,'apellidos',${p.n},'${p.gid}')"/>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Nombre</label>
+            <input value="${escHtml(p.nombre)}" placeholder="Nombre"
+              style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;
+                font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;"
+              onchange="updateAlumno(this,'nombre',${p.n},'${p.gid}')"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div>
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Curso</label>
+            <select onchange="updateAlumno(this,'gid',${p.n},'${p.gid}')"
+              style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;
+                font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;">
+              <option value="g2" ${p.gid==='g2'?'selected':''}>2º Prim.</option>
+              <option value="g3" ${p.gid==='g3'?'selected':''}>3º Prim.</option>
+              <option value="g4" ${p.gid==='g4'?'selected':''}>4º Prim.</option>
+              <option value="g5" ${p.gid==='g5'?'selected':''}>5º Prim.</option>
+              <option value="g6" ${p.gid==='g6'?'selected':''}>6º Prim.</option>
+              <option value="g7" ${p.gid==='g7'?'selected':''}>1º ESO</option>
+              <option value="g8" ${p.gid==='g8'?'selected':''}>2º ESO</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Clase</label>
+            <input value="${escHtml(p.grupo&&p.grupo!=='❓'?p.grupo:'')}" placeholder="A/B/C/D"
+              style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;
+                font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;"
+              onchange="updateAlumno(this,'grupo',${p.n},'${p.gid}')"/>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Monitor/a</label>
+          <select onchange="updateAlumno(this,'monitorId',${p.n},'${p.gid}')"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;
+              font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;">
+            <option value="">Sin asignar</option>
+            ${monitoresData.map(m=>`<option value="${m.id}" ${String(m.id)===String(p.monitorId)?'selected':''}>${escHtml((m.nombre+' '+m.apellidos).trim()||'Monitor/a')}</option>`).join('')}
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #e8e0d0;margin-bottom:12px;">
+          <span style="font-size:13px;font-weight:600;color:#444;">
+            Estado: ${esPend?'<span style="color:#F39C12;">⏳ Pendiente</span>':esAct?'<span style="color:#2D5016;">✅ Activo</span>':'<span style="color:#C0392B;">⛔ No activo</span>'}
+          </span>
+          <button onclick="mobToggleActivo(${p.n},'${p.gid}')"
+            style="width:42px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;background:${toggleBg};">
+            <span style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:4px;left:${toggleLeft};"></span>
+          </button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(g||{})})"
+            style="flex:1;padding:10px;border-radius:10px;border:none;background:#2D5016;color:white;
+              font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+            🩺 Ver ficha completa
+          </button>
+          <button onclick="if(confirm('¿Eliminar a ${escHtml(p.apellidos)}?'))deleteAlumno(${p.n},'${p.gid}')"
+            style="padding:10px 14px;border-radius:10px;border:1.5px solid #fdecea;background:white;
+              font-size:14px;cursor:pointer;">🗑</button>
+        </div>
+      `;
+      card.appendChild(panel);
+      container.appendChild(card);
     });
-    if (!lista.length) container.innerHTML = '<div style="padding:30px;text-align:center;font-size:13px;opacity:.4;">Sin resultados.</div>';
   }
+
+  function toggleMobEditCard(card) {
+    const panel    = card.querySelector('.mob-edit-panel');
+    const chevron  = card.querySelector('.mob-edit-chevron');
+    const isOpen   = panel.style.display !== 'none';
+    // Close all others
+    document.querySelectorAll('.mob-edit-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.mob-edit-chevron').forEach(c => c.style.transform = '');
+    if (!isOpen) {
+      panel.style.display  = 'block';
+      chevron.style.transform = 'rotate(90deg)';
+      setTimeout(() => card.scrollIntoView({behavior:'smooth', block:'nearest'}), 50);
+    }
+  }
+
+
+  function mobToggleActivo(n, gid) {
+    const pE = gruposEdit[gid]?.participantes.find(x=>x.n===n);
+    const pB = grupos[gid]?.participantes.find(x=>x.n===n);
+    const p = pE||pB; if (!p) return;
+    const cur = p.activo==='pendiente'?'pendiente':p.activo===false?'inactivo':'activo';
+    const next = cur==='activo'?false:cur==='inactivo'?'pendiente':true;
+    if (pE) pE.activo=next; if (pB) pB.activo=next;
+    logCambio('alumno',(p.apellidos||'')+', '+(p.nombre||''),'Estado → '+(next===true?'activo':next===false?'inactivo':'pendiente'));
+    renderMobEdicion();
+  }
+
 
   function toggleActivoMob(n, gid, cb) {
     const nowActivo = cb.checked;
@@ -8165,7 +8316,26 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">✏️ Editar alumnos</div>
-      <button onclick="mobAddAlumno()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
+      <div style="display:flex;gap:5px;">
+        <button onclick="mobAddAlumno()" style="padding:5px 9px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:700;cursor:pointer;">+ Añadir</button>
+        <button onclick="saveAllAlumnos()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #2D5016;background:transparent;color:#2D5016;font-size:11px;font-weight:700;cursor:pointer;">💾</button>
+        <button onclick="imprimirListaAlumnos()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">🖨️</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;padding:8px 12px;background:#f9f6f1;border-bottom:1px solid #e8e0d0;flex-wrap:wrap;">
+      <select id="mobFiltCurso" onchange="renderMobEdicion()" style="flex:1;min-width:100px;padding:6px 8px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:11px;outline:none;">
+        <option value="">Todos los cursos</option>
+        <option value="g2">2º Prim.</option><option value="g3">3º Prim.</option>
+        <option value="g4">4º Prim.</option><option value="g5">5º Prim.</option>
+        <option value="g6">6º Prim.</option><option value="g7">1º ESO</option>
+        <option value="g8">2º ESO</option>
+      </select>
+      <select id="mobFiltEstado" onchange="renderMobEdicion()" style="flex:1;min-width:110px;padding:6px 8px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:11px;outline:none;">
+        <option value="">Activos+pend.</option>
+        <option value="activo">✅ Activos</option>
+        <option value="pendiente">⏳ Pendientes</option>
+        <option value="inactivo">⛔ No activos</option>
+      </select>
     </div>
     <div class="mob-search-bar">
       <input type="text" id="mobEdicionSearch" placeholder="🔍 Buscar alumno…" oninput="renderMobEdicion()"/>
@@ -8191,7 +8361,7 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">📜 Historial</div>
-      <button onclick="clearHistorial()" style="padding:5px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-size:11px;font-weight:600;cursor:pointer;color:#C0392B;">Limpiar</button>
+      <button onclick="clearHistorial();renderMobHistorial();" style="padding:5px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-size:11px;font-weight:600;cursor:pointer;color:#C0392B;">Limpiar</button>
     </div>
     <div style="padding:10px 14px;background:#f5f0e8;border-bottom:1px solid #d9ceb8;display:flex;gap:6px;overflow-x:auto;">
       <button class="hist-filtro-btn active" onclick="filterHistorialMob('',this)" style="white-space:nowrap;font-size:11px;">Todos</button>
@@ -8200,6 +8370,14 @@
       <button class="hist-filtro-btn" onclick="filterHistorialMob('asistencia',this)" style="white-space:nowrap;font-size:11px;">✅</button>
       <button class="hist-filtro-btn" onclick="filterHistorialMob('programacion',this)" style="white-space:nowrap;font-size:11px;">📅</button>
       <button class="hist-filtro-btn" onclick="filterHistorialMob('grupo',this)" style="white-space:nowrap;font-size:11px;">🏕</button>
+    </div>
+    <div style="display:flex;gap:5px;padding:8px 12px;background:#f9f6f1;border-bottom:1px solid #e8e0d0;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <button onclick="filterHistorial('');renderMobHistorial();" style="padding:4px 10px;border-radius:20px;border:1.5px solid #2D5016;background:#f0f7eb;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;color:#2D5016;">Todos</button>
+      <button onclick="filterHistorial('alumno');renderMobHistorial();" style="padding:4px 10px;border-radius:20px;border:1.5px solid #d9ceb8;background:white;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;">👥 Alumnos</button>
+      <button onclick="filterHistorial('ficha');renderMobHistorial();" style="padding:4px 10px;border-radius:20px;border:1.5px solid #d9ceb8;background:white;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;">🩺 Fichas</button>
+      <button onclick="filterHistorial('asistencia');renderMobHistorial();" style="padding:4px 10px;border-radius:20px;border:1.5px solid #d9ceb8;background:white;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;">✅ Asist.</button>
+      <button onclick="filterHistorial('programacion');renderMobHistorial();" style="padding:4px 10px;border-radius:20px;border:1.5px solid #d9ceb8;background:white;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;">📅 Prog.</button>
+      <button onclick="filterHistorial('obs');renderMobHistorial();" style="padding:4px 10px;border-radius:20px;border:1.5px solid #d9ceb8;background:white;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;">📝 Notas</button>
     </div>
     <div id="mobHistorialLista" style="padding:0;"></div>
   </div>
@@ -8247,7 +8425,10 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">📅 Programación</div>
-      <button onclick="openProgModal()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Nueva</button>
+      <div style="display:flex;gap:5px;">
+        <button onclick="openProgModal()" style="padding:5px 9px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:700;cursor:pointer;">+ Nueva</button>
+        <button onclick="saveProgData();showSyncIndicator('✔ Programación guardada','ok');" style="padding:5px 9px;border-radius:8px;border:1.5px solid #2D5016;background:transparent;color:#2D5016;font-size:11px;font-weight:700;cursor:pointer;">💾</button>
+      </div>
     </div>
     <!-- Vista tabs: Lista / Semana -->
     <div style="display:flex;gap:0;border-bottom:2px solid #d9ceb8;background:white;position:sticky;top:57px;z-index:90;">
