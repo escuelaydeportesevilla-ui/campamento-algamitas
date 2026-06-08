@@ -3393,7 +3393,16 @@
     const msg = document.getElementById('fichaSavedMsg');
     msg.classList.add('show');
     setTimeout(() => msg.classList.remove('show'), 2500);
-    logCambio('ficha', updatedP.apellidos + ', ' + updatedP.nombre, 'Ficha actualizada');
+    // Registrar en historial según qué cambió realmente
+    const tieneDatosMedicos = data.alergias || data.medicacion || data.observaciones;
+    const cambioDatosPers   = (newAp !== currentFichaP?.apellidos) || (newNm !== currentFichaP?.nombre)
+                            || (newGid !== oldGid) || (newGrupoClase !== currentFichaP?.grupo)
+                            || (newMonitorId !== String(currentFichaP?.monitorId||''));
+    if (tieneDatosMedicos) {
+      logCambio('ficha', updatedP.apellidos + ', ' + updatedP.nombre, 'Datos médicos actualizados');
+    } else {
+      logCambio('alumno', updatedP.apellidos + ', ' + updatedP.nombre, 'Datos personales actualizados');
+    }
   }
 
   function closeFicha() {
@@ -8307,6 +8316,11 @@
         <div class="mob-label">Modo</div>
         <div class="mob-sub">Oscuro/Claro</div>
       </div>
+      <div class="mob-card" onclick="actualizarApp(this)">
+        <div class="mob-icon" id="mobRefreshIcon">🔄</div>
+        <div class="mob-label">Actualizar</div>
+        <div class="mob-sub">Sincronizar datos</div>
+      </div>
 
     </div>
   </div>
@@ -8677,8 +8691,7 @@
 <div id="printArea"></div>
 
 
-<!-- Botón modo oscuro -->
-<button class="dark-toggle" id="darkToggle" onclick="toggleDarkMode()" title="Modo oscuro / claro">🌙</button>
+<!-- Modo oscuro: solo en menú móvil y barra desktop -->
 
 </body>
 </html>
