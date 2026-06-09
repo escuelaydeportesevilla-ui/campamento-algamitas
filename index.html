@@ -3410,6 +3410,7 @@
   // ══════════════════════════════════════════════════════════════
   const APP_PASSWORD   = 'algamitas2026'; // contraseña de acceso compartida
   let   currentProject = null; // proyecto activo
+  let   mobFiltMood = ''; // filtro mood notas alumnos móvil
 
   function doLogin() {
     const val = document.getElementById('loginInput').value;
@@ -4463,40 +4464,75 @@
   }
 
   function renderMobAlumnos() {
-    const q = (document.getElementById('mobAlumnoSearch').value || '').toLowerCase().trim();
+    const q = (document.getElementById('mobAlumnoSearch')?.value||'').toLowerCase().trim();
     const container = document.getElementById('mobAlumnosList');
+    if (!container) return;
     container.innerHTML = '';
-    // Solo activos en el listado principal; búsqueda explícita incluye todos
-    let lista = q.length >= 2
-      ? getAllParticipantsAll().filter(p => (p.apellidos + ' ' + p.nombre).toLowerCase().includes(q))
-      : getAllEditParticipants();
 
-    lista.forEach(p => {
-      const g = gruposEdit[p.gid] || grupos[p.gid];
-      const div = document.createElement('div');
-      div.className = 'mob-alumno-item';
-      div.innerHTML = `
-        <div class="mob-alumno-avatar" style="background:${g.hex}">${getInitials(p.nombre,p.apellidos)}</div>
-        <div class="mob-alumno-nombre" onclick="openFicha(p,g)" style="cursor:pointer">
-          <div class="ap">${escHtml(p.apellidos)}</div>
-          <div class="nm">${escHtml(p.nombre)} · ${g.label}</div>
+    const cursos = [
+      {gid:'g2',label:'2º Primaria',edad:'7–8 años',color:'var(--g2)'},
+      {gid:'g3',label:'3º Primaria',edad:'8–9 años',color:'var(--g3)'},
+      {gid:'g4',label:'4º Primaria',edad:'9–10 años',color:'var(--g4)'},
+      {gid:'g5',label:'5º Primaria',edad:'10–11 años',color:'var(--g5)'},
+      {gid:'g6',label:'6º Primaria',edad:'11–12 años',color:'var(--g6)'},
+      {gid:'g7',label:'1º ESO',edad:'12–13 años',color:'#1ABC9C'},
+      {gid:'g8',label:'2º ESO',edad:'13–14 años',color:'#E67E22'},
+    ];
+
+    if (q.length >= 2) {
+      // Modo búsqueda
+      const found = getAllEditParticipants().filter(p =>
+        (p.apellidos+' '+p.nombre).toLowerCase().includes(q)
+      ).slice(0, 20);
+      if (!found.length) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;opacity:.4;font-size:13px;">Sin resultados</div>';
+        return;
+      }
+      found.forEach(p => {
+        const g = gruposEdit[p.gid]||grupos[p.gid];
+        const med = getMedAlert(p.n);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #ede5d0;cursor:pointer;background:white;';
+        row.onclick = () => openFicha(p, g||{});
+        row.innerHTML = `
+          <div style="width:36px;height:36px;border-radius:10px;background:${g?.hex||'#888'};display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:13px;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}${med?'<span style="margin-left:4px;">'+med+'</span>':''}</div>
+            <div style="font-size:11px;opacity:.5;">${g?g.label:''}</div>
+          </div>
+          <span style="opacity:.25;">›</span>`;
+        container.appendChild(row);
+      });
+      return;
+    }
+
+    // Modo tarjetas por curso
+    cursos.forEach(c => {
+      const g = grupos[c.gid]||gruposEdit[c.gid];
+      if (!g||!g.participantes) return;
+      const activos = g.participantes.filter(p => { const ep=p.activo==='pendiente'||p.activo==='pending'; const ei=p.activo===false||p.activo==='false'; return !ep&&!ei; });
+      if (!activos.length) return;
+      const card = document.createElement('div');
+      card.style.cssText = 'background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;';
+      card.onclick = () => openModal(c.gid);
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${c.color};opacity:.7;">${c.label}</div>
+          <div style="font-size:11px;opacity:.5;">${c.edad}</div>
         </div>
-        ${hasFichaData(p.n) ? '<span style="font-size:16px" title="Tiene ficha">🟢</span>' : ''}
-        <button class="mob-del-btn" onclick="mobDeleteAlumno(${p.n},'${p.gid}',this.closest('.mob-alumno-item'))">🗑</button>
-      `;
-      // Fix closure
-      div.querySelector('.mob-alumno-nombre').addEventListener('click', () => openFicha(p, g));
-      container.appendChild(div);
+        <div style="font-size:2rem;font-weight:900;color:${c.color};line-height:1;">${activos.length}</div>
+        <div style="font-size:12px;opacity:.5;margin-top:2px;">activos · Ver participantes ›</div>`;
+      container.appendChild(card);
     });
 
-    if (!lista.length) container.innerHTML = '<div style="padding:30px;text-align:center;font-size:13px;opacity:.4;">Sin resultados.</div>';
-    // Update count
-    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-    const el = document.getElementById('mobTotal');
-    if (el) el.textContent = total;
-    const sub = document.getElementById('mobSubTotal');
-    if (sub) sub.textContent = total + ' inscritos';
+    // Total
+    const total = getAllEditParticipants().length;
+    const totalCard = document.createElement('div');
+    totalCard.style.cssText = 'background:#2D5016;border-radius:14px;padding:16px;margin-bottom:12px;';
+    totalCard.innerHTML = `<div style="font-size:11px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.6);text-transform:uppercase;margin-bottom:4px;">TOTAL</div><div style="font-size:2rem;font-weight:900;color:white;line-height:1;">${total}</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;">activos inscritos</div>`;
+    container.appendChild(totalCard);
   }
+
 
   function mobDeleteAlumno(n, gid, el) {
     if (!confirm('¿Eliminar este alumno/a?')) return;
@@ -4551,68 +4587,104 @@
       return;
     }
 
-    monitoresData.forEach((m, i) => {
-      const fotoHtml = `<div style="width:52px;height:52px;border-radius:50%;background:#2D5016;color:white;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex-shrink:0;border:3px solid #4A7C2F;">${monitorInitials(m)}</div>`;
+    // Generar opciones de grupo dinámicas (igual que desktop)
+    const claseSet = new Set();
+    getAllEditParticipants().forEach(p => {
+      if (p.gid && p.grupo && p.grupo !== '❓') claseSet.add(p.gid+'|'+p.grupo.toUpperCase().trim());
+    });
+    const clases = [...claseSet].sort((a,b)=>{const [ga,la]=a.split('|'),[gb,lb]=b.split('|');return ga!==gb?ga.localeCompare(gb):la.localeCompare(lb);});
 
-      const div = document.createElement('div');
-      div.style.cssText = 'background:white;border-radius:16px;padding:16px;margin-bottom:12px;border:1.5px solid #d9ceb8;';
-      div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-          <div style="position:relative;">
-            ${fotoHtml}
-          </div>
+    const buildGrupoOpts = (val) => {
+      let o = '<option value="">Sin asignar</option>';
+      if (clases.length) {
+        o += '<optgroup label="── Clase ──">';
+        clases.forEach(clave => {
+          const [gid,letra]=clave.split('|');
+          const g=gruposEdit[gid]||grupos[gid];
+          const lbl=(g?g.label:gid)+' '+letra;
+          o += `<option value="${clave}" ${val===clave?'selected':''}>${lbl}</option>`;
+        });
+        o += '</optgroup>';
+      }
+      o += '<optgroup label="── Curso ──">';
+      [['g2','2º Primaria'],['g3','3º Primaria'],['g4','4º Primaria'],['g5','5º Primaria'],['g6','6º Primaria'],['g7','1º ESO'],['g8','2º ESO']].forEach(([v,l])=>{
+        o += `<option value="${v}" ${val===v?'selected':''}>${l}</option>`;
+      });
+      o += '</optgroup>';
+      if (gruposCamp.length) {
+        o += '<optgroup label="── Grupos campamento ──">';
+        gruposCamp.forEach(g=>{o+=`<option value="gc_${g.id}" ${val==='gc_'+g.id?'selected':''}>${escHtml(g.nombre)}</option>`;});
+        o += '</optgroup>';
+      }
+      return o;
+    };
+
+    monitoresData.forEach((m,i) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:white;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);';
+      const initials = getInitials(m.nombre||'', m.apellidos||'');
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-bottom:1px solid #f5f0e8;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.mob-chev').style.transform=this.nextElementSibling.style.display==='block'?'rotate(90deg)':'';">
+          <div style="width:40px;height:40px;border-radius:50%;background:#2D5016;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:14px;flex-shrink:0;">${initials}</div>
           <div style="flex:1;">
-            <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</div>
-            <div style="font-size:11px;opacity:.5;">${escHtml(m.rol)}</div>
+            <div style="font-weight:700;font-size:14px;">${escHtml((m.nombre+' '+m.apellidos).trim()||'Monitor/a')}</div>
+            <div style="font-size:11px;opacity:.5;">${m.rol||'Monitor/a'}</div>
           </div>
-          <button onclick="deleteMonitor(${i});renderMobMonitores()" style="width:28px;height:28px;border-radius:8px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:14px;flex-shrink:0;">🗑</button>
+          <span class="mob-chev" style="font-size:16px;opacity:.3;transition:transform .2s;">›</span>
         </div>
-        <div style="display:grid;gap:10px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:none;padding:14px 16px;background:#f9f6f1;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
             <div>
-              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Nombre</label>
-              <input value="${escHtml(m.nombre)}" onchange="updateMonitor(${i},'nombre',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"/>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Nombre</label>
+              <input value="${escHtml(m.nombre||'')}" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;"
+                onchange="monitoresData[${i}].nombre=this.value;"/>
             </div>
             <div>
-              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Apellidos</label>
-              <input value="${escHtml(m.apellidos)}" onchange="updateMonitor(${i},'apellidos',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"/>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Rol</label>
-              <select onchange="updateMonitor(${i},'rol',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
-                ${['Coordinador','Monitor/a','Monitor/a auxiliar','Enfermero/a','Cocinero/a'].map(r=>`<option ${m.rol===r?'selected':''}>${r}</option>`).join('')}
-              </select>
-            </div>
-            <div>
-              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Teléfono</label>
-              <input type="tel" value="${escHtml(m.tel||'')}" placeholder="000 000 000" onchange="updateMonitor(${i},'tel',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"/>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Apellidos</label>
+              <input value="${escHtml(m.apellidos||'')}" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;"
+                onchange="monitoresData[${i}].apellidos=this.value;"/>
             </div>
           </div>
-          <div>
-            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Email</label>
-            <input type="email" value="${escHtml(m.email||'')}" placeholder="correo@..." onchange="updateMonitor(${i},'email',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"/>
-          </div>
-          <div>
-            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Grupo asignado</label>
-            <select onchange="updateMonitor(${i},'grupoAsignado',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
-              ${getMonitorGrupoOptions(m)}
+          <div style="margin-bottom:10px;">
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Rol</label>
+            <select onchange="monitoresData[${i}].rol=this.value;" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;">
+              ${['Coordinador','Monitor/a','Auxiliar','Enfermero/a','Cocinero/a'].map(r=>`<option value="${r}" ${m.rol===r?'selected':''}>${r}</option>`).join('')}
             </select>
           </div>
-          <div>
-            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Observaciones</label>
-            <textarea rows="2" onchange="updateMonitor(${i},'observaciones',this.value)" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none;box-sizing:border-box;">${escHtml(m.observaciones||'')}</textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Teléfono</label>
+              <input type="tel" value="${escHtml(m.tel||'')}" placeholder="000 000 000" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;"
+                onchange="monitoresData[${i}].tel=this.value;"/>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Email</label>
+              <input type="email" value="${escHtml(m.email||'')}" placeholder="correo@..." style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;"
+                onchange="monitoresData[${i}].email=this.value;"/>
+            </div>
           </div>
-        </div>
-        <button onclick="saveMonitores();renderMobMonitores()" style="margin-top:12px;width:100%;padding:10px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">💾 Guardar</button>
-      `;
-      container.appendChild(div);
+          <div style="margin-bottom:10px;">
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Grupo asignado</label>
+            <select onchange="monitoresData[${i}].grupoAsignado=this.value;" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;">
+              ${buildGrupoOpts(m.grupoAsignado||'')}
+            </select>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Observaciones</label>
+            <textarea rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;resize:none;"
+              onchange="monitoresData[${i}].obs=this.value;">${escHtml(m.obs||'')}</textarea>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="saveMonitores();showSyncIndicator('✔ Monitor guardado','ok');"
+              style="flex:1;padding:10px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">💾 Guardar</button>
+            <button onclick="if(confirm('¿Eliminar este monitor?')){deleteMonitor(${i});renderMobMonitores();}"
+              style="padding:10px 14px;border-radius:10px;border:1.5px solid #fdecea;background:white;font-size:14px;cursor:pointer;">🗑</button>
+          </div>
+        </div>`;
+      container.appendChild(card);
     });
-
-    const cnt = document.getElementById('mobMonCount');
-    if (cnt) cnt.textContent = monitoresData.length + ' monitores';
   }
+
 
   function renderMobGrupos() {
     // Redirige a la implementación completa
@@ -4625,19 +4697,28 @@
     container.innerHTML = '';
     obsData.forEach((obs, i) => {
       const div = document.createElement('div');
-      div.className = 'mob-obs-item';
-      div.style.borderLeft = '4px solid ' + obs.color;
+      div.style.cssText = 'background:white;border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.06);';
       div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div class="mob-obs-title" style="flex:1">${escHtml(obs.titulo)}</div>
-          <button onclick="deleteObs(${i});renderMobObs()" style="width:26px;height:26px;border-radius:6px;border:none;background:rgba(0,0,0,.06);cursor:pointer;font-size:12px;">🗑</button>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9f6f1;border-bottom:1px solid #ede5d0;">
+          <div style="flex:1;font-weight:700;font-size:14px;">${escHtml(obs.titulo||'Nota '+( i+1))}</div>
+          <button onclick="deleteObs(${i})" style="background:transparent;border:none;cursor:pointer;color:#c0392b;font-size:15px;opacity:.6;">🗑</button>
         </div>
-        <textarea rows="4" onchange="obsData[${i}].texto=this.value">${escHtml(obs.texto)}</textarea>
-        <button onclick="saveObs(${i})" style="margin-top:8px;padding:8px 16px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;width:100%;">Guardar nota</button>
-      `;
+        <div style="padding:12px 14px;">
+          <textarea rows="4" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f9f6f1;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;resize:vertical;"
+            onchange="obsData[${i}].texto=this.value;saveObs();">${escHtml(obs.texto||'')}</textarea>
+          <button onclick="obsData[${i}].texto=this.previousElementSibling.value;saveObs();showSyncIndicator('✔ Nota guardada','ok');"
+            style="width:100%;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;">💾 Guardar</button>
+        </div>`;
       container.appendChild(div);
     });
+    // Añadir nota
+    const addBtn = document.createElement('button');
+    addBtn.onclick = () => { addObs(); renderMobObs(); };
+    addBtn.style.cssText = 'width:100%;padding:12px;border-radius:12px;border:1.5px dashed #7FB069;background:transparent;color:#2D5016;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    addBtn.textContent = '+ Nueva nota de coordinación';
+    container.appendChild(addBtn);
   }
+
 
   function renderMobMedico() {
     const container = document.getElementById('mobMedList');
@@ -5703,38 +5784,39 @@
     if (!c) return;
     const conCabana = gruposCamp.filter(g => g.cabana || g.tipoAloj);
     if (!conCabana.length) {
-      c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin cabañas asignadas aún.<br>Ve a Grupos → 🏠 Cabaña.</div>';
+      c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin cabañas configuradas. Ve a Grupos → Cabaña.</div>';
       return;
     }
-    const tipoIcon = {cabana:'🏠',bungalow:'🏠',tienda:'⛺',dormitorio:'🛏',otro:'🏗'};
     c.innerHTML = '';
     conCabana.forEach(g => {
-      const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
-      const icon = tipoIcon[g.tipoAloj] || '🏠';
-      const div = document.createElement('div');
-      div.style.cssText = `background:var(--blanco);border-radius:16px;padding:18px;margin-bottom:12px;border-left:5px solid ${g.color||'var(--tierra)'};border-top:1px solid var(--crema-oscuro);border-right:1px solid var(--crema-oscuro);border-bottom:1px solid var(--crema-oscuro);`;
-      div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <span style="font-size:24px">${icon}</span>
-          <div><div style="font-family:'Playfair Display',serif;font-weight:700;color:var(--verde-bosque);">${escHtml(g.nombre)}</div>
-          <div style="font-size:11px;opacity:.5;">${g.cabana?escHtml(g.cabana):''}${g.zona?' · '+escHtml(g.zona):''}</div></div>
-          <span style="margin-left:auto;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;background:${g.color}22;color:${g.color}">${alumnos.length} alumnos</span>
+      const alumnos = (g.alumnos||[]).map(n => getAllEditParticipants(true).find(p=>p.n===n)).filter(Boolean);
+      const monitores = (g.monitores||[]).map(id => monitoresData.find(m=>String(m.id)===String(id))).filter(Boolean);
+      const conAlerta = alumnos.filter(p => getMedAlert(p.n));
+      const tipoIcon = g.tipoAloj==='Tienda'?'⛺':g.tipoAloj==='Dormitorio'?'🛏':'🏠';
+      const card = document.createElement('div');
+      card.style.cssText = 'background:white;border-radius:14px;margin-bottom:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid '+(g.hex||'#2D5016')+';';
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:24px;">${tipoIcon}</span>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:15px;">${escHtml(g.nombre||'Grupo')}</div>
+            <div style="font-size:11px;opacity:.5;">${g.tipoAloj||'Cabaña'} ${g.cabana?'· '+escHtml(g.cabana):''}${g.zona?'· '+escHtml(g.zona):''}</div>
+          </div>
+          ${conAlerta.length ? '<span style="background:#fdecea;color:#c0392b;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;">🔴 '+conAlerta.length+' alertas</span>' : ''}
         </div>
-        ${g.notasCabana?`<div style="font-size:12px;opacity:.6;margin-bottom:10px;">📝 ${escHtml(g.notasCabana)}</div>`:''}
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          ${alumnos.sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'})).map(p=>{
-            const pg=gruposEdit[p.gid]||grupos[p.gid];
-            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--crema-oscuro);">
-              <div style="width:24px;height:24px;border-radius:50%;background:${pg.hex};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0">${getInitials(p.nombre,p.apellidos)}</div>
-              <span style="font-size:13px;font-weight:600">${escHtml(p.apellidos.split(' ')[0])}</span>
-              <span style="font-size:12px;opacity:.6">${escHtml(p.nombre)}</span>
+        ${monitores.length ? `<div style="font-size:12px;color:#2D5016;font-weight:600;margin-bottom:8px;">👤 ${monitores.map(m=>escHtml((m.nombre+' '+m.apellidos).trim())).join(', ')}</div>` : ''}
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${alumnos.map(p => {
+            const med = getMedAlert(p.n);
+            return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:20px;background:${med?'#fdecea':'#f0f7eb'};font-size:11px;cursor:pointer;" onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(gruposEdit[p.gid]||grupos[p.gid]||{})})">
+              ${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}${med?'<span style="font-size:11px;">'+med+'</span>':''}
             </div>`;
           }).join('')}
-        </div>
-      `;
-      c.appendChild(div);
+        </div>`;
+      c.appendChild(card);
     });
   }
+
 
   function renderMobProg() {
     const container = document.getElementById('mobProgList');
@@ -6606,47 +6688,93 @@
   function renderMobObsAlumnos() {
     const container = document.getElementById('mobObsAluList');
     if (!container) return;
+
+    // Render search + existing notes
     const entries = Object.entries(obsAlumnos)
-      .sort(([,a],[,b]) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+      .filter(([,a]) => {
+        if (!a.notas || !a.notas.length) return false;
+        if (mobFiltMood) return a.notas.some(n => n.mood === mobFiltMood);
+        return true;
+      })
+      .sort(([,a],[,b]) => (a.apellidos||'').localeCompare(b.apellidos||'','es',{sensitivity:'base'}));
 
     container.innerHTML = '';
-    entries.forEach(([n, d]) => {
-      const p = getAllEditParticipants().find(x => x.n === parseInt(n)) || d;
-      const g = gruposEdit[p.gid||d.gid]||grupos[p.gid||d.gid];
-      const hex = g?.hex||'#888';
-      const div = document.createElement('div');
-      div.id = 'mobobscard-'+n;
-      div.style.cssText = 'background:white;border-radius:14px;padding:16px;margin-bottom:12px;border:1.5px solid #d9ceb8;';
-      div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:${hex};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0">${getInitials(d.nombre,d.apellidos)}</div>
-          <div style="flex:1"><div style="font-weight:700;font-size:14px;">${escHtml(d.apellidos)}, ${escHtml(d.nombre)}</div>
-          <div style="font-size:11px;opacity:.45;">${d.notas.length} nota${d.notas.length!==1?'s':''}</div></div>
-        </div>
-        <div class="mood-selector" style="margin-bottom:8px;">
-          <button class="mood-btn selected" data-mood="bien" onclick="toggleMood(this)" style="font-size:12px;padding:4px 10px;">😊</button>
-          <button class="mood-btn" data-mood="regular" onclick="toggleMood(this)" style="font-size:12px;padding:4px 10px;">😐</button>
-          <button class="mood-btn" data-mood="mal" onclick="toggleMood(this)" style="font-size:12px;padding:4px 10px;">😟</button>
-        </div>
-        <textarea rows="2" placeholder="Nueva nota…" style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none;box-sizing:border-box;margin-bottom:8px;"></textarea>
-        <button onclick="addNotaMob(${n},this)" style="width:100%;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;">Guardar nota</button>
-        ${d.notas.map(nota => {
-          const col = {bien:'#27AE60',regular:'#E67E22',mal:'#C0392B'}[nota.mood]||'#27AE60';
-          const mi  = {bien:'😊',regular:'😐',mal:'😟'}[nota.mood]||'';
-          return `<div style="background:#f5f0e8;border-radius:10px;padding:10px 12px;border-left:3px solid ${col};margin-bottom:6px;position:relative;">
-            <button onclick="deleteNota(${n},${nota.id})" style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:5px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:10px;">🗑</button>
-            <div style="font-size:10px;opacity:.4;margin-bottom:3px;">${nota.fecha||''}</div>
-            <div style="font-size:13px;">${mi} ${escHtml(nota.texto)}</div>
-          </div>`;
-        }).join('')}
-      `;
-      container.appendChild(div);
-    });
 
     if (!entries.length) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Usa el buscador para añadir la primera nota.</div>';
+      container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;opacity:.4;">Usa el buscador para añadir la primera nota.</div>';
+      return;
     }
+
+    entries.forEach(([nStr, alumno]) => {
+      const n = Number(nStr);
+      const p = getAllEditParticipants(true).find(x=>x.n===n);
+      const g = p ? (gruposEdit[p.gid]||grupos[p.gid]) : null;
+      const card = document.createElement('div');
+      card.style.cssText = 'background:white;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);';
+
+      // Header
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9f6f1;border-bottom:1px solid #ede5d0;">
+          <div style="width:36px;height:36px;border-radius:10px;background:${g?.hex||'#2D5016'};display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:13px;flex-shrink:0;">${getInitials(alumno.nombre||'',alumno.apellidos||'')}</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;">${escHtml(alumno.apellidos)}, ${escHtml(alumno.nombre)}</div>
+            <div style="font-size:11px;opacity:.5;">${g?g.label:''} · ${alumno.notas.length} nota${alumno.notas.length!==1?'s':''}</div>
+          </div>
+          <button onclick="openAddNota(${n})" style="padding:6px 10px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:700;cursor:pointer;">+ Nota</button>
+        </div>
+        <div style="padding:10px 14px;">
+          ${alumno.notas.slice().reverse().map(nota => {
+            const moodIcon = nota.mood==='bien'?'😊':nota.mood==='regular'?'😐':'😟';
+            const moodColor = nota.mood==='bien'?'#27AE60':nota.mood==='regular'?'#E67E22':'#C0392B';
+            return `<div style="padding:10px;background:#f9f6f1;border-radius:10px;margin-bottom:8px;border-left:3px solid ${moodColor};" id="mob-nota-item-${n}-${nota.id}">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-size:12px;font-weight:700;color:${moodColor};">${moodIcon} ${nota.mood==='bien'?'Bien':nota.mood==='regular'?'Regular':'Necesita atención'}</span>
+                <div style="display:flex;gap:4px;">
+                  <button onclick="mobToggleEditNota(${n},${nota.id})" style="background:transparent;border:none;cursor:pointer;font-size:13px;opacity:.5;">✏️</button>
+                  <button onclick="deleteNota(${n},${nota.id})" style="background:transparent;border:none;cursor:pointer;font-size:13px;color:#c0392b;opacity:.6;">🗑</button>
+                </div>
+              </div>
+              <div style="font-size:13px;color:#444;" id="mob-nota-txt-${n}-${nota.id}">${escHtml(nota.texto)}</div>
+              <div style="font-size:10px;opacity:.4;margin-top:4px;">${nota.fecha||''}</div>
+              <!-- Edit form -->
+              <div id="mob-nota-edit-${n}-${nota.id}" style="display:none;margin-top:8px;">
+                <div style="display:flex;gap:6px;margin-bottom:6px;">
+                  <button class="mood-btn ${nota.mood==='bien'?'selected':''}" data-mood="bien" onclick="toggleMood(this)" style="flex:1;padding:5px;border-radius:8px;border:1.5px solid #d9ceb8;background:${nota.mood==='bien'?'#27AE60':'white'};color:${nota.mood==='bien'?'white':'#666'};font-size:11px;cursor:pointer;">😊</button>
+                  <button class="mood-btn ${nota.mood==='regular'?'selected':''}" data-mood="regular" onclick="toggleMood(this)" style="flex:1;padding:5px;border-radius:8px;border:1.5px solid #d9ceb8;background:${nota.mood==='regular'?'#E67E22':'white'};color:${nota.mood==='regular'?'white':'#666'};font-size:11px;cursor:pointer;">😐</button>
+                  <button class="mood-btn ${nota.mood==='mal'?'selected':''}" data-mood="mal" onclick="toggleMood(this)" style="flex:1;padding:5px;border-radius:8px;border:1.5px solid #d9ceb8;background:${nota.mood==='mal'?'#C0392B':'white'};color:${nota.mood==='mal'?'white':'#666'};font-size:11px;cursor:pointer;">😟</button>
+                </div>
+                <textarea rows="2" style="width:100%;padding:7px 9px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;resize:none;">${escHtml(nota.texto)}</textarea>
+                <div style="display:flex;gap:6px;margin-top:6px;">
+                  <button onclick="mobSaveEditNota(${n},${nota.id},this)" style="flex:1;padding:7px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:700;cursor:pointer;">💾 Guardar</button>
+                  <button onclick="mobToggleEditNota(${n},${nota.id})" style="padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:transparent;font-size:12px;cursor:pointer;">Cancelar</button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      container.appendChild(card);
+    });
   }
+
+  function mobToggleEditNota(n, notaId) {
+    const form = document.getElementById('mob-nota-edit-'+n+'-'+notaId);
+    if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function mobSaveEditNota(n, notaId, btn) {
+    const form = btn.closest('[id^="mob-nota-edit-"]');
+    if (!form) return;
+    const texto = form.querySelector('textarea').value.trim();
+    const mood  = form.querySelector('.mood-btn.selected')?.dataset.mood || 'bien';
+    if (!texto) return;
+    if (!obsAlumnos[n]) return;
+    const nota = obsAlumnos[n].notas.find(x=>x.id===notaId);
+    if (!nota) return;
+    nota.texto = texto; nota.mood = mood;
+    saveObsAlumnos();
+    renderMobObsAlumnos();
+  }
+
 
   function addNotaMob(n, btn) {
     const card = btn.closest('[id^="mobobscard-"]');
@@ -6677,134 +6805,186 @@
       const btn   = document.getElementById('mobGTab'+t.charAt(0).toUpperCase()+t.slice(1));
       if (panel) panel.style.display = t===tab ? 'block' : 'none';
       if (btn) {
-        btn.style.color = t===tab ? '#2D5016' : '#888';
-        btn.style.borderBottom = t===tab ? '2px solid #2D5016' : 'none';
-        btn.style.marginBottom = t===tab ? '-2px' : '0';
+        btn.style.color    = t===tab ? '#2D5016' : '#888';
+        btn.style.fontWeight = t===tab ? '800' : '600';
+        btn.style.borderBottom = t===tab ? '2px solid #2D5016' : '2px solid transparent';
       }
     });
-    if (tab==='camp') renderMobGruposMain();
-    if (tab==='mon')  renderMobGruposPorMonitor();
-    if (tab==='clase') renderMobGruposClase();
+    if (tab === 'camp')  { renderMobGruposCamp(); }
+    if (tab === 'mon')   { renderMobGruposPorMonitor(); }
+    if (tab === 'clase') { renderMobGruposPorClase(); }
   }
 
+
   function renderMobGruposMain() {
+    renderMobGruposCamp();
+  }
+
+  function mobGruposTab(tab) {
+    document.querySelectorAll('#mob-grupos .mob-gtab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+      b.style.background = b.dataset.tab === tab ? '#2D5016' : 'transparent';
+      b.style.color = b.dataset.tab === tab ? 'white' : '#2D5016';
+    });
+    renderMobGruposMain();
+  }
+
+  function renderMobGruposCamp() {
     const c = document.getElementById('mobGTabCampPanel');
     if (!c) return;
-
     if (!gruposCamp.length) {
       c.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Pulsa "+ Grupo" para crear el primero.</div>';
       return;
     }
-
     c.innerHTML = '';
     gruposCamp.forEach((g, gi) => {
-      const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
-      const monitores = monitoresData.filter(m => (g.monitores||[]).includes(m.id));
-
+      const alumnos = g.alumnos || [];
+      const conAlerta = alumnos.filter(n => getMedAlert(n)).length;
       const card = document.createElement('div');
-      card.style.cssText = `background:white;border-radius:16px;padding:16px;margin-bottom:14px;border-left:5px solid ${g.color};border-top:1px solid #ede8de;border-right:1px solid #ede8de;border-bottom:1px solid #ede8de;`;
-
-      // Header editable
-      card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-          <div style="width:12px;height:36px;border-radius:6px;background:${g.color};flex-shrink:0;cursor:pointer;" onclick="cycleMobGColor(${g.id},this)" title="Cambiar color"></div>
-          <input value="${escHtml(g.nombre)}" onchange="updateGcampField(${g.id},'nombre',this.value);this.previousElementSibling.nextElementSibling.nextElementSibling.querySelector('.mgname').textContent=this.value"
-            style="flex:1;font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;border:none;background:transparent;outline:none;border-bottom:1.5px dashed #d9ceb8;padding:2px 4px;"/>
-          <span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;background:${g.color}22;color:${g.color};">${alumnos.length}</span>
-          <button onclick="deleteGrupoCamp(${g.id});renderMobGruposMain()" style="width:28px;height:28px;border-radius:8px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:13px;flex-shrink:0;">🗑</button>
+      card.style.cssText = 'background:white;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);border-top:3px solid '+(g.hex||'#2D5016')+';';
+      // Header
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;';
+      header.onclick = () => {
+        const body = header.nextElementSibling;
+        const chev = header.querySelector('.gc-chev');
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'block';
+        chev.style.transform = open ? '' : 'rotate(90deg)';
+      };
+      header.innerHTML = `
+        <div onclick="event.stopPropagation();cycleColor('${g.id}');renderMobGruposMain();"
+          style="width:22px;height:22px;border-radius:50%;background:${g.hex||'#2D5016'};flex-shrink:0;cursor:pointer;border:2px solid rgba(255,255,255,.5);" title="Cambiar color"></div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:14px;">${escHtml(g.nombre||'Grupo')}</div>
+          <div style="font-size:11px;opacity:.5;">${alumnos.length} alumnos${conAlerta?' · '+conAlerta+' 🔴':''}</div>
         </div>
-
-        <!-- Sub-tabs del grupo en móvil -->
-        <div style="display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;">
-          <button onclick="showMobGrupCard(${g.id},'alumnos',this)" class="mgcard-tab-btn mgcard-tab-active" style="padding:5px 10px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">👥 Alumnos</button>
-          <button onclick="showMobGrupCard(${g.id},'monitores',this)" class="mgcard-tab-btn" style="padding:5px 10px;border-radius:8px;border:none;background:#f5f0e8;color:#2D5016;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">👤 Monitor</button>
-          <button onclick="showMobGrupCard(${g.id},'cabana',this)" class="mgcard-tab-btn" style="padding:5px 10px;border-radius:8px;border:none;background:#f5f0e8;color:#2D5016;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">🏠 Cabaña</button>
-          <button onclick="showMobGrupCard(${g.id},'vaciar',this)" class="mgcard-tab-btn" style="padding:5px 10px;border-radius:8px;border:none;background:#f5f0e8;color:#C0392B;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">🧹 Vaciar</button>
+        <span class="gc-chev" style="font-size:16px;opacity:.3;transition:transform .2s;">›</span>`;
+      // Body
+      const body = document.createElement('div');
+      body.style.cssText = 'display:none;padding:0 16px 14px;';
+      // Subpestañas
+      body.innerHTML = `
+        <div style="display:flex;gap:6px;margin-bottom:12px;padding-top:8px;">
+          <button onclick="mobGrupoCardTab(this,'alumnos-${gi}')" class="gcardtab active" data-panel="alumnos-${gi}"
+            style="flex:1;padding:6px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:700;cursor:pointer;">👥 Alumnos</button>
+          <button onclick="mobGrupoCardTab(this,'monitores-${gi}')" class="gcardtab" data-panel="monitores-${gi}"
+            style="flex:1;padding:6px;border-radius:8px;border:1.5px solid #d9ceb8;background:transparent;color:#666;font-size:11px;font-weight:700;cursor:pointer;">👤 Monitores</button>
+          <button onclick="mobGrupoCardTab(this,'cabana-${gi}')" class="gcardtab" data-panel="cabana-${gi}"
+            style="flex:1;padding:6px;border-radius:8px;border:1.5px solid #d9ceb8;background:transparent;color:#666;font-size:11px;font-weight:700;cursor:pointer;">🏠 Cabaña</button>
         </div>
-
-        <!-- PANEL ALUMNOS -->
-        <div id="mgcardpanel-${g.id}-alumnos">
+        <!-- ALUMNOS -->
+        <div id="alumnos-${gi}">
           <div style="display:flex;gap:6px;margin-bottom:8px;">
-            <input type="text" id="mobGBuscar-${g.id}" placeholder="🔍 Añadir alumno…" oninput="buscarParaGrupoMob(${g.id})"
-              style="flex:1;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;"/>
+            <input placeholder="🔍 Añadir alumno…" id="mobGBuscar-${gi}"
+              style="flex:1;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;"
+              oninput="mobGrupoSearch('${g.id}',${gi})"/>
+            <button onclick="addTodosActivosGrupo('${g.id}')" style="padding:8px 10px;border-radius:8px;border:1.5px solid #2D5016;background:transparent;color:#2D5016;font-size:11px;font-weight:700;cursor:pointer;">+Todos</button>
           </div>
-          <div id="mobGBuscarRes-${g.id}" style="display:none;background:white;border:1.5px solid #d9ceb8;border-radius:10px;max-height:160px;overflow-y:auto;margin-bottom:8px;"></div>
-          <div id="mobGAlumnosList-${g.id}" style="display:flex;flex-direction:column;gap:4px;">
-            ${alumnos.length===0
-              ? '<div style="font-size:12px;opacity:.35;font-style:italic;padding:4px 0;">Sin alumnos. Usa el buscador.</div>'
-              : alumnos.sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'})).map(p => {
-                  const pg=gruposEdit[p.gid]||grupos[p.gid];
-                  return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f5f0e8;border-radius:8px;">
-                    <div style="width:24px;height:24px;border-radius:50%;background:${pg?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
-                    <span style="flex:1;font-size:12px;font-weight:600;">${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}</span>
-                    ${getMedAlert(p.n)}
-                    <button onclick="removeAlumnoFromGrupo(${g.id},${p.n});renderMobGruposMain()" style="width:22px;height:22px;border-radius:6px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:11px;">✕</button>
-                  </div>`;
-                }).join('')}
+          <div id="mobGBuscarRes-${gi}" style="max-height:150px;overflow-y:auto;margin-bottom:8px;"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;" id="mobGChips-${gi}">
+            ${alumnos.map(n => {
+              const p = getAllEditParticipants(true).find(x=>x.n===n);
+              const med = getMedAlert(n);
+              return p ? `<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:20px;background:#f0f7eb;font-size:12px;">
+                ${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}${med?'<span>'+med+'</span>':''}
+                <span onclick="removeAlumnoFromGrupo('${g.id}',${n})" style="cursor:pointer;color:#c0392b;font-weight:700;margin-left:2px;">×</span>
+              </div>` : '';
+            }).join('')}
           </div>
         </div>
-
-        <!-- PANEL MONITORES -->
-        <div id="mgcardpanel-${g.id}-monitores" style="display:none;">
-          ${monitores.map(m=>`<div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f5f0e8;border-radius:8px;margin-bottom:6px;">
-            <span style="flex:1;font-size:13px;font-weight:600;">👤 ${escHtml(m.nombre)} ${escHtml(m.apellidos)}</span>
-            <button onclick="removeMonitorFromGrupo(${g.id},'${m.id}');renderMobGruposMain()" style="width:24px;height:24px;border-radius:6px;border:none;background:rgba(192,57,43,.1);color:#C0392B;cursor:pointer;font-size:11px;">✕</button>
-          </div>`).join('')}
-          <select onchange="addMonitorToGrupo(${g.id},this.value);this.value='';renderMobGruposMain()"
-            style="width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-top:4px;">
-            <option value="">+ Asignar monitor…</option>
-            ${monitoresData.filter(m=>!(g.monitores||[]).includes(m.id)).map(m=>`<option value="${m.id}">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</option>`).join('')}
+        <!-- MONITORES -->
+        <div id="monitores-${gi}" style="display:none;">
+          <select onchange="addMonitorToGrupo('${g.id}',this.value);this.value='';" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-bottom:8px;">
+            <option value="">+ Añadir monitor…</option>
+            ${monitoresData.map(m=>`<option value="${m.id}">${escHtml((m.nombre+' '+m.apellidos).trim())}</option>`).join('')}
           </select>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${(g.monitores||[]).map(mid => {
+              const m = monitoresData.find(x=>String(x.id)===String(mid));
+              return m ? `<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;background:#e8f5e9;font-size:12px;">
+                ${escHtml((m.nombre+' '+m.apellidos).trim())}
+                <span onclick="removeMonitorFromGrupo('${g.id}',${mid})" style="cursor:pointer;color:#c0392b;font-weight:700;margin-left:2px;">×</span>
+              </div>` : '';
+            }).join('')}
+          </div>
         </div>
-
-        <!-- PANEL CABAÑA -->
-        <div id="mgcardpanel-${g.id}-cabana" style="display:none;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <!-- CABAÑA -->
+        <div id="cabana-${gi}" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <div>
-              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Tipo</label>
-              <select onchange="updateGcampField(${g.id},'tipoAloj',this.value)" style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
-                <option ${(g.tipoAloj||'')==='cabana'?'selected':''} value="cabana">🏠 Cabaña</option>
-                <option ${(g.tipoAloj||'')==='bungalow'?'selected':''} value="bungalow">🏠 Bungalow</option>
-                <option ${(g.tipoAloj||'')==='tienda'?'selected':''} value="tienda">⛺ Tienda</option>
-                <option ${(g.tipoAloj||'')==='dormitorio'?'selected':''} value="dormitorio">🛏 Dormitorio</option>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Tipo</label>
+              <select onchange="gruposCamp[${gi}].tipoAloj=this.value;saveGruposCamp();" style="width:100%;padding:7px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
+                ${['Cabaña','Bungalow','Tienda','Dormitorio','Otro'].map(t=>`<option value="${t}" ${g.tipoAloj===t?'selected':''}>${t}</option>`).join('')}
               </select>
             </div>
             <div>
-              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Nº / Nombre</label>
-              <input type="text" value="${escHtml(g.cabana||'')}" placeholder="Cabaña 4…" onchange="updateGcampField(${g.id},'cabana',this.value)"
-                style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;box-sizing:border-box;"/>
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px;">Nombre/Nº</label>
+              <input value="${escHtml(g.cabana||'')}" placeholder="Ej. Cabaña 3" style="width:100%;padding:7px;border-radius:8px;border:1.5px solid #d9ceb8;background:white;font-family:'DM Sans',sans-serif;font-size:12px;box-sizing:border-box;outline:none;"
+                onchange="gruposCamp[${gi}].cabana=this.value;saveGruposCamp();"/>
             </div>
-            <div>
-              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Zona</label>
-              <input type="text" value="${escHtml(g.zona||'')}" placeholder="Zona Norte…" onchange="updateGcampField(${g.id},'zona',this.value)"
-                style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;box-sizing:border-box;"/>
-            </div>
-            <div>
-              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Capacidad</label>
-              <input type="number" value="${escHtml(String(g.capacidad||''))}" placeholder="Nº plazas" onchange="updateGcampField(${g.id},'capacidad',this.value)"
-                style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;box-sizing:border-box;"/>
-            </div>
-          </div>
-          <div style="margin-top:10px;">
-            <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;display:block;margin-bottom:4px;">Notas</label>
-            <textarea rows="2" placeholder="Observaciones…" onchange="updateGcampField(${g.id},'notasCabana',this.value)"
-              style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;resize:none;box-sizing:border-box;">${escHtml(g.notasCabana||'')}</textarea>
-          </div>
-          <button onclick="saveGruposCamp()" style="margin-top:8px;width:100%;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar cabaña</button>
-        </div>
-
-        <!-- PANEL VACIAR -->
-        <div id="mgcardpanel-${g.id}-vaciar" style="display:none;">
-          <div style="text-align:center;padding:16px;">
-            <div style="font-size:32px;margin-bottom:8px;">🧹</div>
-            <div style="font-size:14px;color:#666;margin-bottom:16px;">¿Quitar todos los alumnos de <strong>${escHtml(g.nombre)}</strong>?</div>
-            <button onclick="vaciarGrupoCamp(${g.id});renderMobGruposMain()" style="padding:10px 24px;border-radius:12px;border:none;background:#C0392B;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Vaciar grupo</button>
           </div>
         </div>
-      `;
+        <!-- Acciones grupo -->
+        <div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #ede5d0;">
+          <button onclick="saveGruposCamp();showSyncIndicator('✔ Grupo guardado','ok');"
+            style="flex:1;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">💾 Guardar</button>
+          <button onclick="if(confirm('¿Eliminar grupo?'))deleteGrupoCamp('${g.id}')"
+            style="padding:9px 12px;border-radius:10px;border:1.5px solid #fdecea;background:white;font-size:13px;cursor:pointer;">🗑</button>
+        </div>`;
+      card.appendChild(header);
+      card.appendChild(body);
       c.appendChild(card);
     });
   }
+
+  function mobGrupoCardTab(btn, panelId) {
+    const card = btn.closest('[style*="border-top"]') || btn.closest('div[style*="border-radius:14px"]');
+    if (!card) return;
+    card.querySelectorAll('.gcardtab').forEach(b => {
+      b.style.background = 'transparent'; b.style.color = '#666'; b.style.border = '1.5px solid #d9ceb8';
+    });
+    btn.style.background = '#2D5016'; btn.style.color = 'white'; btn.style.border = 'none';
+    card.querySelectorAll('[id^="alumnos-"],[id^="monitores-"],[id^="cabana-"]').forEach(p => p.style.display = 'none');
+    const panel = document.getElementById(panelId);
+    if (panel) panel.style.display = 'block';
+  }
+
+  function mobGrupoSearch(grupoId, gi) {
+    const q = (document.getElementById('mobGBuscar-'+gi)?.value||'').toLowerCase().trim();
+    const res = document.getElementById('mobGBuscarRes-'+gi);
+    if (!res) return;
+    if (q.length < 2) { res.innerHTML = ''; return; }
+    const g = gruposCamp.find(x=>x.id===grupoId);
+    const asignados = g?.alumnos||[];
+    const found = getAllEditParticipants().filter(p =>
+      !asignados.includes(p.n) && (p.apellidos+' '+p.nombre).toLowerCase().includes(q)
+    ).slice(0,8);
+    res.innerHTML = found.map(p => `
+      <div onclick="addAlumnoAGrupo('${grupoId}',${p.n});document.getElementById('mobGBuscar-${gi}').value='';document.getElementById('mobGBuscarRes-${gi}').innerHTML='';renderMobGruposMain();"
+        style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #ede5d0;font-size:13px;background:white;"
+        onmouseenter="this.style.background='#f0f7eb'" onmouseleave="this.style.background='white'">
+        ${escHtml(p.apellidos)}, ${escHtml(p.nombre)}
+        <span style="font-size:11px;opacity:.4;margin-left:6px;">${(gruposEdit[p.gid]||grupos[p.gid])?.label||''}</span>
+      </div>`).join('') || '<div style="padding:8px 10px;font-size:12px;opacity:.4;">Sin resultados</div>';
+  }
+
+  function renderMobGruposPorMonitor() {
+    const c = document.getElementById('mobGTabMonPanel');
+    if (!c) return;
+    renderGruposPorMonitor();
+    const desktop = document.getElementById('gruposPorMonitor');
+    c.innerHTML = desktop ? desktop.innerHTML : '<div style="text-align:center;padding:30px;font-size:13px;opacity:.4;">Sin datos.</div>';
+  }
+
+  function renderMobGruposPorClase() {
+    const c = document.getElementById('mobGTabClasePanel');
+    if (!c) return;
+    renderGruposClase();
+    const desktop = document.getElementById('gruposPorClase');
+    c.innerHTML = desktop ? desktop.innerHTML : '<div style="text-align:center;padding:30px;font-size:13px;opacity:.4;">Sin datos.</div>';
+  }
+
 
   function showMobGrupCard(gid, tab, btn) {
     ['alumnos','monitores','cabana','vaciar'].forEach(t => {
@@ -6991,54 +7171,93 @@
     if (tab==='lista')  renderMobProgLista();
   }
 
+  function renderMobBuscar() {
+    const q = (document.getElementById('mobBuscarInput')?.value||'').toLowerCase().trim();
+    const res = document.getElementById('mobBuscarResults');
+    if (!res) return;
+    if (q.length < 2) {
+      res.innerHTML = '<div style="text-align:center;padding:20px;font-size:13px;opacity:.4;">Escribe 2 o más letras para buscar.</div>';
+      return;
+    }
+    const found = getAllEditParticipants(true).filter(p =>
+      (p.apellidos+' '+p.nombre).toLowerCase().includes(q) ||
+      (p.nombre+' '+p.apellidos).toLowerCase().includes(q)
+    ).slice(0,20);
+    if (!found.length) {
+      res.innerHTML = '<div style="text-align:center;padding:20px;font-size:13px;opacity:.4;">Sin resultados.</div>';
+      return;
+    }
+    res.innerHTML = '';
+    found.forEach(p => {
+      const g = gruposEdit[p.gid]||grupos[p.gid];
+      const gcampAsig = gruposCamp.find(gc=>(gc.alumnos||[]).includes(p.n));
+      const med = getMedAlert(p.n);
+      const esPend = p.activo==='pendiente'||p.activo==='pending';
+      const esInact = p.activo===false||p.activo==='false';
+      const badge = esPend ? '<span style="font-size:10px;font-weight:700;color:#F39C12;background:#fff3cd;padding:1px 5px;border-radius:5px;margin-left:4px;">⏳</span>'
+                  : esInact ? '<span style="font-size:10px;color:#C0392B;background:#fdecea;padding:1px 5px;border-radius:5px;margin-left:4px;">⛔</span>' : '';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;background:white;border-bottom:1px solid #ede5d0;cursor:pointer;';
+      row.onclick = () => openFicha(p, g||{});
+      row.innerHTML = `
+        <div style="width:38px;height:38px;border-radius:10px;background:${g?.hex||'#888'};display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:13px;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${escHtml(p.apellidos)}, ${escHtml(p.nombre)}
+            ${med?'<span style="font-size:12px;margin-left:3px;">'+med+'</span>':''}${badge}
+          </div>
+          <div style="font-size:11px;opacity:.5;margin-top:1px;">
+            ${g?g.label:'?'}${gcampAsig?' · '+escHtml(gcampAsig.nombre):''}
+          </div>
+        </div>
+        <span style="font-size:16px;opacity:.25;">›</span>`;
+      res.appendChild(row);
+    });
+  }
+
   function renderMobProgLista() {
-    // Update renderMobProg to use new container
     const container = document.getElementById('mobProgListPanel');
     if (!container) return;
     const tipo = document.getElementById('mobFiltTipo')?.value || '';
     const dia  = document.getElementById('mobFiltDia')?.value  || '';
     let lista = progData.filter(a => {
       if (tipo && a.tipo !== tipo) return false;
-      if (dia && !(a.dias||[]).includes(dia)) return false;
+      if (dia  && !(a.dias||[]).includes(dia)) return false;
       return true;
     }).sort((a,b) => {
-      const fa = a.fechaInicio || '', fb = b.fechaInicio || '';
-      if (fa && fb && fa !== fb) return fa.localeCompare(fb);
-      if (fa && !fb) return -1; if (!fa && fb) return 1;
-      const di = DIAS_ORDER.indexOf(a.dias?.[0]||'') - DIAS_ORDER.indexOf(b.dias?.[0]||'');
-      return di !== 0 ? di : (a.horaInicio||'').localeCompare(b.horaInicio||'');
+      const fa=a.fechaInicio||'',fb=b.fechaInicio||'';
+      if (fa&&fb&&fa!==fb) return fa.localeCompare(fb);
+      const di=DIAS_ORDER.indexOf(a.dias?.[0]||'')-DIAS_ORDER.indexOf(b.dias?.[0]||'');
+      return di!==0?di:(a.horaInicio||'').localeCompare(b.horaInicio||'');
     });
 
     if (!lista.length) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin actividades. Pulsa "+ Nueva".</div>';
+      container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;opacity:.4;">Sin actividades. Pulsa "+ Nueva".</div>';
       return;
     }
     container.innerHTML = '';
     lista.forEach(a => {
-      const diasStr = (a.dias||[]).map(d=>DIAS_LABELS[d]?.slice(0,3)||d).join(', ');
-      const gruposNom = (a.grupos||[]).map(gid=>{const g=gruposCamp.find(g=>String(g.id)===String(gid));return g?g.nombre:'';}).filter(Boolean).join(', ');
-      const monNom = (a.monitores||[]).map(mid=>{const m=monitoresData.find(m=>String(m.id)===String(mid));return m?(m.nombre).trim():'';}).filter(Boolean).join(', ');
-      const color = (typeof TIPO_COLORS !== 'undefined' ? TIPO_COLORS[a.tipo] : null) || '#4A7C2F';
-      const div = document.createElement('div');
-      div.style.cssText = 'background:white;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid '+color+';border-top:1px solid #ede8de;border-right:1px solid #ede8de;border-bottom:1px solid #ede8de;';
-      div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:${color}22;color:${color};">${TIPO_LABELS[a.tipo]||a.tipo}</span>
-          <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:.95rem;color:#2D5016;flex:1;">${escHtml(a.nombre||'Sin nombre')}</span>
-          <button onclick="openProgModal(${a.id})" style="padding:4px 10px;border-radius:7px;border:1.5px solid #d9ceb8;background:#f5f0e8;font-size:11px;cursor:pointer;">✏️</button>
-        </div>
-        <div style="font-size:11px;color:#666;line-height:1.6;">
-          ${diasStr?`📅 ${diasStr}`:''}${a.horaInicio?' · ⏰ '+a.horaInicio+(a.horaFin?' → '+a.horaFin:''):''}
-          ${a.fechaInicio?`<br>📆 ${a.fechaInicio}${a.fechaFin&&a.fechaFin!==a.fechaInicio?' → '+a.fechaFin:''}` :''}
-          ${gruposNom?`<br>🏕 ${escHtml(gruposNom)}`:''}
-          ${monNom?`<br>👤 ${escHtml(monNom)}`:''}
-          ${a.lugar?`<br>📍 ${escHtml(a.lugar)}`:''}
-        </div>
-      `;
-      div.addEventListener('click', e => { if (!e.target.closest('button')) openProgModal(a.id); });
-      container.appendChild(div);
+      const color = TIPO_COLORS[a.tipo]||'#888';
+      const tipoLabel = TIPO_LABELS[a.tipo]||a.tipo||'';
+      const diasStr = (a.dias||[]).map(d=>d.charAt(0).toUpperCase()+d.slice(1,3)).join(', ');
+      const fechaStr = a.fechaInicio ? new Date(a.fechaInicio+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'}) : diasStr;
+      const row = document.createElement('div');
+      row.style.cssText = 'background:white;border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06);border-left:4px solid '+color+';';
+      row.innerHTML = `
+        <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="openProgModal('${a.id}')">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+              <span style="font-size:10px;font-weight:700;color:${color};background:${color}22;padding:2px 6px;border-radius:4px;">${tipoLabel}</span>
+            </div>
+            <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(a.nombre||tipoLabel)}</div>
+            <div style="font-size:11px;opacity:.5;margin-top:2px;">${fechaStr}${a.horaInicio?' · '+a.horaInicio+(a.horaFin?' → '+a.horaFin:''):''}</div>
+          </div>
+          <span style="font-size:16px;opacity:.25;flex-shrink:0;">✏️</span>
+        </div>`;
+      container.appendChild(row);
     });
   }
+
 
   function renderMobProgSemana() {
     const c = document.getElementById('mobProgSemanaPanel');
@@ -7416,75 +7635,62 @@
     const ds = getAsistFechaStr();
     const day = asistenciaData[ds] || {};
 
-    // Date display
     const dateEl = document.getElementById('mobAsistDate');
-    if (dateEl) dateEl.textContent = asistFecha.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+    if (dateEl) dateEl.textContent = asistFecha.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
 
-    // Stats
-    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-    const presente  = Object.values(day).filter(v=>v==='presente').length;
-    const ausente   = Object.values(day).filter(v=>v==='ausente').length;
-    const justif    = Object.values(day).filter(v=>v==='justificado').length;
-    const s = n => document.getElementById(n);
-    if (s('mobAsistP')) s('mobAsistP').textContent = presente + ' ✅';
-    if (s('mobAsistA')) s('mobAsistA').textContent = ausente  + ' ❌';
-    if (s('mobAsistJ')) s('mobAsistJ').textContent = justif   + ' ⚠️';
+    const statsEl = document.getElementById('mobAsistStats');
+    const lista = getAllEditParticipants();
+    const presentes  = lista.filter(p=>day[p.n]==='P').length;
+    const ausentes   = lista.filter(p=>day[p.n]==='A').length;
+    const justif     = lista.filter(p=>day[p.n]==='J').length;
+    const sinMarcar  = lista.filter(p=>!day[p.n]).length;
+    if (statsEl) statsEl.innerHTML = `
+      <div style="display:flex;gap:8px;padding:8px 14px;background:#f9f6f1;font-size:12px;font-weight:700;">
+        <span style="color:#27AE60;">✅ ${presentes}</span>
+        <span style="color:#C0392B;">❌ ${ausentes}</span>
+        <span style="color:#E67E22;">⚠️ ${justif}</span>
+        <span style="color:#999;">— ${sinMarcar} sin marcar</span>
+      </div>`;
 
-    const lista = document.getElementById('mobAsistLista');
-    if (!lista) return;
-    lista.innerHTML = '';
+    const container = document.getElementById('mobAsistLista');
+    if (!container) return;
+    container.innerHTML = '';
 
-    // Group by gruposCamp
-    const groups = [];
-    if (gruposCamp.length) {
-      gruposCamp.forEach(g => {
-        const alumnos = getAllEditParticipants().filter(p => (g.alumnos||[]).includes(p.n));
-        if (alumnos.length) groups.push({nombre:g.nombre, color:g.color, alumnos});
-      });
-      const asignadosIds = new Set(gruposCamp.flatMap(g=>g.alumnos||[]));
-      const sin = getAllEditParticipants().filter(p=>!asignadosIds.has(p.n));
-      if (sin.length) groups.push({nombre:'Sin grupo', color:'#aaa', alumnos:sin});
-    } else {
-      Object.entries(gruposEdit).forEach(([gid,g]) => {
-        const alumnos = getAllEditParticipants().filter(p=>p.gid===gid);
-        if (alumnos.length) groups.push({nombre:g.label, color:g.hex, alumnos});
-      });
-    }
-
-    groups.forEach(({nombre, color, alumnos}) => {
-      const sorted = [...alumnos].sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
-      const presentes = sorted.filter(p=>day[p.n]==='presente').length;
-
-      const header = document.createElement('div');
-      header.style.cssText = `display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f5f0e8;border-radius:10px;margin-bottom:6px;margin-top:12px;`;
-      header.innerHTML = `
-        <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-        <div style="flex:1;font-size:12px;font-weight:700;color:#2D5016;">${escHtml(nombre)}</div>
-        <span style="font-size:11px;opacity:.5;">${presentes}/${sorted.length}</span>
-      `;
-      lista.appendChild(header);
-
-      sorted.forEach(p => {
+    // Agrupar por grupo campamento
+    const grupos_asist = gruposCamp.length ? gruposCamp : [{id:'_all', nombre:'Todos', alumnos: lista.map(p=>p.n)}];
+    grupos_asist.forEach(g => {
+      const miembros = gruposCamp.length
+        ? (g.alumnos||[]).map(n=>lista.find(p=>p.n===n)).filter(Boolean)
+        : lista;
+      if (!miembros.length) return;
+      const section = document.createElement('div');
+      section.style.cssText = 'margin-bottom:16px;';
+      section.innerHTML = `<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2D5016;opacity:.7;padding:8px 14px;background:#f0f7eb;border-radius:8px;margin-bottom:6px;">${escHtml(g.nombre)}</div>`;
+      miembros.forEach(p => {
         const estado = day[p.n] || '';
-        const g = gruposEdit[p.gid]||grupos[p.gid];
+        const med = getMedAlert(p.n);
         const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f5f0e8;';
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:white;border-bottom:1px solid #ede5d0;';
         row.innerHTML = `
-          <div style="width:28px;height:28px;border-radius:50%;background:${g?.hex||'#888'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;">${getInitials(p.nombre,p.apellidos)}</div>
-          <div style="flex:1;font-size:13px;font-weight:600;">${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}</div>
-          <div style="display:flex;gap:4px;">
-            <button onclick="marcarAsistencia(${p.n},'presente',this);renderMobAsistStats()" data-estado="presente"
-              style="width:32px;height:32px;border-radius:8px;border:1.5px solid ${estado==='presente'?'#27AE60':'#d9ceb8'};background:${estado==='presente'?'#27AE6022':'white'};font-size:14px;cursor:pointer;">✅</button>
-            <button onclick="marcarAsistencia(${p.n},'ausente',this);renderMobAsistStats()" data-estado="ausente"
-              style="width:32px;height:32px;border-radius:8px;border:1.5px solid ${estado==='ausente'?'#C0392B':'#d9ceb8'};background:${estado==='ausente'?'#C0392B22':'white'};font-size:14px;cursor:pointer;">❌</button>
-            <button onclick="marcarAsistencia(${p.n},'justificado',this);renderMobAsistStats()" data-estado="justificado"
-              style="width:32px;height:32px;border-radius:8px;border:1.5px solid ${estado==='justificado'?'#E67E22':'#d9ceb8'};background:${estado==='justificado'?'#E67E2222':'white'};font-size:14px;cursor:pointer;">⚠️</button>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${escHtml(p.apellidos)}, ${escHtml(p.nombre)}${med?'<span style="font-size:12px;margin-left:3px;">'+med+'</span>':''}
+            </div>
           </div>
-        `;
-        lista.appendChild(row);
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <button onclick="marcarAsistencia(${p.n},'P')"
+              style="width:32px;height:32px;border-radius:8px;border:2px solid ${estado==='P'?'#27AE60':'#e8e0d0'};background:${estado==='P'?'#27AE60':'white'};color:${estado==='P'?'white':'#aaa'};font-size:14px;cursor:pointer;padding:0;">✅</button>
+            <button onclick="marcarAsistencia(${p.n},'A')"
+              style="width:32px;height:32px;border-radius:8px;border:2px solid ${estado==='A'?'#C0392B':'#e8e0d0'};background:${estado==='A'?'#C0392B':'white'};color:${estado==='A'?'white':'#aaa'};font-size:14px;cursor:pointer;padding:0;">❌</button>
+            <button onclick="marcarAsistencia(${p.n},'J')"
+              style="width:32px;height:32px;border-radius:8px;border:2px solid ${estado==='J'?'#E67E22':'#e8e0d0'};background:${estado==='J'?'#E67E22':'white'};color:${estado==='J'?'white':'#aaa'};font-size:14px;cursor:pointer;padding:0;">⚠️</button>
+          </div>`;
+        section.appendChild(row);
       });
+      container.appendChild(section);
     });
   }
+
 
   function renderMobAsistStats() {
     const ds = getAsistFechaStr();
@@ -7497,26 +7703,80 @@
   }
 
   function renderMobGuardia() {
-    renderGuardia(); // reuse desktop render
     const c = document.getElementById('mobGuardiaContent');
     if (!c) return;
-    // Copy content from desktop panels to mobile
-    const ahora = document.getElementById('guardiaAhora')?.innerHTML || '';
-    const hoy   = document.getElementById('guardiaHoy')?.innerHTML || '';
-    const med   = document.getElementById('guardiaMedico')?.innerHTML || '';
-    c.innerHTML = `
-      <div style="margin-bottom:16px;">${ahora}</div>
-      <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;margin-bottom:10px;">📋 Actividades de hoy</div>
-      <div style="margin-bottom:16px;">${hoy}</div>
-      <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#2D5016;margin-bottom:10px;">💊 Medicación</div>
-      ${med}
-    `;
+    const now   = new Date();
+    const hoy   = dateToStr(now);
+    const hhmm  = now.toTimeString().slice(0,5);
+    const actHoy = progData.filter(a => actividadEnFecha(a, hoy))
+      .sort((a,b)=>(a.horaInicio||'').localeCompare(b.horaInicio||''));
+
+    // EN CURSO
+    const enCurso = actHoy.filter(a => a.horaInicio <= hhmm && a.horaFin >= hhmm);
+    let html = `<div style="margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2D5016;opacity:.6;margin-bottom:8px;">⚡ En este momento</div>`;
+    if (enCurso.length) {
+      enCurso.forEach(a => {
+        const color = TIPO_COLORS[a.tipo]||'#2D5016';
+        html += `<div style="background:${color};border-radius:12px;padding:14px;color:white;margin-bottom:8px;">
+          <div style="font-size:11px;font-weight:700;opacity:.8;margin-bottom:4px;">${TIPO_LABELS[a.tipo]||a.tipo} · ${a.horaInicio}–${a.horaFin}</div>
+          <div style="font-size:16px;font-weight:900;">${escHtml(a.nombre||TIPO_LABELS[a.tipo]||'')}</div>
+          ${(a.lugar)?'<div style="font-size:12px;opacity:.8;margin-top:4px;">📍 '+escHtml(a.lugar)+'</div>':''}
+        </div>`;
+      });
+    } else {
+      html += '<div style="padding:14px;background:#f9f6f1;border-radius:12px;font-size:13px;opacity:.5;text-align:center;">Sin actividad en este momento</div>';
+    }
+    html += '</div>';
+
+    // AGENDA HOY
+    html += `<div style="margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2D5016;opacity:.6;margin-bottom:8px;">📅 Agenda de hoy</div>`;
+    if (actHoy.length) {
+      actHoy.forEach(a => {
+        const color = TIPO_COLORS[a.tipo]||'#2D5016';
+        const isCur = enCurso.some(x=>x.id===a.id);
+        html += `<div style="display:flex;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:${isCur?color+'22':'white'};border-left:3px solid ${color};">
+          <div style="font-size:12px;font-weight:700;color:#666;flex-shrink:0;">${a.horaInicio||'—'}</div>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:13px;">${escHtml(a.nombre||TIPO_LABELS[a.tipo]||'')}</div>
+            ${isCur?'<span style="font-size:10px;font-weight:700;color:'+color+';">EN CURSO</span>':''}
+          </div>
+        </div>`;
+      });
+    } else {
+      html += '<div style="padding:14px;background:#f9f6f1;border-radius:12px;font-size:13px;opacity:.5;text-align:center;">Sin actividades hoy</div>';
+    }
+    html += '</div>';
+
+    // MEDICACIÓN
+    const conMed = getAllEditParticipants().filter(p => {
+      const f = fichasCache[p.n];
+      return f && f.medicacion && String(f.medicacion).trim();
+    });
+    if (conMed.length) {
+      html += `<div style="margin-bottom:16px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#C0392B;opacity:.8;margin-bottom:8px;">💊 Medicación hoy (${conMed.length})</div>`;
+      conMed.forEach(p => {
+        const f = fichasCache[p.n];
+        html += `<div style="padding:10px 12px;background:#fff8f0;border-radius:10px;border-left:3px solid #E67E22;margin-bottom:6px;">
+          <div style="font-weight:700;font-size:13px;">${escHtml(p.apellidos)}, ${escHtml(p.nombre)}</div>
+          <div style="font-size:12px;color:#E67E22;margin-top:2px;">${escHtml(f.medicacion)}</div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Resumen diario
+    html += `<button onclick="generarResumenDiario()"
+      style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #2D5016;background:transparent;color:#2D5016;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+      📋 Generar resumen del día
+    </button>`;
+
+    c.innerHTML = html;
   }
 
 
-  // ══════════════════════════════════════════════════════════════
-  //  ALERTA MÉDICA EN GRUPOS - función centralizada
-  // ══════════════════════════════════════════════════════════════
   function getMedAlert(n) {
     // Check fichasCache first, then localStorage
     const d = fichasCache[String(n)] || (() => {
@@ -7947,29 +8207,31 @@
       : historialData;
 
     if (!filtered.length) {
-      lista.innerHTML = '<div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Sin registros aún.</div>';
+      lista.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;opacity:.4;">Sin registros en el historial.</div>';
       return;
     }
+    const tipoColors = {alumno:'#3B7EA1',ficha:'#C0392B',monitor:'#8E44AD',grupo:'#2D5016',programacion:'#E67E22',asistencia:'#27AE60',obs:'#E67E22',sistema:'#888'};
+    const tipoLabels = {alumno:'👥 Alumno',ficha:'🩺 Ficha',monitor:'👤 Monitor',grupo:'🏕 Grupo',programacion:'📅 Prog.',asistencia:'✅ Asist.',obs:'📝 Nota',sistema:'⚙️ Sistema'};
     lista.innerHTML = '';
-    filtered.slice(0,100).forEach(e => {
-      const tipo = HIST_TIPOS[e.tipo] || HIST_TIPOS.sistema;
+    filtered.slice(0,50).forEach(e => {
+      const color = tipoColors[e.tipo]||'#888';
+      const label = tipoLabels[e.tipo]||e.tipo||'';
       const div = document.createElement('div');
-      div.style.cssText = 'display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid #f0ebe0;align-items:flex-start;';
+      div.style.cssText = 'padding:10px 14px;border-bottom:1px solid #ede5d0;display:flex;gap:10px;align-items:flex-start;';
       div.innerHTML = `
-        <div style="width:8px;height:8px;border-radius:50%;background:${tipo.color};flex-shrink:0;margin-top:5px;"></div>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:600;color:#333;">
-            <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:${tipo.color}22;color:${tipo.color};margin-right:5px;">${tipo.label}</span>
-            ${escHtml(e.accion)}
+        <div style="width:4px;border-radius:2px;background:${color};flex-shrink:0;align-self:stretch;min-height:30px;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+            <span style="font-size:10px;font-weight:700;color:${color};">${label}</span>
+            <span style="font-size:10px;opacity:.4;">${timeAgo(e.ts)}</span>
           </div>
-          ${e.detalle?`<div style="font-size:11px;opacity:.45;margin-top:2px;">${escHtml(e.detalle)}</div>`:''}
-          <div style="font-size:10px;opacity:.35;margin-top:2px;">${e.fecha} · ${e.hora}</div>
-        </div>
-        <div style="font-size:10px;opacity:.3;white-space:nowrap;flex-shrink:0;">${tiempoRelativo(e.ts)}</div>
-      `;
+          <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(e.quien||'')}</div>
+          ${e.detalle?'<div style="font-size:11px;opacity:.5;margin-top:1px;">'+escHtml(e.detalle)+'</div>':''}
+        </div>`;
       lista.appendChild(div);
     });
   }
+
 
   function filterHistorialMob(tipo, btn) {
     histFiltroActivo = tipo;
@@ -8526,6 +8788,7 @@
       <div style="display:flex;gap:5px;">
         <button onclick="openProgModal()" style="padding:5px 9px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:700;cursor:pointer;">+ Nueva</button>
         <button onclick="saveProgData();showSyncIndicator('✔ Programación guardada','ok');" style="padding:5px 9px;border-radius:8px;border:1.5px solid #2D5016;background:transparent;color:#2D5016;font-size:11px;font-weight:700;cursor:pointer;">💾</button>
+        <button onclick="document.getElementById('exportModal').classList.add('visible')" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">📄 PDF</button>
       </div>
     </div>
     <!-- Vista tabs: Lista / Semana -->
