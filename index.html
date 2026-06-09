@@ -4054,10 +4054,33 @@
 
   function getMonitorGrupoOptions(m) {
     let opts = '<option value="">Sin asignar</option>';
-    // Grupos de clase (cursos)
-    opts += '<optgroup label="── Curso escolar ──">';
+    // Grupos de clase: combinaciones reales de curso+letra
+    const claseSet = new Set();
+    getAllEditParticipants().forEach(p => {
+      if (p.gid && p.grupo && p.grupo !== '❓') {
+        claseSet.add(p.gid + '|' + p.grupo.toUpperCase().trim());
+      }
+    });
+    // Ordenar por gid luego por letra
+    const clases = [...claseSet].sort((a,b) => {
+      const [ga,la] = a.split('|'), [gb,lb] = b.split('|');
+      return ga !== gb ? ga.localeCompare(gb) : la.localeCompare(lb);
+    });
+    if (clases.length) {
+      opts += '<optgroup label="── Clase (Curso + Grupo) ──">';
+      clases.forEach(clave => {
+        const [gid, letra] = clave.split('|');
+        const g = gruposEdit[gid] || grupos[gid];
+        const label = (g ? g.label : gid) + ' ' + letra;
+        const val = clave; // e.g. "g4|A"
+        opts += `<option value="${val}" ${m.grupoAsignado===val?'selected':''}>${label}</option>`;
+      });
+      opts += '</optgroup>';
+    }
+    // Cursos genéricos (sin letra) como fallback
+    opts += '<optgroup label="── Curso completo ──">';
     [['g2','2º Primaria'],['g3','3º Primaria'],['g4','4º Primaria'],
-     ['g5','5º Primaria'],['g6','6º Primaria']].forEach(([val,label]) => {
+     ['g5','5º Primaria'],['g6','6º Primaria'],['g7','1º ESO'],['g8','2º ESO']].forEach(([val,label]) => {
       opts += `<option value="${val}" ${m.grupoAsignado===val?'selected':''}>${label}</option>`;
     });
     opts += '</optgroup>';
