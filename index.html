@@ -3829,7 +3829,11 @@
           </select>
         </td>
         <td class="otros-grupos-cell" data-n="${p.n}"></td>
-        <td><button class="tbl-del-btn" onclick="deleteAlumno(${p.n},'${p.gid}')" title="Eliminar">🗑</button></td>
+        <td style="white-space:nowrap;">
+          <button onclick="saveAllAlumnos()" title="Guardar cambios"
+            style="padding:4px 8px;border-radius:6px;border:none;background:#f0f7eb;color:#2D5016;font-size:13px;cursor:pointer;margin-right:4px;">💾</button>
+          <button class="tbl-del-btn" onclick="deleteAlumno(${p.n},'${p.gid}')" title="Eliminar">🗑</button>
+        </td>
       `;
 
       // Fill otros grupos cell after render (avoids template literal nesting issues)
@@ -4215,52 +4219,84 @@
     if (!container) return;
     container.innerHTML = '';
 
-    const letras = ['A','B','C','D'];
-    const colors = {'A':'#4A90D9','B':'#27AE60','C':'#E67E22','D':'#8E44AD'};
+    const letraColors = {'A':'#4A90D9','B':'#27AE60','C':'#E67E22','D':'#8E44AD'};
+    const todos = getAllEditParticipants();
 
-    letras.forEach(letra => {
-      const alumnos = getAllEditParticipants().filter(p => p.grupo === letra);
+    // Generar combinaciones únicas de curso+letra que existen en los datos
+    const claveSet = new Set();
+    todos.forEach(p => {
+      const gid = p.gid || 'g6';
+      const letra = (p.grupo && p.grupo !== '❓') ? p.grupo.toUpperCase().trim() : null;
+      if (letra) claveSet.add(gid + '_' + letra);
+    });
+
+    // Ordenar: primero por gid (g2→g8), luego por letra (A→Z)
+    const claves = [...claveSet].sort((a, b) => {
+      const [ga, la] = a.split('_');
+      const [gb, lb] = b.split('_');
+      if (ga !== gb) return ga.localeCompare(gb);
+      return la.localeCompare(lb);
+    });
+
+    claves.forEach(clave => {
+      const [gid, letra] = clave.split('_');
+      const g = gruposEdit[gid] || grupos[gid];
+      const color = letraColors[letra] || '#888';
+      const alumnos = todos.filter(p => p.gid === gid && p.grupo && p.grupo.toUpperCase().trim() === letra);
       if (!alumnos.length) return;
+
+      const label = (g ? g.label : gid) + ' ' + letra;
       const card = document.createElement('div');
       card.className = 'grupo-resumen-card';
       card.innerHTML = `
         <div class="grupo-resumen-header">
-          <div class="grupo-color-dot" style="background:${colors[letra]}"></div>
-          <div class="grupo-resumen-title">Grupo ${letra}</div>
-          <div class="grupo-resumen-meta">${alumnos.length} participantes</div>
+          <div class="grupo-color-dot" style="background:${color}"></div>
+          <div class="grupo-resumen-title">${escHtml(label)}</div>
+          <div class="grupo-resumen-meta">${alumnos.length} alumnos</div>
         </div>
         <div class="grupo-alumnos-list">
-          ${alumnos.map(p => `
-            <div class="grupo-alumno-chip">
-              <div class="chip-avatar" style="background:${colors[letra]}">${getInitials(p.nombre,p.apellidos)}</div>
-              <div><span style="font-weight:600">${escHtml(p.apellidos)}</span> ${escHtml(p.nombre)}
-              <div style="font-size:10px;opacity:.5">${gruposEdit[p.gid]?.label||''}</div></div>
-            </div>`).join('')}
+          ${alumnos.map(p => {
+            const med = getMedAlert(p.n);
+            return `<div class="grupo-alumno-chip">
+              <div class="chip-avatar" style="background:${color}">${getInitials(p.nombre,p.apellidos)}</div>
+              <div>
+                <span style="font-weight:600">${escHtml(p.apellidos)}</span> ${escHtml(p.nombre)}
+                ${med ? '<span style="font-size:12px;margin-left:3px;">'+med+'</span>' : ''}
+                <div style="font-size:10px;opacity:.5">${g ? g.label : ''}</div>
+              </div>
+            </div>`;
+          }).join('')}
         </div>`;
       container.appendChild(card);
     });
 
-    // Grupos pendientes
-    const pendientes = getAllEditParticipants().filter(p => !letras.includes(p.grupo));
-    if (pendientes.length) {
+    // Sin grupo asignado
+    const sinGrupo = todos.filter(p => !p.grupo || p.grupo === '❓');
+    if (sinGrupo.length) {
       const card = document.createElement('div');
       card.className = 'grupo-resumen-card';
       card.innerHTML = `
         <div class="grupo-resumen-header">
           <div class="grupo-color-dot" style="background:#ccc"></div>
-          <div class="grupo-resumen-title" style="opacity:.6">Grupo pendiente (❓)</div>
-          <div class="grupo-resumen-meta">${pendientes.length} participantes</div>
+          <div class="grupo-resumen-title" style="opacity:.6">Sin grupo de clase asignado</div>
+          <div class="grupo-resumen-meta">${sinGrupo.length} alumnos</div>
         </div>
         <div class="grupo-alumnos-list">
-          ${pendientes.map(p => `
-            <div class="grupo-alumno-chip" style="opacity:.65">
+          ${sinGrupo.map(p => {
+            const g = gruposEdit[p.gid] || grupos[p.gid];
+            return `<div class="grupo-alumno-chip" style="opacity:.65">
               <div class="chip-avatar" style="background:#bbb">${getInitials(p.nombre,p.apellidos)}</div>
-              ${escHtml(p.apellidos)} ${escHtml(p.nombre)}
-            </div>`).join('')}
+              <div>
+                ${escHtml(p.apellidos)} ${escHtml(p.nombre)}
+                <div style="font-size:10px;opacity:.5">${g ? g.label : ''}</div>
+              </div>
+            </div>`;
+          }).join('')}
         </div>`;
       container.appendChild(card);
     }
   }
+
 
   // ══════════════════════════════════════════════════════════════
   //  RESUMEN MÉDICO
@@ -6443,6 +6479,9 @@
           </button>
         </div>
         <div style="display:flex;gap:8px;">
+          <button onclick="saveAllAlumnos()"
+            style="padding:10px 14px;border-radius:10px;border:1.5px solid #f0f7eb;background:white;
+              font-size:14px;cursor:pointer;" title="Guardar cambios">💾</button>
           <button onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(g||{})})"
             style="flex:1;padding:10px;border-radius:10px;border:none;background:#2D5016;color:white;
               font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
