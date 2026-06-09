@@ -2120,6 +2120,7 @@
           <option value="activo">✅ Activos</option>
           <option value="pendiente">⏳ Pendientes de revisar</option>
           <option value="inactivo">⛔ No activos</option>
+          <option value="todos">📋 Todos (imprimir)</option>
         </select>
       </div>
     </div>
@@ -2150,9 +2151,12 @@
     <h2 class="section-title">👤 Equipo de monitores</h2>
     <div class="edit-toolbar">
       <button class="edit-btn primary" onclick="addMonitor()">➕ Añadir monitor/a</button>
-      <button class="edit-btn" onclick="saveMonitores()">💾 Guardar</button>
+      <button class="edit-btn" onclick="saveMonitores(this)">💾 Guardar</button>
+      <button class="edit-btn" onclick="showMonTab('equipo',this)" id="monTabEquipo" style="background:var(--verde-bosque);color:white;">👤 Equipo</button>
+      <button class="edit-btn" onclick="showMonTab('medico',this)" id="monTabMedico">🩺 Resumen médico</button>
       <span id="monSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
     </div>
+    <div id="monPanelEquipo">
     <div class="monitor-grid" id="monitorGrid"></div>
     <h2 class="section-title" style="margin-top:32px;">🩺 Resumen médico — Panel coordinador</h2>
     <p style="font-size:13px;opacity:.6;margin-bottom:20px;">Participantes con datos médicos relevantes registrados en sus fichas.</p>
@@ -2176,7 +2180,7 @@
     <div class="gtab-panel active" id="gtab-campamento">
       <div class="edit-toolbar">
         <button class="edit-btn primary" onclick="addGrupoCamp()">➕ Nuevo grupo</button>
-        <button class="edit-btn" onclick="saveGruposCamp()">💾 Guardar grupos</button>
+        <button class="edit-btn" onclick="saveGruposCamp(this)">💾 Guardar grupos</button>
         <button class="edit-btn" onclick="imprimirGrupos('campamento')">🖨️ Imprimir / PDF</button>
         <button class="edit-btn danger" onclick="resetTodosGrupos()" title="Eliminar todos los grupos y empezar de cero">🗑 Resetear todo</button>
         <span id="gcSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
@@ -3174,7 +3178,14 @@
   /* ── FICHA ALUMNO ── */
   let currentFichaP = null;
 
-  async function openFicha(p, g) {
+    function openFichaById(n) {
+    const p = getAllEditParticipants(true).find(x => x.n === n);
+    if (!p) return;
+    const g = gruposEdit[p.gid] || grupos[p.gid] || {};
+    openFicha(p, g);
+  }
+
+async function openFicha(p, g) {
     currentFichaP = p;
 
     // Avatar
@@ -3367,9 +3378,10 @@
     if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
 
     const msg = document.getElementById('fichaSavedMsg');
-    msg.textContent = '✔ Datos guardados correctamente';
+    msg.textContent = '✔ Datos guardados';
     msg.classList.add('show');
     if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'Guardar ficha'; }
+    showSyncIndicator('✔ Ficha guardada correctamente', 'ok');
     setTimeout(() => msg.classList.remove('show'), 3000);
     // Registrar en historial según qué cambió realmente
     const tieneDatosMedicos = data.alergias || data.medicacion || data.observaciones;
@@ -3392,6 +3404,11 @@
   function handleFichaOverlay(e) {
     if (e.target === document.getElementById('fichaOverlay')) closeFicha();
   }
+
+  // Refresh session on any user interaction
+  ['click','touchstart','keydown'].forEach(ev => {
+    document.addEventListener(ev, () => refreshSession(), {passive: true, capture: true});
+  });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
@@ -3437,6 +3454,12 @@
   function doLogin() {
     const val = document.getElementById('loginInput').value;
     if (val === APP_PASSWORD || val === PASSWORD) {
+      // Guardar sesión con timestamp
+      try {
+        localStorage.setItem('campapp_session', JSON.stringify({
+          ts: Date.now(), ok: true
+        }));
+      } catch(e) {}
       document.getElementById('loginOverlay').style.display = 'none';
       showProjectSelector();
     } else {
@@ -3444,6 +3467,26 @@
       document.getElementById('loginInput').value = '';
       document.getElementById('loginInput').focus();
     }
+  }
+
+  function checkSession() {
+    // Returns true if there's a valid session (less than 5 min old)
+    try {
+      const s = JSON.parse(localStorage.getItem('campapp_session') || 'null');
+      if (!s || !s.ok) return false;
+      return (Date.now() - s.ts) < 5 * 60 * 1000;
+    } catch(e) { return false; }
+  }
+
+  function refreshSession() {
+    // Call this on any user interaction to reset the 5-min timer
+    try {
+      const s = JSON.parse(localStorage.getItem('campapp_session') || 'null');
+      if (s && s.ok) {
+        s.ts = Date.now();
+        localStorage.setItem('campapp_session', JSON.stringify(s));
+      }
+    } catch(e) {}
   }
 
   // ── Pantalla de selección de proyecto ──
@@ -3536,7 +3579,11 @@
     const heroSub = document.querySelector('.hero-sub');
     if (heroSub && project.entidad) heroSub.textContent = project.entidad;
 
-    try { sessionStorage.setItem('campapp-project', JSON.stringify(project)); } catch(e) {}
+    try {
+      sessionStorage.setItem('campapp-project', JSON.stringify(project));
+      // Refresh session timestamp when project selected
+      refreshSession();
+    } catch(e) {}
     initApp();
   }
 
@@ -3640,11 +3687,16 @@
     const activos    = todos.filter(p => { const ep=p.activo==='pendiente'||p.activo==='pending'; const ei=p.activo===false||p.activo==='false'; return !ep&&!ei; }).length;
     const pendientes = todos.filter(p => p.activo==='pendiente'||p.activo==='pending').length;
     const inactivos  = todos.filter(p => p.activo===false||p.activo==='false').length;
+    // Desktop
     const sa=document.getElementById('statActivos');   if(sa) sa.textContent=activos;
     const sp=document.getElementById('statPendientes');if(sp) sp.textContent=pendientes;
     const si=document.getElementById('statInactivos'); if(si) si.textContent=inactivos;
+    // Móvil
+    const msa=document.getElementById('mobStatActivos');   if(msa) msa.textContent=activos;
+    const msp=document.getElementById('mobStatPendientes');if(msp) msp.textContent=pendientes;
+    const msi=document.getElementById('mobStatInactivos'); if(msi) msi.textContent=inactivos;
+    const mobSub=document.getElementById('mobSubTotal');   if(mobSub) mobSub.textContent=activos+' activos';
   }
-
   function initApp() {
     // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
@@ -3800,6 +3852,7 @@
       const esPendiente = p.activo === 'pendiente' || p.activo === 'pending';
       const esInactivo  = p.activo === false || p.activo === 'false' || p.activo === 'inactivo';
       const esActivo    = !esPendiente && !esInactivo;
+      if (filtroActivo === 'todos') return true;
       if (filtroActivo === 'activo'    && !esActivo)    return false;
       if (filtroActivo === 'inactivo'  && !esInactivo)  return false;
       if (filtroActivo === 'pendiente' && !esPendiente) return false;
@@ -4264,27 +4317,19 @@ function imprimirListaAlumnos() {
     setTimeout(() => win.print(), 400);
   }
 
-  function saveAllAlumnos() {
-    // Sync gruposEdit back to grupos global
+  function saveAllAlumnos(btn) {
     Object.entries(gruposEdit).forEach(([gid, g]) => {
       grupos[gid].participantes = g.participantes.map(p => ({...p}));
     });
     updateHeroStats();
-
-    // Sincronizar con Google Sheets
-    const msg = document.getElementById('editSavedMsg');
-    msg.textContent = '⏳ Sincronizando con Sheets…';
-    msg.style.opacity = '1';
+    const _btn = btn || document.querySelector('.edit-toolbar .edit-btn.primary ~ .edit-btn');
+    btnLoading(_btn, 'Guardando…');
     syncAllParticipantesSheets().then(() => {
-      const totalActivos = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length;
-      const totalTodos = getAllEditParticipants(true).length;
-      msg.textContent = `✔ ${totalActivos} activos / ${totalTodos} total`;
-      setTimeout(() => msg.style.opacity = '0', 3000);
+      const act = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length;
+      btnDone(_btn, act + ' activos guardados');
     }).catch(() => {
-      msg.textContent = `✔ ${total} participantes guardados (sin conexión a Sheets)`;
-      setTimeout(() => msg.style.opacity = '0', 3000);
+      btnError(_btn, 'Sin conexión — guardado local');
     });
-
     renderGruposPorMonitor();
     renderGruposClase();
     updateHeroStats();
@@ -4359,7 +4404,18 @@ function imprimirListaAlumnos() {
     return opts;
   }
 
-  function renderMonitorGrid() {
+    function showMonTab(tab, btn) {
+    document.getElementById('monPanelEquipo').style.display = tab === 'equipo' ? 'block' : 'none';
+    document.getElementById('monPanelMedico').style.display = tab === 'medico' ? 'block' : 'none';
+    ['monTabEquipo','monTabMedico'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) { b.style.background = ''; b.style.color = ''; }
+    });
+    if (btn) { btn.style.background = 'var(--verde-bosque)'; btn.style.color = 'white'; }
+    if (tab === 'medico') renderMedResumen();
+  }
+
+function renderMonitorGrid() {
     const grid = document.getElementById('monitorGrid');
     if (!grid) return;
     grid.innerHTML = '';
@@ -4428,14 +4484,15 @@ function imprimirListaAlumnos() {
     renderMonitorGrid();
   }
 
-  function saveMonitores() {
+  function saveMonitores(btn) {
+    if (btn) btnLoading(btn, 'Guardando…');
     saveMonitoresStorage();
-    const msg = document.getElementById('monSavedMsg');
-    msg.textContent = '✔ Guardado';
-    msg.style.opacity = '1';
-    setTimeout(() => msg.style.opacity = '0', 2500);
-    renderGruposPorMonitor();
-    logCambio('monitor', 'Equipo de monitores actualizado', monitoresData.length + ' monitores');
+    setTimeout(() => {
+      if (btn) btnDone(btn, 'Monitores guardados');
+      else showSyncIndicator('✔ Monitores guardados', 'ok');
+      renderGruposPorMonitor();
+      logCambio('monitor', 'Equipo de monitores actualizado', monitoresData.length + ' monitores');
+    }, 300);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -4970,7 +5027,7 @@ function imprimirListaAlumnos() {
         <div style="padding:12px 14px;">
           <textarea rows="4" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f9f6f1;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;resize:vertical;"
             onchange="obsData[${i}].texto=this.value;saveObs();">${escHtml(obs.texto||'')}</textarea>
-          <button onclick="obsData[${i}].texto=this.previousElementSibling.value;saveObs();showSyncIndicator('✔ Nota guardada','ok');"
+          <button onclick="const _b=this;btnLoading(_b,'Guardando…');obsData[${i}].texto=this.previousElementSibling.querySelector('textarea').value;saveObs();setTimeout(()=>btnDone(_b,'Nota guardada'),300);"
             style="width:100%;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;">💾 Guardar</button>
         </div>`;
       container.appendChild(div);
@@ -5037,12 +5094,14 @@ function imprimirListaAlumnos() {
     sheetsSet('grupos', gruposCamp);
   }
 
-  function saveGruposCamp() {
+  function saveGruposCamp(btn) {
+    if (btn) btnLoading(btn, 'Guardando…');
     saveGruposCampStorage();
-    const msg = document.getElementById('gcSavedMsg');
-    msg.textContent = '✔ Guardado'; msg.style.opacity = '1';
-    setTimeout(() => msg.style.opacity = '0', 2500);
-    logCambio('grupo', 'Grupos campamento guardados', gruposCamp.length + ' grupos');
+    setTimeout(() => {
+      if (btn) btnDone(btn, 'Grupos guardados');
+      else showSyncIndicator('✔ Grupos guardados', 'ok');
+      logCambio('grupo', 'Grupos campamento guardados', gruposCamp.length + ' grupos');
+    }, 300);
   }
 
 
@@ -5922,6 +5981,7 @@ function imprimirListaAlumnos() {
     saveProgData();
     closeProgModal();
     if (progVistaCalendario) renderCalendario(); else renderProg();
+    showSyncIndicator('✔ Actividad guardada', 'ok');
     logCambio('programacion', (editingProgId ? 'Actividad editada' : 'Actividad creada') + ': ' + (act.nombre || act.tipo), act.horaInicio ? act.horaInicio + ' – ' + act.horaFin : '');
   }
 
@@ -5932,6 +5992,7 @@ function imprimirListaAlumnos() {
     saveProgData();
     closeProgModal();
     if (progVistaCalendario) renderCalendario(); else renderProg();
+    showSyncIndicator('✔ Actividad guardada', 'ok');
     logCambio('programacion', 'Actividad eliminada: ' + (delAct?.nombre || ''), '');
   }
 
@@ -6072,7 +6133,7 @@ function imprimirListaAlumnos() {
         <div style="display:flex;flex-wrap:wrap;gap:5px;">
           ${alumnos.map(p => {
             const med = getMedAlert(p.n);
-            return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:20px;background:${med?'#fdecea':'#f0f7eb'};font-size:11px;cursor:pointer;" onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(gruposEdit[p.gid]||grupos[p.gid]||{})})">
+            return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:20px;background:${med?'#fdecea':'#f0f7eb'};font-size:11px;cursor:pointer;" onclick="openFichaById(${p.n})">
               ${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}${med?'<span style="font-size:11px;">'+med+'</span>':''}
             </div>`;
           }).join('')}
@@ -6605,103 +6666,25 @@ function imprimirListaAlumnos() {
     if (!ind) {
       ind = document.createElement('div');
       ind.id = 'syncIndicator';
-      ind.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:8px 16px;border-radius:20px;font-family:"DM Sans",sans-serif;font-size:12px;font-weight:600;z-index:9999;transition:opacity .4s;box-shadow:0 4px 16px rgba(0,0,0,.15);';
+      ind.style.cssText = 'position:fixed;bottom:24px;right:20px;padding:10px 18px;border-radius:24px;font-family:\'DM Sans\',sans-serif;font-size:13px;font-weight:700;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.25);transition:opacity .3s,transform .3s;display:flex;align-items:center;gap:8px;';
       document.body.appendChild(ind);
     }
-    const styles = {
-      ok:      'background:#27AE60;color:white;',
-      warn:    'background:#E67E22;color:white;',
-      loading: 'background:#2D5016;color:white;',
-      error:   'background:#C0392B;color:white;'
+    clearTimeout(ind._timer);
+    const colors = {
+      ok:   {bg:'#2D5016', color:'white'},
+      warn: {bg:'#E67E22', color:'white'},
+      err:  {bg:'#C0392B', color:'white'},
     };
-    ind.style.cssText += styles[type] || styles.ok;
-    ind.textContent = msg;
+    const c = colors[type] || colors.ok;
+    ind.style.background = c.bg;
+    ind.style.color = c.color;
     ind.style.opacity = '1';
-    if (type !== 'loading') {
-      clearTimeout(ind._timer);
-      ind._timer = setTimeout(() => ind.style.opacity = '0', 3000);
-    }
-  }
-
-
-  // ══════════════════════════════════════════════════════════════
-  //  ACTUALIZAR / RESINCRONIZAR SIN CERRAR SESIÓN
-  // ══════════════════════════════════════════════════════════════
-  async function actualizarApp(btn) {
-    // Animación girando
-    const icons = [document.getElementById('refreshIcon'), document.getElementById('refreshIconMob')];
-    const subs  = [document.getElementById('refreshSub'),  document.getElementById('refreshSubMob')];
-    icons.forEach(el => { if (el) { el.style.animation = 'spin .8s linear infinite'; el.textContent = '🔄'; } });
-    subs.forEach(el  => { if (el) el.textContent = 'Cargando…'; });
-    showSyncIndicator('⏳ Actualizando…', 'loading');
-
-    try {
-      // 1. Recargar todos los datos de config (monitores, grupos, obs, prog, notas)
-      await loadAllFromSheets();
-
-      // 2. Recargar participantes
-      await loadParticipantesFromSheets();
-      gruposEdit = JSON.parse(JSON.stringify(grupos));
-
-      // 3. Re-renderizar la pestaña activa
-      const activePanel = document.querySelector('.tab-panel.active');
-      const activeId = activePanel ? activePanel.id.replace('tab-', '') : 'participantes';
-
-      renderEditTable();
-      renderMonitorGrid();
-      renderObsGrid();
-      renderGruposPorMonitor();
-      renderGruposClase();
-
-      if (activeId === 'grupos')        { renderBanco(); renderGruposCamp(); }
-      if (activeId === 'cabanas')       renderCabanasVista();
-      if (activeId === 'programacion')  { populateProgFiltros(); renderProg(); }
-      if (activeId === 'obsalumnos')    renderObsAlumnos();
-      if (activeId === 'monitores')     renderMedResumen();
-
-      // 4. Actualizar contadores
-      const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-      const heroNum = document.querySelector('.hero-stat .num');
-      if (heroNum) {
-        const activeCount = getAllEditParticipants().length; // already filtered
-        const allCount = getAllEditParticipants(true).length;
-        heroNum.textContent = activeCount;
-        // Add inactive note if any
-        const heroLbl = document.querySelector('.hero-stat .lbl');
-        if (heroLbl && allCount > activeCount) {
-          heroLbl.textContent = 'Participantes (' + (allCount - activeCount) + ' inactivos)';
-        }
-      }
-      const dnavPart = document.getElementById('dnav-sub-participantes');
-      if (dnavPart) dnavPart.textContent = total + ' inscritos';
-      const dnavMon = document.getElementById('dnav-sub-monitores');
-      if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
-    loadAsistencia();
-      const mobTotal = document.getElementById('mobTotal');
-      if (mobTotal) mobTotal.textContent = total;
-      const mobSub = document.getElementById('mobSubTotal');
-      if (mobSub) mobSub.textContent = total + ' inscritos';
-      const mobMon = document.getElementById('mobMonCount');
-      if (mobMon) mobMon.textContent = monitoresData.length + ' monitores';
-
-      icons.forEach(el => { if (el) { el.style.animation = ''; el.textContent = '✅'; } });
-      subs.forEach(el  => { if (el) el.textContent = 'Actualizado'; });
-      showSyncIndicator('✔ Todo actualizado', 'ok');
-
-      setTimeout(() => {
-        icons.forEach(el => { if (el) el.textContent = '🔄'; });
-        subs.forEach(el  => { if (el) el.textContent = 'Sincronizar datos'; });
-      }, 3000);
-
-    } catch(e) {
-      icons.forEach(el => { if (el) { el.style.animation = ''; el.textContent = '⚠️'; } });
-      subs.forEach(el  => { if (el) el.textContent = 'Error al actualizar'; });
-      showSyncIndicator('⚠ Error al actualizar', 'warn');
-      setTimeout(() => {
-        icons.forEach(el => { if (el) el.textContent = '🔄'; });
-        subs.forEach(el  => { if (el) el.textContent = 'Sincronizar datos'; });
-      }, 3000);
-    }
+    ind.style.transform = 'translateY(0)';
+    ind.textContent = msg;
+    ind._timer = setTimeout(() => {
+      ind.style.opacity = '0';
+      ind.style.transform = 'translateY(8px)';
+    }, 4000);
   }
 
 
@@ -6725,6 +6708,7 @@ function imprimirListaAlumnos() {
       const esInact = p.activo === false || p.activo === 'false';
       const esAct   = !esPend && !esInact;
       if (filtCurso  && p.gid !== filtCurso)             return false;
+      if (filtEstado === 'todos') return true; // mostrar todos sin excepción
       if (filtEstado === 'activo'    && !esAct)   return false;
       if (filtEstado === 'pendiente' && !esPend)  return false;
       if (filtEstado === 'inactivo'  && !esInact) return false;
@@ -6851,7 +6835,7 @@ function imprimirListaAlumnos() {
           <button onclick="saveAllAlumnos()"
             style="padding:10px 14px;border-radius:10px;border:1.5px solid #f0f7eb;background:white;
               font-size:14px;cursor:pointer;" title="Guardar cambios">💾</button>
-          <button onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(g||{})})"
+          <button onclick="openFichaById(${p.n})"
             style="flex:1;padding:10px;border-radius:10px;border:none;background:#2D5016;color:white;
               font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
             🩺 Ver ficha completa
@@ -7191,7 +7175,7 @@ function imprimirListaAlumnos() {
         </div>
         <!-- Acciones grupo -->
         <div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #ede5d0;">
-          <button onclick="saveGruposCamp();showSyncIndicator('✔ Grupo guardado','ok');"
+          <button onclick="saveGruposCamp(this)"
             style="flex:1;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">💾 Guardar</button>
           <button onclick="if(confirm('¿Eliminar grupo?'))deleteGrupoCamp('${g.id}')"
             style="padding:9px 12px;border-radius:10px;border:1.5px solid #fdecea;background:white;font-size:13px;cursor:pointer;">🗑</button>
@@ -8508,6 +8492,48 @@ function imprimirListaAlumnos() {
   // ══════════════════════════════════════════════════════════════
   //  F. MODO OSCURO
   // ══════════════════════════════════════════════════════════════
+  // Auto-login if session is still valid (within 5 minutes)
+  (function() {
+    try {
+      const s = JSON.parse(localStorage.getItem('campapp_session') || 'null');
+      if (s && s.ok && (Date.now() - s.ts) < 5 * 60 * 1000) {
+        // Valid session — skip login, go to project selector
+        const loginEl = document.getElementById('loginOverlay');
+        if (loginEl) loginEl.style.display = 'none';
+        // Restore last project if available
+        const lastProj = JSON.parse(sessionStorage.getItem('campapp-project') || 'null');
+        if (lastProj) {
+          setTimeout(() => selectProject(lastProj), 100);
+        } else {
+          setTimeout(() => showProjectSelector(), 100);
+        }
+        // Refresh timestamp
+        s.ts = Date.now();
+        localStorage.setItem('campapp_session', JSON.stringify(s));
+      }
+    } catch(e) {}
+  })();
+
+  // ── Spinner universal en botón guardar ──
+  function btnLoading(btn, label) {
+    if (!btn) return;
+    btn._origLabel = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ ' + (label || 'Guardando…');
+  }
+  function btnDone(btn, msg) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.innerHTML = btn._origLabel || '💾 Guardar';
+    showSyncIndicator('✔ ' + (msg || 'Datos guardados'), 'ok');
+  }
+  function btnError(btn, msg) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.innerHTML = btn._origLabel || '💾 Guardar';
+    showSyncIndicator('⚠ ' + (msg || 'Error al guardar'), 'warn');
+  }
+
   function initDarkMode() {
     const saved = localStorage.getItem('camp-dark-mode');
     if (saved === 'true') applyDarkMode(true);
@@ -8865,6 +8891,28 @@ function imprimirListaAlumnos() {
 
   <!-- PANTALLA PRINCIPAL -->
   <div class="mob-screen active" id="mob-home">
+    <!-- Stats bar -->
+    <div style="background:#2D5016;padding:14px 16px;display:flex;gap:20px;align-items:center;">
+      <div style="flex:1;">
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:white;line-height:1.2;" id="mobHeroTitle">Campamento Algámitas 2026</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px;" id="mobHeroSub">ACPA · Colegio San José SSCC</div>
+      </div>
+    </div>
+    <div style="background:#2D5016;padding:10px 16px 14px;display:flex;gap:24px;border-bottom:3px solid rgba(255,255,255,.1);">
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:white;line-height:1;" id="mobStatActivos">—</div>
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px;">✅ Activos</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:#F39C12;line-height:1;" id="mobStatPendientes">—</div>
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px;">⏳ Pendientes</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:rgba(255,255,255,.5);line-height:1;" id="mobStatInactivos">—</div>
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px;">⛔ No activos</div>
+      </div>
+    </div>
+
     <div class="mob-grid">
 
       <!-- ALUMNOS -->
@@ -8994,6 +9042,7 @@ function imprimirListaAlumnos() {
         <option value="activo">✅ Activos</option>
         <option value="pendiente">⏳ Pendientes</option>
         <option value="inactivo">⛔ No activos</option>
+        <option value="todos">📋 Todos (imprimir)</option>
       </select>
     </div>
     <div class="mob-search-bar">
@@ -9131,7 +9180,6 @@ function imprimirListaAlumnos() {
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">👥 Participantes</div>
-      <button onclick="mobAddAlumno()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
     </div>
     <div class="mob-search-bar">
       <input type="text" id="mobAlumnoSearch" placeholder="🔍 Buscar por nombre o apellidos…" oninput="renderMobAlumnos()"/>
