@@ -2177,6 +2177,7 @@
       <div class="edit-toolbar">
         <button class="edit-btn primary" onclick="addGrupoCamp()">➕ Nuevo grupo</button>
         <button class="edit-btn" onclick="saveGruposCamp()">💾 Guardar grupos</button>
+        <button class="edit-btn" onclick="imprimirGrupos('campamento')">🖨️ Imprimir / PDF</button>
         <button class="edit-btn danger" onclick="resetTodosGrupos()" title="Eliminar todos los grupos y empezar de cero">🗑 Resetear todo</button>
         <span id="gcSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
       </div>
@@ -2197,12 +2198,17 @@
     <div class="gtab-panel" id="gtab-monitor">
       <div class="edit-toolbar">
         <button class="edit-btn" onclick="renderGruposPorMonitor()">🔄 Actualizar</button>
+        <button class="edit-btn" onclick="imprimirGrupos('monitor')">🖨️ Imprimir / PDF</button>
       </div>
       <div id="gruposPorMonitor"></div>
     </div>
 
     <!-- POR CLASE -->
     <div class="gtab-panel" id="gtab-clase">
+      <div class="edit-toolbar">
+        <button class="edit-btn" onclick="renderGruposClase()">🔄 Actualizar</button>
+        <button class="edit-btn" onclick="imprimirGrupos('clase')">🖨️ Imprimir / PDF</button>
+      </div>
       <div id="gruposPorClase"></div>
     </div>
   </div>
@@ -3173,7 +3179,9 @@
 
     // Avatar
     document.getElementById('fichaAvatar').style.background = g.hex;
-    document.getElementById('fichaAvatar').textContent = getInitials(p.nombre, p.apellidos);
+    const _fichaAv = document.getElementById('fichaAvatar');
+    _fichaAv.textContent = getInitials(p.nombre, p.apellidos);
+    _fichaAv.dataset.n = String(p.n);
     document.getElementById('fichaSavedMsg').classList.remove('show');
 
     // ── Datos del participante (editables) ──
@@ -3900,7 +3908,247 @@
     openFicha(nuevoP, g);
   }
 
-  function imprimirListaAlumnos() {
+      function abrirImprimirFicha() {
+    const modal = document.getElementById('imprimirFichaModal');
+    modal.style.display = 'flex';
+  }
+
+  function generarPDFFicha() {
+    document.getElementById('imprimirFichaModal').style.display = 'none';
+
+    const inclDatosP = document.getElementById('fpDatosPersonales').checked;
+    const inclContact = document.getElementById('fpContacto').checked;
+    const inclMedico  = document.getElementById('fpMedico').checked;
+    const inclGrupo   = document.getElementById('fpGrupo').checked;
+    const inclNotas   = document.getElementById('fpNotas').checked;
+
+    // Gather current ficha data from the open modal
+    const nombre    = document.getElementById('fichaNombre')?.textContent || '';
+    const curso     = document.getElementById('fichaCurso')?.textContent  || '';
+    const apellidos = document.getElementById('fApellidos')?.value || '';
+    const nombreP   = document.getElementById('fNombre')?.value   || '';
+    const gidEl     = document.getElementById('fCurso');
+    const grupoClase= document.getElementById('fGrupo')?.value || '';
+    const monSel    = document.getElementById('fMonitor');
+    const monNombre = monSel?.options[monSel.selectedIndex]?.text || 'Sin asignar';
+    const grupoCamp = document.getElementById('fGrupoCamp')?.value || '';
+
+    const contacto  = document.getElementById('fContacto')?.value || '';
+    const tel1      = document.getElementById('fTel1')?.value || '';
+    const tel2      = document.getElementById('fTel2')?.value || '';
+
+    const alergias  = document.getElementById('fAlergias')?.value || '';
+    const medicacion= document.getElementById('fMedicacion')?.value || '';
+    const obsM      = document.getElementById('fObservaciones')?.value || '';
+
+    // Linked panel data (grupo campamento, cabaña)
+    const linkedPanel = document.getElementById('fichaLinkedPanel');
+    const linkedHtml  = linkedPanel ? linkedPanel.innerHTML : '';
+
+    // Notas del alumno
+    const nEl = document.getElementById('fichaAvatar')?.dataset.n;
+    const notas = nEl && obsAlumnos[nEl]?.notas ? obsAlumnos[nEl].notas : [];
+
+    let sections = '';
+
+    if (inclDatosP) {
+      sections += `<div class="section">
+        <div class="section-title">📋 Datos del participante</div>
+        <table class="data-table">
+          <tr><td class="label">Apellidos</td><td>${escHtml(apellidos)}</td></tr>
+          <tr><td class="label">Nombre</td><td>${escHtml(nombreP)}</td></tr>
+          <tr><td class="label">Curso</td><td>${escHtml(gidEl?.options[gidEl.selectedIndex]?.text||'')}</td></tr>
+          <tr><td class="label">Grupo de clase</td><td>${escHtml(grupoClase||'—')}</td></tr>
+        </table>
+      </div>`;
+    }
+
+    if (inclGrupo) {
+      sections += `<div class="section">
+        <div class="section-title">🏕 Organización en el campamento</div>
+        <table class="data-table">
+          <tr><td class="label">Grupo campamento</td><td>${escHtml(grupoCamp||'Sin asignar')}</td></tr>
+          <tr><td class="label">Monitor/a</td><td>${escHtml(monNombre)}</td></tr>
+        </table>
+        ${linkedHtml ? '<div style="font-size:11px;color:#888;margin-top:6px;">'+linkedHtml.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,200)+'</div>' : ''}
+      </div>`;
+    }
+
+    if (inclContact) {
+      sections += `<div class="section">
+        <div class="section-title">📞 Contacto familiar</div>
+        <table class="data-table">
+          <tr><td class="label">Persona de contacto</td><td>${escHtml(contacto||'—')}</td></tr>
+          <tr><td class="label">Teléfono 1</td><td>${escHtml(tel1||'—')}</td></tr>
+          <tr><td class="label">Teléfono 2</td><td>${escHtml(tel2||'—')}</td></tr>
+        </table>
+      </div>`;
+    }
+
+    if (inclMedico) {
+      const hasData = alergias || medicacion || obsM;
+      sections += `<div class="section ${alergias?'alert-section':''}">
+        <div class="section-title">💊 Datos médicos${alergias?' <span class="alert-badge">⚠️ ALERGIAS</span>':''}</div>
+        ${hasData ? `<table class="data-table">
+          ${alergias?`<tr><td class="label alert-label">Alergias</td><td class="alert-val">${escHtml(alergias)}</td></tr>`:''}
+          ${medicacion?`<tr><td class="label">Medicación</td><td>${escHtml(medicacion)}</td></tr>`:''}
+          ${obsM?`<tr><td class="label">Observaciones</td><td>${escHtml(obsM)}</td></tr>`:''}
+        </table>` : '<p class="no-data">Sin datos médicos registrados</p>'}
+      </div>`;
+    }
+
+    if (inclNotas && notas.length) {
+      const moodLabel = m => m==='bien'?'😊 Bien':m==='regular'?'😐 Regular':'😟 Necesita atención';
+      const moodColor = m => m==='bien'?'#27AE60':m==='regular'?'#E67E22':'#C0392B';
+      sections += `<div class="section">
+        <div class="section-title">🗒 Notas del equipo (${notas.length})</div>
+        ${notas.slice().reverse().map(n => `
+          <div class="nota-item" style="border-left-color:${moodColor(n.mood)};">
+            <div class="nota-mood" style="color:${moodColor(n.mood)};">${moodLabel(n.mood)}</div>
+            <div class="nota-texto">${escHtml(n.texto)}</div>
+            <div class="nota-fecha">${escHtml(n.fecha||'')} · ${escHtml(n.monitor||'Monitor')}</div>
+          </div>`).join('')}
+      </div>`;
+    } else if (inclNotas) {
+      sections += `<div class="section"><div class="section-title">🗒 Notas del equipo</div><p class="no-data">Sin notas registradas</p></div>`;
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ficha de ${escHtml(apellidos)}, ${escHtml(nombreP)}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #222; font-size: 13px; }
+  .header { display: flex; align-items: center; gap: 16px; padding: 16px; background: #2D5016; border-radius: 12px; margin-bottom: 20px; color: white; }
+  .avatar { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; flex-shrink: 0; }
+  .header-name { font-size: 1.2rem; font-weight: 700; }
+  .header-meta { font-size: 12px; opacity: .75; margin-top: 2px; }
+  .section { margin-bottom: 18px; border: 1.5px solid #e8e0d0; border-radius: 10px; overflow: hidden; }
+  .alert-section { border-color: #f5c6cb; }
+  .section-title { background: #f9f6f1; padding: 10px 14px; font-weight: 700; font-size: 13px; color: #2D5016; border-bottom: 1px solid #e8e0d0; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table td { padding: 8px 14px; border-bottom: 1px solid #f0ebe0; vertical-align: top; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .label { font-weight: 600; color: #666; width: 38%; font-size: 12px; }
+  .alert-label { color: #C0392B; }
+  .alert-val { color: #C0392B; font-weight: 600; }
+  .alert-badge { background: #fdecea; color: #C0392B; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700; }
+  .no-data { padding: 10px 14px; color: #aaa; font-style: italic; font-size: 12px; }
+  .nota-item { padding: 10px 14px; border-left: 3px solid #2D5016; margin: 8px 14px; border-radius: 0 8px 8px 0; background: #f9f6f1; }
+  .nota-mood { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+  .nota-texto { font-size: 13px; margin-bottom: 4px; }
+  .nota-fecha { font-size: 10px; color: #aaa; }
+  .footer { margin-top: 20px; text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #e8e0d0; padding-top: 12px; }
+  @media print { .no-print { display: none !important; } body { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="avatar">${getInitials(nombreP, apellidos)}</div>
+  <div>
+    <div class="header-name">${escHtml(apellidos)}, ${escHtml(nombreP)}</div>
+    <div class="header-meta">${escHtml(gidEl?.options[gidEl.selectedIndex]?.text||'')} · Campamento Algámitas 2026</div>
+  </div>
+</div>
+${sections}
+<div class="footer">CampApp · Escuela y Deporte · Generado: ${new Date().toLocaleString('es-ES')}</div>
+<div class="no-print" style="margin-top:20px;text-align:center;">
+  <button onclick="window.print()" style="padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 400);
+  }
+
+function imprimirGrupos(tipo) {
+    let titulo = '';
+    let sourceId = '';
+    if (tipo === 'campamento') { titulo = 'Grupos campamento'; sourceId = 'gtab-campamento'; }
+    if (tipo === 'monitor')    { titulo = 'Grupos por monitor'; sourceId = 'gruposPorMonitor'; }
+    if (tipo === 'clase')      { titulo = 'Grupos por clase';   sourceId = 'gruposPorClase'; }
+
+    // Asegurarse de que el contenido está renderizado
+    if (tipo === 'monitor') { renderGruposPorMonitor(); if (!document.getElementById(sourceId)?.innerHTML) sourceId = 'mobGTabMonPanel'; }
+    if (tipo === 'clase')   { renderGruposClase();   if (!document.getElementById(sourceId)?.innerHTML) sourceId = 'mobGTabClasePanel'; }
+    if (tipo === 'campamento') {
+      // Try desktop first, fall back to mobile
+      if (!document.getElementById('gtab-campamento') || !document.getElementById('gtab-campamento').querySelector('.grupo-card, .grupo-resumen-card')) {
+        sourceId = 'mobGTabCampPanel';
+      }
+    }
+
+    const sourceEl = document.getElementById(sourceId);
+    if (!sourceEl) return;
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>${titulo} — CampApp</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #222; }
+  h1 { color: #2D5016; font-size: 1.3rem; margin-bottom: 4px; }
+  .meta { font-size: 12px; color: #888; margin-bottom: 20px; }
+  /* Grupos campamento */
+  .grupo-card-print { border: 1.5px solid #d9ceb8; border-radius: 10px; padding: 14px; margin-bottom: 14px; break-inside: avoid; }
+  .grupo-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid #ede5d0; padding-bottom: 8px; }
+  .grupo-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .grupo-nombre { font-weight: 700; font-size: 15px; }
+  .grupo-meta { font-size: 11px; color: #888; }
+  .alumno-chip { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; margin: 2px; background: #f0f7eb; }
+  .alerta-chip { background: #fdecea !important; }
+  /* Por monitor / clase */
+  .grupo-resumen-card { border: 1.5px solid #d9ceb8; border-radius: 10px; padding: 14px; margin-bottom: 14px; break-inside: avoid; }
+  .grupo-resumen-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .grupo-color-dot { width: 12px; height: 12px; border-radius: 50%; background: #2D5016; flex-shrink: 0; }
+  .grupo-resumen-title { font-weight: 700; font-size: 14px; }
+  .grupo-resumen-meta { font-size: 11px; color: #888; margin-left: auto; }
+  .grupo-alumno-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 11px; margin: 2px; background: #f0f7eb; }
+  .chip-avatar { width: 18px; height: 18px; border-radius: 50%; background: #2D5016; color: white; font-size: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  @media print {
+    body { padding: 10px; }
+    button { display: none; }
+    .grupo-card-print, .grupo-resumen-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1>🏕 ${titulo} — Campamento Algámitas 2026</h1>
+<div class="meta">Generado: ${new Date().toLocaleString('es-ES')}</div>
+${sourceEl.innerHTML}
+<div style="margin-top:20px;text-align:center;" class="no-print">
+  <button onclick="window.print()" style="padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+  }
+
+  function mobImprimirGrupos() {
+    // Detect which panel is visible
+    const campPanel  = document.getElementById('mobGTabCampPanel');
+    const monPanel   = document.getElementById('mobGTabMonPanel');
+    const clasePanel = document.getElementById('mobGTabClasePanel');
+    let tipo = 'campamento';
+    if (monPanel   && monPanel.style.display   !== 'none') tipo = 'monitor';
+    if (clasePanel && clasePanel.style.display !== 'none') tipo = 'clase';
+    imprimirGrupos(tipo);
+  }
+
+function imprimirListaAlumnos() {
     const filtro     = document.getElementById('filtroGrupo').value;
     const filtroAct  = document.getElementById('filtroActivo').value;
     const filtroNom  = filtro
@@ -8546,6 +8794,7 @@
     </div>
     <div class="ficha-footer">
       <span class="ficha-saved-msg" id="fichaSavedMsg">✔ Datos guardados</span>
+      <button class="ficha-save-btn" style="background:#f0f7eb;color:#2D5016;border:1.5px solid #2D5016;" onclick="abrirImprimirFicha()">🖨️ Imprimir</button>
       <button class="ficha-save-btn" onclick="saveFicha()">Guardar ficha</button>
     </div>
   </div>
@@ -8876,7 +9125,10 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">🏕 Grupos campamento</div>
-      <button onclick="addGrupoCamp();renderMobGruposMain()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Grupo</button>
+      <div style="display:flex;gap:5px;">
+        <button onclick="addGrupoCamp();renderMobGruposMain()" style="padding:5px 9px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:700;cursor:pointer;">+ Grupo</button>
+        <button onclick="mobImprimirGrupos()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">🖨️</button>
+      </div>
     </div>
     <!-- Sub-nav grupos móvil -->
     <div style="display:flex;gap:0;border-bottom:2px solid #d9ceb8;background:white;position:sticky;top:57px;z-index:90;">
