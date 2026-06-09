@@ -2020,50 +2020,9 @@
   <div id="tab-participantes" class="tab-panel active">
 
     <h2 class="section-title">👥 Participantes por curso</h2>
+    <div class="grupos-grid" id="cursosGrid"></div>
 
-    <div class="grupos-grid">
-      <div class="grupo-card gc-2" onclick="openModal('g2')">
-        <div class="curso-label">2º Primaria</div>
-        <div class="numero" style="color:var(--g2)">4</div>
-        <div class="descripcion">niños/as</div>
-        <div class="edad">7 – 8 años</div>
-        <div class="card-toggle-hint">Ver participantes ↓</div>
-      </div>
-      <div class="grupo-card gc-3" onclick="openModal('g3')">
-        <div class="curso-label">3º Primaria</div>
-        <div class="numero" style="color:var(--g3)">31</div>
-        <div class="descripcion">niños/as</div>
-        <div class="edad">8 – 9 años</div>
-        <div class="card-toggle-hint">Ver participantes ↓</div>
-      </div>
-      <div class="grupo-card gc-4" onclick="openModal('g4')">
-        <div class="curso-label">4º Primaria</div>
-        <div class="numero" style="color:var(--g4)">24</div>
-        <div class="descripcion">niños/as</div>
-        <div class="edad">9 – 10 años</div>
-        <div class="card-toggle-hint">Ver participantes ↓</div>
-      </div>
-      <div class="grupo-card gc-5" onclick="openModal('g5')">
-        <div class="curso-label">5º Primaria</div>
-        <div class="numero" style="color:var(--g5)">32</div>
-        <div class="descripcion">niños/as</div>
-        <div class="edad">10 – 11 años</div>
-        <div class="card-toggle-hint">Ver participantes ↓</div>
-      </div>
-      <div class="grupo-card gc-6" onclick="openModal('g6')">
-        <div class="curso-label">6º Primaria</div>
-        <div class="numero" style="color:var(--g6)">40</div>
-        <div class="descripcion">niños/as</div>
-        <div class="edad">11 – 12 años</div>
-        <div class="card-toggle-hint">Ver participantes ↓</div>
-      </div>
-      <div class="grupo-card total-card" style="cursor:default;">
-        <div class="curso-label">TOTAL</div>
-        <div class="numero">131</div>
-        <div class="descripcion">participantes inscritos</div>
-        <div class="edad">❓ grupos pendientes de confirmar</div>
-      </div>
-    </div>
+
 
     <!-- MODAL -->
     <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
@@ -3047,10 +3006,11 @@
     currentGroup = groupId;
     const g = grupos[groupId];
     document.getElementById('modalTitle').textContent = g.label;
-    const activosCount = g.participantes.filter(p => p.activo !== false).length;
-    const totalCount = g.participantes.length;
-    const inactivosCount = totalCount - activosCount;
-    document.getElementById('modalSubtitle').textContent = g.edad + ' · ' + activosCount + ' participantes' + (inactivosCount > 0 ? ' (' + inactivosCount + ' no asisten)' : '');
+    const activosCount    = g.participantes.filter(p => { const ep=p.activo==='pendiente'||p.activo==='pending'; const ei=p.activo===false||p.activo==='false'; return !ep&&!ei; }).length;
+    const pendCount       = g.participantes.filter(p => p.activo==='pendiente'||p.activo==='pending').length;
+    const inactivosCount  = g.participantes.filter(p => p.activo===false||p.activo==='false').length;
+    const totalCount      = activosCount + pendCount;
+    document.getElementById('modalSubtitle').textContent = g.edad + ' · ' + activosCount + ' activos' + (pendCount > 0 ? ' + ' + pendCount + ' pendientes' : '') + (inactivosCount > 0 ? ' (' + inactivosCount + ' inactivos)' : '');
     document.getElementById('modalColorBar').style.background = g.hex;
     document.getElementById('modalSearch').value = '';
 
@@ -3595,7 +3555,64 @@
   }
 
 
+  function renderCursosGrid() {
+    const grid = document.getElementById('cursosGrid');
+    if (!grid) return;
+
+    const cursos = [
+      { gid:'g2', label:'2º Primaria', edad:'7 – 8 años',   color:'var(--g2)' },
+      { gid:'g3', label:'3º Primaria', edad:'8 – 9 años',   color:'var(--g3)' },
+      { gid:'g4', label:'4º Primaria', edad:'9 – 10 años',  color:'var(--g4)' },
+      { gid:'g5', label:'5º Primaria', edad:'10 – 11 años', color:'var(--g5)' },
+      { gid:'g6', label:'6º Primaria', edad:'11 – 12 años', color:'var(--g6)' },
+      { gid:'g7', label:'1º ESO',      edad:'12 – 13 años', color:'var(--g7,#1ABC9C)' },
+      { gid:'g8', label:'2º ESO',      edad:'13 – 14 años', color:'var(--g8,#E67E22)' },
+    ];
+
+    let totalActivos = 0;
+    let totalPendientes = 0;
+    let html = '';
+
+    cursos.forEach(c => {
+      const g = grupos[c.gid] || gruposEdit[c.gid];
+      if (!g || !g.participantes) return;
+      // Solo contar activos (no pendientes, no inactivos)
+      const activos = g.participantes.filter(p => {
+        const esPend = p.activo === 'pendiente' || p.activo === 'pending';
+        const esInact = p.activo === false || p.activo === 'false';
+        return !esPend && !esInact;
+      });
+      const pend = g.participantes.filter(p => p.activo === 'pendiente' || p.activo === 'pending');
+      if (activos.length === 0 && pend.length === 0) return;
+      totalActivos += activos.length;
+      totalPendientes += pend.length;
+      html += `
+        <div class="grupo-card" onclick="openModal('${c.gid}')">
+          <div class="curso-label">${c.label}</div>
+          <div class="numero" style="color:${c.color}">${activos.length}</div>
+          <div class="descripcion">activos${pend.length > 0 ? ' <span style="color:#F39C12;font-size:11px;">(+'+pend.length+' pend.)</span>' : ''}</div>
+          <div class="edad">${c.edad}</div>
+          <div class="card-toggle-hint">Ver participantes ↓</div>
+        </div>`;
+    });
+
+    // Total card
+    const pendBadge = totalPendientes > 0
+      ? `<div style="font-size:11px;color:#F39C12;margin-top:4px;">+${totalPendientes} pendientes de confirmar</div>`
+      : '';
+    html += `
+      <div class="grupo-card total-card" style="cursor:default;">
+        <div class="curso-label">TOTAL</div>
+        <div class="numero">${totalActivos}</div>
+        <div class="descripcion">activos inscritos</div>
+        ${pendBadge}
+      </div>`;
+
+    grid.innerHTML = html;
+  }
+
   function updateHeroStats() {
+    renderCursosGrid();
     const todos      = getAllEditParticipants(true);
     const activos    = todos.filter(p => { const ep=p.activo==='pendiente'||p.activo==='pending'; const ei=p.activo===false||p.activo==='false'; return !ep&&!ei; }).length;
     const pendientes = todos.filter(p => p.activo==='pendiente'||p.activo==='pending').length;
