@@ -2802,7 +2802,7 @@
   // ══════════════════════════════════════════════════════════════
   //  CONFIGURACIÓN — pega aquí la URL de tu Apps Script desplegado
   // ══════════════════════════════════════════════════════════════
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjhRBmKZNw9KsfK6aP5dDjlGQML_VkZBTSG8y0ImkNQyOZBoxP2YJeKevBKFjKGd8Plw/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfnl9_4myW_KJU75iOoYZ8mRvUGQMVwI1Lhxv3CKxNOk3xM6bjrq6kg5Yhgk_cR9qh/exec';
   const PASSWORD   = 'algamitas2026';   // misma clave que en el .gs
   const MONITOR_ID = 'Coordinador Miguel Ángel';         // cambia por el nombre del monitor en cada dispositivo
 
@@ -3853,9 +3853,7 @@
     el.style.transition = 'opacity .3s';
     setTimeout(() => el.remove(), 300);
     // Update hero count
-    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-    const heroNum = document.querySelector('.hero-stat .num');
-    if (heroNum) heroNum.textContent = total;
+    updateHeroStats();
   }
 
   function deleteAlumno(n, gid) {
@@ -3987,9 +3985,7 @@
     Object.entries(gruposEdit).forEach(([gid, g]) => {
       grupos[gid].participantes = g.participantes.map(p => ({...p}));
     });
-    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-    const heroNum = document.querySelector('.hero-stat .num');
-    if (heroNum) heroNum.textContent = total;
+    updateHeroStats();
 
     // Sincronizar con Google Sheets
     const msg = document.getElementById('editSavedMsg');
