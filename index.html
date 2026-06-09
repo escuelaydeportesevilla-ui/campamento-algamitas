@@ -3288,6 +3288,9 @@
 
   async function saveFicha() {
     if (!currentFichaP) return;
+    // Show spinner
+    const saveBtn = document.getElementById('fichaSaveBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '⏳ Guardando…'; }
     const n = currentFichaP.n;
     const oldGid = currentFichaP.gid;
     const newGid = document.getElementById('fCurso').value;
@@ -3311,9 +3314,18 @@
       grupoCamp: newGrupoCamp,
       monitorId: newMonitorId,
     };
+    // Si es nuevo participante, necesita apellidos o nombre para guardarse
+    if (currentFichaP._nuevo && !newAp && !newNm) {
+      alert('Por favor introduce al menos el nombre o apellidos antes de guardar.');
+      return;
+    }
     if (gruposEdit[newGid]) gruposEdit[newGid].participantes.push(updatedP);
     if (grupos[newGid])     grupos[newGid].participantes.push(updatedP);
+    delete updatedP._nuevo;
     currentFichaP = updatedP;
+    if (updatedP.apellidos || updatedP.nombre) {
+      logCambio('alumno', 'Nuevo alumno añadido: ' + (updatedP.apellidos||'') + ', ' + (updatedP.nombre||''), '');
+    }
 
     // Update header display
     document.getElementById('fichaNombre').textContent = updatedP.apellidos + ', ' + updatedP.nombre;
@@ -3355,8 +3367,10 @@
     if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
 
     const msg = document.getElementById('fichaSavedMsg');
+    msg.textContent = '✔ Datos guardados correctamente';
     msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 2500);
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'Guardar ficha'; }
+    setTimeout(() => msg.classList.remove('show'), 3000);
     // Registrar en historial según qué cambió realmente
     const tieneDatosMedicos = data.alergias || data.medicacion || data.observaciones;
     const cambioDatosPers   = (newAp !== currentFichaP?.apellidos) || (newNm !== currentFichaP?.nombre)
@@ -3898,12 +3912,11 @@
   }
 
   function addAlumno() {
-    // Crear alumno temporal y abrir su ficha directamente para editar
-    const gid = document.getElementById('filtroGrupo').value || 'g6';
-    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 200) + 1;
-    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid, grupoCamp:'', monitorId:''};
-    gruposEdit[gid].participantes.push(nuevoP);
-    grupos[gid].participantes.push(nuevoP);
+    const gid  = document.getElementById('filtroGrupo').value || 'g6';
+    const maxN = Math.max(...getAllEditParticipants(true).map(p => p.n), 200) + 1;
+    // Mark as _nuevo so saveFicha knows it hasn't been added to grupos yet
+    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid,
+                    grupoCamp:'', monitorId:'', activo: true, _nuevo: true};
     const g = gruposEdit[gid] || grupos[gid];
     openFicha(nuevoP, g);
   }
@@ -3927,8 +3940,8 @@
     const curso     = document.getElementById('fichaCurso')?.textContent  || '';
     const apellidos = document.getElementById('fApellidos')?.value || '';
     const nombreP   = document.getElementById('fNombre')?.value   || '';
-    const gidEl     = document.getElementById('fCurso');
-    const grupoClase= document.getElementById('fGrupo')?.value || '';
+    const gidEl     = document.getElementById('fCurso');  // select with options
+    const grupoClase= document.getElementById('fGrupoClase')?.value || '';
     const monSel    = document.getElementById('fMonitor');
     const monNombre = monSel?.options[monSel.selectedIndex]?.text || 'Sin asignar';
     const grupoCamp = document.getElementById('fGrupoCamp')?.value || '';
@@ -4149,8 +4162,9 @@ ${sourceEl.innerHTML}
   }
 
 function imprimirListaAlumnos() {
-    const filtro     = document.getElementById('filtroGrupo').value;
-    const filtroAct  = document.getElementById('filtroActivo').value;
+    // Support both desktop and mobile filter IDs
+    const filtro    = document.getElementById('filtroGrupo')?.value || document.getElementById('mobFiltCurso')?.value || '';
+    const filtroAct = document.getElementById('filtroActivo')?.value || document.getElementById('mobFiltEstado')?.value || '';
     const filtroNom  = filtro
       ? (gruposEdit[filtro]?.label || filtro)
       : 'Todos los cursos';
@@ -4791,11 +4805,13 @@ function imprimirListaAlumnos() {
   }
 
   function mobAddAlumno() {
-    const gid = 'g6';
-    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 200) + 1;
-    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid, grupoCamp:'', monitorId:''};
-    gruposEdit[gid].participantes.push(nuevoP);
-    grupos[gid].participantes.push(nuevoP);
+    // Use current mob filter curso if set, else g6
+    const filtGid = document.getElementById('mobFiltCurso')?.value || 'g6';
+    const gid = filtGid;
+    const maxN = Math.max(...getAllEditParticipants(true).map(p => p.n), 200) + 1;
+    // _nuevo: no push to grupos until saveFicha confirms
+    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid,
+                    grupoCamp:'', monitorId:'', activo: true, _nuevo: true};
     const g = gruposEdit[gid] || grupos[gid];
     openFicha(nuevoP, g);
   }
@@ -8705,6 +8721,40 @@ function imprimirListaAlumnos() {
   </div>
 </div>
 
+<!-- ══ MODAL IMPRIMIR FICHA ══ -->
+<div id="imprimirFichaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:20px;padding:28px;max-width:420px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.3);">
+    <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:#2D5016;margin-bottom:6px;">🖨️ Imprimir ficha</div>
+    <div style="font-size:13px;color:#888;margin-bottom:20px;">Selecciona qué secciones incluir en el PDF</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpDatosPersonales" checked style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">📋 Datos del participante</div><div style="font-size:11px;color:#888;">Nombre, curso, grupo, monitor</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpContacto" checked style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">📞 Contacto familiar</div><div style="font-size:11px;color:#888;">Teléfonos, persona de contacto</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpMedico" checked style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">💊 Datos médicos</div><div style="font-size:11px;color:#888;">Alergias, medicación, observaciones</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpGrupo" checked style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">🏕 Organización campamento</div><div style="font-size:11px;color:#888;">Grupo, cabaña, monitor asignado</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpNotas" style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">🗒 Notas individuales</div><div style="font-size:11px;color:#888;">Observaciones del equipo</div></div>
+      </label>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="generarPDFFicha()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Generar PDF</button>
+      <button onclick="document.getElementById('imprimirFichaModal').style.display='none'" style="padding:12px 16px;border-radius:12px;border:1.5px solid #d9ceb8;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- FICHA ALUMNO -->
 <div class="ficha-overlay" id="fichaOverlay" onclick="handleFichaOverlay(event)">
   <div class="ficha-box" style="max-width:560px;">
@@ -8795,7 +8845,7 @@ function imprimirListaAlumnos() {
     <div class="ficha-footer">
       <span class="ficha-saved-msg" id="fichaSavedMsg">✔ Datos guardados</span>
       <button class="ficha-save-btn" style="background:#f0f7eb;color:#2D5016;border:1.5px solid #2D5016;" onclick="abrirImprimirFicha()">🖨️ Imprimir</button>
-      <button class="ficha-save-btn" onclick="saveFicha()">Guardar ficha</button>
+      <button class="ficha-save-btn" id="fichaSaveBtn" onclick="saveFicha()">Guardar ficha</button>
     </div>
   </div>
 </div>
