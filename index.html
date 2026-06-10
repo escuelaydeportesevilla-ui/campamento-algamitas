@@ -40,6 +40,9 @@
   }
 
   /* ── HERO ── */
+  /* Ocultar pantallas móvil en desktop */
+  .mob-screen { display: none; }
+
   .hero {
     background: var(--verde-bosque);
     background-image:
@@ -1115,7 +1118,10 @@
 
   @media (max-width: 768px) {
     /* Ocultar interfaz desktop, mostrar móvil */
-    .main, .hero-stats { display: none !important; }
+    .main { display: none !important; }
+    .hero-stats { display: none !important; }
+    /* Mostrar interfaz móvil */
+    .mob-screen.active { display: block !important; }
     footer { display: block !important; margin-top: 24px; }
     .hero { padding: 28px 18px 24px; }
     .hero h1 { font-size: 1.6rem; }
@@ -8855,6 +8861,11 @@ function renderMonitorGrid() {
     <div class="mob-stat"><div class="num">9,0</div><div class="lbl">Valoración 2025</div></div>
   </div>
 
+
+</div>
+
+
+<!-- ══ INTERFAZ MÓVIL ══ -->
   <!-- PANTALLA PRINCIPAL -->
   <div class="mob-screen active" id="mob-home">
     <!-- Stats bar -->
@@ -9348,7 +9359,7 @@ function renderMonitorGrid() {
       <button onclick="ejecutarExport()" style="padding:10px 22px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🖨 Imprimir / Guardar PDF</button>
     </div>
   </div>
-</div>
+
 
 <!-- ══ ÁREA DE IMPRESIÓN (generada dinámicamente) ══ -->
 <div id="printArea"></div>
