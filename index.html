@@ -1130,7 +1130,7 @@
 
     /* Pantalla principal móvil */
     .mob-screen { display: none; padding: 16px; }
-    .mob-screen.active { display: block; }
+    .mob-screen.active { display: block !important; }
 
     /* Grid de botones principales */
     .mob-section-label {
@@ -8464,27 +8464,25 @@ function renderMonitorGrid() {
   // ══════════════════════════════════════════════════════════════
   //  F. MODO OSCURO
   // ══════════════════════════════════════════════════════════════
-  // Auto-login if session is still valid (within 5 minutes)
-  (function() {
+  // Sesión: auto-login si hay sesión válida (< 5 minutos de inactividad)
+  // Se ejecuta en DOMContentLoaded para garantizar que el DOM esté listo
+  document.addEventListener('DOMContentLoaded', function() {
     try {
       const s = JSON.parse(localStorage.getItem('campapp_session') || 'null');
       if (s && s.ok && (Date.now() - s.ts) < 5 * 60 * 1000) {
-        // Valid session — skip login, go to project selector
         const loginEl = document.getElementById('loginOverlay');
         if (loginEl) loginEl.style.display = 'none';
-        // Restore last project if available
-        const lastProj = JSON.parse(sessionStorage.getItem('campapp-project') || 'null');
-        if (lastProj) {
-          setTimeout(() => selectProject(lastProj), 100);
-        } else {
-          setTimeout(() => showProjectSelector(), 100);
-        }
-        // Refresh timestamp
         s.ts = Date.now();
         localStorage.setItem('campapp_session', JSON.stringify(s));
+        const lastProj = JSON.parse(sessionStorage.getItem('campapp-project') || 'null');
+        if (lastProj) {
+          selectProject(lastProj);
+        } else {
+          showProjectSelector();
+        }
       }
-    } catch(e) {}
-  })();
+    } catch(e) { console.warn('Session check error:', e); }
+  });
 
   // ── Spinner universal en botón guardar ──
   function btnLoading(btn, label) {
@@ -8863,7 +8861,6 @@ function renderMonitorGrid() {
 
 
 </div>
-
 
 <!-- ══ INTERFAZ MÓVIL ══ -->
   <!-- PANTALLA PRINCIPAL -->
