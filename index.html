@@ -3411,11 +3411,6 @@ async function openFicha(p, g) {
     if (e.target === document.getElementById('fichaOverlay')) closeFicha();
   }
 
-  // Refresh session on any user interaction
-  ['click','touchstart','keydown'].forEach(ev => {
-    document.addEventListener(ev, () => refreshSession(), {passive: true, capture: true});
-  });
-
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       closeFicha();
@@ -3460,12 +3455,6 @@ async function openFicha(p, g) {
   function doLogin() {
     const val = document.getElementById('loginInput').value;
     if (val === APP_PASSWORD || val === PASSWORD) {
-      // Guardar sesión con timestamp
-      try {
-        localStorage.setItem('campapp_session', JSON.stringify({
-          ts: Date.now(), ok: true
-        }));
-      } catch(e) {}
       document.getElementById('loginOverlay').style.display = 'none';
       showProjectSelector();
     } else {
@@ -3475,25 +3464,7 @@ async function openFicha(p, g) {
     }
   }
 
-  function checkSession() {
-    // Returns true if there's a valid session (less than 5 min old)
-    try {
-      const s = JSON.parse(localStorage.getItem('campapp_session') || 'null');
-      if (!s || !s.ok) return false;
-      return (Date.now() - s.ts) < 5 * 60 * 1000;
-    } catch(e) { return false; }
-  }
-
-  function refreshSession() {
-    // Call this on any user interaction to reset the 5-min timer
-    try {
-      const s = JSON.parse(localStorage.getItem('campapp_session') || 'null');
-      if (s && s.ok) {
-        s.ts = Date.now();
-        localStorage.setItem('campapp_session', JSON.stringify(s));
-      }
-    } catch(e) {}
-  }
+  function refreshSession() {} // placeholder
 
   // ── Pantalla de selección de proyecto ──
   // Proyectos guardados en localStorage. Sin servidor externo.
@@ -3587,8 +3558,6 @@ async function openFicha(p, g) {
 
     try {
       sessionStorage.setItem('campapp-project', JSON.stringify(project));
-      // Refresh session timestamp when project selected
-      refreshSession();
     } catch(e) {}
     initApp();
   }
@@ -8464,25 +8433,7 @@ function renderMonitorGrid() {
   // ══════════════════════════════════════════════════════════════
   //  F. MODO OSCURO
   // ══════════════════════════════════════════════════════════════
-  // Sesión: auto-login si hay sesión válida (< 5 minutos de inactividad)
-  // Se ejecuta en DOMContentLoaded para garantizar que el DOM esté listo
-  document.addEventListener('DOMContentLoaded', function() {
-    try {
-      const s = JSON.parse(localStorage.getItem('campapp_session') || 'null');
-      if (s && s.ok && (Date.now() - s.ts) < 5 * 60 * 1000) {
-        const loginEl = document.getElementById('loginOverlay');
-        if (loginEl) loginEl.style.display = 'none';
-        s.ts = Date.now();
-        localStorage.setItem('campapp_session', JSON.stringify(s));
-        const lastProj = JSON.parse(sessionStorage.getItem('campapp-project') || 'null');
-        if (lastProj) {
-          selectProject(lastProj);
-        } else {
-          showProjectSelector();
-        }
-      }
-    } catch(e) { console.warn('Session check error:', e); }
-  });
+
 
   // ── Spinner universal en botón guardar ──
   function btnLoading(btn, label) {
