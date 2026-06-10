@@ -3698,68 +3698,34 @@ async function openFicha(p, g) {
     const mobSub=document.getElementById('mobSubTotal');   if(mobSub) mobSub.textContent=activos+' activos';
   }
   function initApp() {
-    // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
-    // Init PIN y dark mode
     initDarkMode();
-    // Limpiar fotos legacy de localStorage
     try { localStorage.removeItem('camp-monitores-fotos'); } catch(e) {}
 
-    // Cargar TODOS los datos desde Sheets
+    // Cargar datos desde Sheets
     (async () => {
       await loadAllFromSheets();
       await loadParticipantesFromSheets();
       gruposEdit = JSON.parse(JSON.stringify(grupos));
+
+      // Actualizar todos los contadores y paneles
       updateHeroStats();
       renderEditTable();
       renderMonitorGrid();
       renderObsGrid();
       renderGruposPorMonitor();
       renderGruposClase();
-      const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-      const mobTotal = document.getElementById('mobTotal');
-      if (mobTotal) mobTotal.textContent = total;
-      const mobSub = document.getElementById('mobSubTotal');
-      if (mobSub) mobSub.textContent = total + ' inscritos';
-      const heroNum = document.querySelector('.hero-stat .num');
-      if (heroNum) {
-        const activeCount = getAllEditParticipants().length; // already filtered
-        const allCount = getAllEditParticipants(true).length;
-        heroNum.textContent = activeCount;
-        // Add inactive note if any
-        const heroLbl = document.querySelector('.hero-stat .lbl');
-        if (heroLbl && allCount > activeCount) {
-          heroLbl.textContent = 'Participantes (' + (allCount - activeCount) + ' inactivos)';
-        }
-      }
+      renderMedResumen();
+
+      // Contadores nav desktop
       const dnavPart = document.getElementById('dnav-sub-participantes');
-      if (dnavPart) dnavPart.textContent = total + ' inscritos';
+      if (dnavPart) dnavPart.textContent = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length + ' inscritos';
       const dnavMon = document.getElementById('dnav-sub-monitores');
       if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
-    loadAsistencia();
-    })();
 
-    // Actualizar contadores móvil (inicial con datos base)
-    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-    const mobTotal = document.getElementById('mobTotal');
-    if (mobTotal) mobTotal.textContent = total;
-    const mobSub = document.getElementById('mobSubTotal');
-    if (mobSub) mobSub.textContent = total + ' inscritos';
-    const mobMon = document.getElementById('mobMonCount');
-    if (mobMon) mobMon.textContent = monitoresData.length + ' monitores';
-    // Desktop nav counters
-    const dnavPart = document.getElementById('dnav-sub-participantes');
-    if (dnavPart) dnavPart.textContent = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length + ' inscritos';
-    const dnavMon = document.getElementById('dnav-sub-monitores');
-    if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
-    loadAsistencia();
-    // Arranque normal de la app (preload fichas, render tablas, etc.)
-    renderEditTable();
-    renderMonitorGrid();
-    renderObsGrid();
-    renderGruposPorMonitor();
-    renderGruposClase();
-    renderMedResumen();
+      loadAsistencia();
+      updateHeroStats(); // segunda llamada para asegurar contadores móvil
+    })();
 
     if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
       setStatus('local'); cacheLoaded = true;
