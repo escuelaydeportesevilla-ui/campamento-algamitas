@@ -1991,11 +1991,7 @@
       <div class="dnav-label">Evaluación</div>
       <div class="dnav-sub">2025</div>
     </button>
-    <button class="desktop-nav-btn" onclick="actualizarApp(this)" data-tab="actualizar" id="btnActualizar" style="border-color:var(--verde-claro);">
-      <div class="dnav-icon" id="refreshIcon">🔄</div>
-      <div class="dnav-label">Actualizar</div>
-      <div class="dnav-sub" id="refreshSub">Sincronizar datos</div>
-    </button>
+
   </div>
 
   <!-- TABS (ocultos, solo para compatibilidad) -->
@@ -2100,7 +2096,7 @@
 
     <div class="edit-toolbar">
       <button class="edit-btn primary" onclick="addAlumno()">➕ Añadir alumno</button>
-      <button class="edit-btn" onclick="saveAllAlumnos()">💾 Guardar cambios</button>
+      <button class="edit-btn" onclick="saveAllAlumnos(this)">💾 Guardar cambios</button>
       <button class="edit-btn" onclick="imprimirListaAlumnos()" title="Imprimir lista actual">🖨️ Imprimir</button>
       <span id="editSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;"></span>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -2150,7 +2146,7 @@
     <h2 class="section-title">👤 Equipo de monitores</h2>
     <div class="edit-toolbar">
       <button class="edit-btn primary" onclick="addMonitor()">➕ Añadir monitor/a</button>
-      <button class="edit-btn" onclick="saveMonitores()">💾 Guardar</button>
+      <button class="edit-btn" onclick="saveMonitores(this)">💾 Guardar</button>
       <span id="monSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
     </div>
     <div class="monitor-grid" id="monitorGrid"></div>
@@ -2176,7 +2172,7 @@
     <div class="gtab-panel active" id="gtab-campamento">
       <div class="edit-toolbar">
         <button class="edit-btn primary" onclick="addGrupoCamp()">➕ Nuevo grupo</button>
-        <button class="edit-btn" onclick="saveGruposCamp()">💾 Guardar grupos</button>
+        <button class="edit-btn" onclick="saveGruposCamp(this)">💾 Guardar grupos</button>
         <button class="edit-btn danger" onclick="resetTodosGrupos()" title="Eliminar todos los grupos y empezar de cero">🗑 Resetear todo</button>
         <span id="gcSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
       </div>
@@ -2234,7 +2230,7 @@
       <button class="edit-btn primary" onclick="openProgModal()">➕ Nueva actividad</button>
       <button class="edit-btn" onclick="toggleProgVista()" id="btnVistaProg">📅 Ver calendario</button>
       <button class="edit-btn" onclick="openExportModal()">📄 Exportar PDF</button>
-      <button class="edit-btn" onclick="saveProgData()">💾 Guardar</button>
+      <button class="edit-btn" onclick="(()=>{btnLoading(this,'Guardando…');saveProgData();setTimeout(()=>btnDone(this,'Programación guardada'),300)}).call(this)">💾 Guardar</button>
       <span id="progSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
     </div>
 
@@ -3278,6 +3274,13 @@
     av.textContent = ((nm[0]||'') + (ap[0]||'')).toUpperCase();
   }
 
+  async function saveFichaConSpinner() {
+    const btn = document.getElementById('fichaSaveBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando…'; }
+    await saveFicha();
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Guardar ficha'; }
+  }
+
   async function saveFicha() {
     if (!currentFichaP) return;
     const n = currentFichaP.n;
@@ -4002,43 +4005,27 @@
     setTimeout(() => win.print(), 400);
   }
 
-  function saveAllAlumnos() {
-    // Sync gruposEdit back to grupos global
+  function saveAllAlumnos(btn) {
+    // Sync gruposEdit back to grupos
     Object.entries(gruposEdit).forEach(([gid, g]) => {
-      grupos[gid].participantes = g.participantes.map(p => ({...p}));
+      if (grupos[gid]) grupos[gid].participantes = g.participantes.map(p => ({...p}));
     });
-    updateHeroStats();
-
-    // Sincronizar con Google Sheets
-    const msg = document.getElementById('editSavedMsg');
-    msg.textContent = '⏳ Sincronizando con Sheets…';
-    msg.style.opacity = '1';
-    syncAllParticipantesSheets().then(() => {
-      const totalActivos = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length;
-      const totalTodos = getAllEditParticipants(true).length;
-      msg.textContent = `✔ ${totalActivos} activos / ${totalTodos} total`;
-      setTimeout(() => msg.style.opacity = '0', 3000);
-    }).catch(() => {
-      msg.textContent = `✔ ${total} participantes guardados (sin conexión a Sheets)`;
-      setTimeout(() => msg.style.opacity = '0', 3000);
-    });
-
-    renderGruposPorMonitor();
-    renderGruposClase();
-    updateHeroStats();
-    logCambio('alumno', 'Lista de participantes guardada', getAllEditParticipants().length + ' activos');
+    if (btn) btnLoading(btn, 'Guardando…');
+    syncAllParticipantesSheets()
+      .then(() => {
+        const act = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
+        if (btn) btnDone(btn, act + ' activos guardados');
+        else showSyncIndicator('✔ Participantes guardados', 'ok');
+        updateHeroStats();
+        renderGruposPorMonitor();
+        renderGruposClase();
+      })
+      .catch(() => {
+        if (btn) btnError(btn, 'Sin conexión — guardado local');
+        else showSyncIndicator('⚠ Sin conexión — guardado local', 'warn');
+      });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  //  MONITORES
-  // ══════════════════════════════════════════════════════════════
-  let monitoresData = JSON.parse(localStorage.getItem('camp-monitores') || '[]');
-  if (!monitoresData.length) {
-    monitoresData = [
-      {id:1, nombre:'Miguel Ángel', apellidos:'Ballesteros García', rol:'Coordinador', tel:'', email:'', grupoAsignado:'g6', observaciones:''},
-      {id:2, nombre:'Monitor/a', apellidos:'', rol:'Monitor/a', tel:'', email:'', grupoAsignado:'g5', observaciones:''},
-    ];
-  }
 
   function saveMonitoresStorage() {
     // Strip any legacy foto data before sending to Sheets
@@ -4166,19 +4153,17 @@
     renderMonitorGrid();
   }
 
-  function saveMonitores() {
+  function saveMonitores(btn) {
+    if (btn) btnLoading(btn, 'Guardando…');
     saveMonitoresStorage();
-    const msg = document.getElementById('monSavedMsg');
-    msg.textContent = '✔ Guardado';
-    msg.style.opacity = '1';
-    setTimeout(() => msg.style.opacity = '0', 2500);
-    renderGruposPorMonitor();
-    logCambio('monitor', 'Equipo de monitores actualizado', monitoresData.length + ' monitores');
+    setTimeout(() => {
+      if (btn) btnDone(btn, 'Monitores guardados');
+      else showSyncIndicator('✔ Monitores guardados', 'ok');
+      renderGruposPorMonitor();
+    }, 200);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  //  GRUPOS POR MONITOR y POR CLASE
-  // ══════════════════════════════════════════════════════════════
+
   function renderGruposPorMonitor() {
     const container = document.getElementById('gruposPorMonitor');
     if (!container) return;
@@ -4773,12 +4758,13 @@
     sheetsSet('grupos', gruposCamp);
   }
 
-  function saveGruposCamp() {
+  function saveGruposCamp(btn) {
+    if (btn) btnLoading(btn, 'Guardando…');
     saveGruposCampStorage();
-    const msg = document.getElementById('gcSavedMsg');
-    msg.textContent = '✔ Guardado'; msg.style.opacity = '1';
-    setTimeout(() => msg.style.opacity = '0', 2500);
-    logCambio('grupo', 'Grupos campamento guardados', gruposCamp.length + ' grupos');
+    setTimeout(() => {
+      if (btn) btnDone(btn, 'Grupos guardados');
+      else showSyncIndicator('✔ Grupos guardados', 'ok');
+    }, 200);
   }
 
 
@@ -6336,6 +6322,26 @@
   }
 
   // Indicador de sync en pantalla
+  // ── Spinner universal en botones guardar ──────────────────────
+  function btnLoading(btn, label) {
+    if (!btn) return;
+    btn._origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ ' + (label || 'Guardando…');
+  }
+  function btnDone(btn, msg) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.innerHTML = btn._origHTML || '💾 Guardar';
+    showSyncIndicator('✔ ' + (msg || 'Guardado'), 'ok');
+  }
+  function btnError(btn, msg) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.innerHTML = btn._origHTML || '💾 Guardar';
+    showSyncIndicator('⚠ ' + (msg || 'Error al guardar'), 'warn');
+  }
+
   function showSyncIndicator(msg, type) {
     let ind = document.getElementById('syncIndicator');
     if (!ind) {
@@ -8546,7 +8552,7 @@
     </div>
     <div class="ficha-footer">
       <span class="ficha-saved-msg" id="fichaSavedMsg">✔ Datos guardados</span>
-      <button class="ficha-save-btn" onclick="saveFicha()">Guardar ficha</button>
+      <button class="ficha-save-btn" id="fichaSaveBtn" onclick="saveFichaConSpinner()">Guardar ficha</button>
     </div>
   </div>
 </div>
