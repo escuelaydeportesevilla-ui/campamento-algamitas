@@ -40,6 +40,9 @@
   }
 
   /* ── HERO ── */
+  /* Ocultar pantallas móvil en desktop */
+  .mob-screen { display: none; }
+
   .hero {
     background: var(--verde-bosque);
     background-image:
@@ -1115,7 +1118,10 @@
 
   @media (max-width: 768px) {
     /* Ocultar interfaz desktop, mostrar móvil */
-    .main, .hero-stats { display: none !important; }
+    .main { display: none !important; }
+    .hero-stats { display: none !important; }
+    /* Mostrar interfaz móvil */
+    .mob-screen.active { display: block !important; }
     footer { display: block !important; margin-top: 24px; }
     .hero { padding: 28px 18px 24px; }
     .hero h1 { font-size: 1.6rem; }
@@ -1124,7 +1130,7 @@
 
     /* Pantalla principal móvil */
     .mob-screen { display: none; padding: 16px; }
-    .mob-screen.active { display: block; }
+    .mob-screen.active { display: block !important; }
 
     /* Grid de botones principales */
     .mob-section-label {
@@ -1991,11 +1997,7 @@
       <div class="dnav-label">Evaluación</div>
       <div class="dnav-sub">2025</div>
     </button>
-    <button class="desktop-nav-btn" onclick="actualizarApp(this)" data-tab="actualizar" id="btnActualizar" style="border-color:var(--verde-claro);">
-      <div class="dnav-icon" id="refreshIcon">🔄</div>
-      <div class="dnav-label">Actualizar</div>
-      <div class="dnav-sub" id="refreshSub">Sincronizar datos</div>
-    </button>
+
   </div>
 
   <!-- TABS (ocultos, solo para compatibilidad) -->
@@ -2120,6 +2122,7 @@
           <option value="activo">✅ Activos</option>
           <option value="pendiente">⏳ Pendientes de revisar</option>
           <option value="inactivo">⛔ No activos</option>
+          <option value="todos">📋 Todos (imprimir)</option>
         </select>
       </div>
     </div>
@@ -2150,16 +2153,22 @@
     <h2 class="section-title">👤 Equipo de monitores</h2>
     <div class="edit-toolbar">
       <button class="edit-btn primary" onclick="addMonitor()">➕ Añadir monitor/a</button>
-      <button class="edit-btn" onclick="saveMonitores()">💾 Guardar</button>
+      <button class="edit-btn" onclick="saveMonitores(this)">💾 Guardar</button>
+      <button class="edit-btn" onclick="showMonTab('equipo',this)" id="monTabEquipo" style="background:var(--verde-bosque);color:white;">👤 Equipo</button>
+      <button class="edit-btn" onclick="showMonTab('medico',this)" id="monTabMedico">🩺 Resumen médico</button>
       <span id="monSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
     </div>
+    <div id="monPanelEquipo">
     <div class="monitor-grid" id="monitorGrid"></div>
+  </div>
+  <div id="monPanelMedico" style="display:none;">
     <h2 class="section-title" style="margin-top:32px;">🩺 Resumen médico — Panel coordinador</h2>
     <p style="font-size:13px;opacity:.6;margin-bottom:20px;">Participantes con datos médicos relevantes registrados en sus fichas.</p>
     <div id="medResumen">
       <div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Carga las fichas médicas desde la pestaña Participantes para ver el resumen aquí.</div>
     </div>
   </div>
+
 
   <!-- TAB GRUPOS -->
   <div id="tab-grupos" class="tab-panel">
@@ -2176,7 +2185,8 @@
     <div class="gtab-panel active" id="gtab-campamento">
       <div class="edit-toolbar">
         <button class="edit-btn primary" onclick="addGrupoCamp()">➕ Nuevo grupo</button>
-        <button class="edit-btn" onclick="saveGruposCamp()">💾 Guardar grupos</button>
+        <button class="edit-btn" onclick="saveGruposCamp(this)">💾 Guardar grupos</button>
+        <button class="edit-btn" onclick="imprimirGrupos('campamento')">🖨️ Imprimir / PDF</button>
         <button class="edit-btn danger" onclick="resetTodosGrupos()" title="Eliminar todos los grupos y empezar de cero">🗑 Resetear todo</button>
         <span id="gcSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
       </div>
@@ -2197,12 +2207,16 @@
     <div class="gtab-panel" id="gtab-monitor">
       <div class="edit-toolbar">
         <button class="edit-btn" onclick="renderGruposPorMonitor()">🔄 Actualizar</button>
+        <button class="edit-btn" onclick="imprimirGrupos('monitor')">🖨️ Imprimir / PDF</button>
       </div>
       <div id="gruposPorMonitor"></div>
     </div>
 
     <!-- POR CLASE -->
     <div class="gtab-panel" id="gtab-clase">
+      <div class="edit-toolbar">
+        <button class="edit-btn" onclick="imprimirGrupos('clase')">🖨️ Imprimir / PDF</button>
+      </div>
       <div id="gruposPorClase"></div>
     </div>
   </div>
@@ -2789,7 +2803,12 @@
     if (id === 'guardia') { renderGuardia(); }
     if (id === 'obsalumnos') { renderObsAlumnos(); }
     if (id === 'programacion') { populateProgFiltros(); renderProg(); }
-    if (id === 'edicion') { renderEditTable(); } // grupos camp may have changed
+    if (id === 'edicion')       { renderEditTable(); }
+    if (id === 'participantes') { updateHeroStats(); }
+    if (id === 'monitores')     { renderMonitorGrid(); renderMedResumen(); }
+    if (id === 'recomendaciones') { /* static content */ }
+    if (id === 'evaluacion')    { /* static content */ }
+    if (id === 'observaciones') { renderObsGrid(); }
   }
 
   /* ── DATOS PARTICIPANTES ── */
@@ -3168,12 +3187,21 @@
   /* ── FICHA ALUMNO ── */
   let currentFichaP = null;
 
-  async function openFicha(p, g) {
+    function openFichaById(n) {
+    const p = getAllEditParticipants(true).find(x => x.n === n);
+    if (!p) return;
+    const g = gruposEdit[p.gid] || grupos[p.gid] || {};
+    openFicha(p, g);
+  }
+
+async function openFicha(p, g) {
     currentFichaP = p;
 
     // Avatar
     document.getElementById('fichaAvatar').style.background = g.hex;
-    document.getElementById('fichaAvatar').textContent = getInitials(p.nombre, p.apellidos);
+    const _fichaAv = document.getElementById('fichaAvatar');
+    _fichaAv.textContent = getInitials(p.nombre, p.apellidos);
+    _fichaAv.dataset.n = String(p.n);
     document.getElementById('fichaSavedMsg').classList.remove('show');
 
     // ── Datos del participante (editables) ──
@@ -3280,6 +3308,9 @@
 
   async function saveFicha() {
     if (!currentFichaP) return;
+    // Show spinner
+    const saveBtn = document.getElementById('fichaSaveBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '⏳ Guardando…'; }
     const n = currentFichaP.n;
     const oldGid = currentFichaP.gid;
     const newGid = document.getElementById('fCurso').value;
@@ -3303,9 +3334,18 @@
       grupoCamp: newGrupoCamp,
       monitorId: newMonitorId,
     };
+    // Si es nuevo participante, necesita apellidos o nombre para guardarse
+    if (currentFichaP._nuevo && !newAp && !newNm) {
+      alert('Por favor introduce al menos el nombre o apellidos antes de guardar.');
+      return;
+    }
     if (gruposEdit[newGid]) gruposEdit[newGid].participantes.push(updatedP);
     if (grupos[newGid])     grupos[newGid].participantes.push(updatedP);
+    delete updatedP._nuevo;
     currentFichaP = updatedP;
+    if (updatedP.apellidos || updatedP.nombre) {
+      logCambio('alumno', 'Nuevo alumno añadido: ' + (updatedP.apellidos||'') + ', ' + (updatedP.nombre||''), '');
+    }
 
     // Update header display
     document.getElementById('fichaNombre').textContent = updatedP.apellidos + ', ' + updatedP.nombre;
@@ -3347,8 +3387,11 @@
     if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
 
     const msg = document.getElementById('fichaSavedMsg');
+    msg.textContent = '✔ Datos guardados';
     msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 2500);
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'Guardar ficha'; }
+    showSyncIndicator('✔ Ficha guardada correctamente', 'ok');
+    setTimeout(() => msg.classList.remove('show'), 3000);
     // Registrar en historial según qué cambió realmente
     const tieneDatosMedicos = data.alergias || data.medicacion || data.observaciones;
     const cambioDatosPers   = (newAp !== currentFichaP?.apellidos) || (newNm !== currentFichaP?.nombre)
@@ -3423,6 +3466,8 @@
       document.getElementById('loginInput').focus();
     }
   }
+
+  function refreshSession() {} // placeholder
 
   // ── Pantalla de selección de proyecto ──
   // Proyectos guardados en localStorage. Sin servidor externo.
@@ -3514,7 +3559,9 @@
     const heroSub = document.querySelector('.hero-sub');
     if (heroSub && project.entidad) heroSub.textContent = project.entidad;
 
-    try { sessionStorage.setItem('campapp-project', JSON.stringify(project)); } catch(e) {}
+    try {
+      sessionStorage.setItem('campapp-project', JSON.stringify(project));
+    } catch(e) {}
     initApp();
   }
 
@@ -3618,74 +3665,55 @@
     const activos    = todos.filter(p => { const ep=p.activo==='pendiente'||p.activo==='pending'; const ei=p.activo===false||p.activo==='false'; return !ep&&!ei; }).length;
     const pendientes = todos.filter(p => p.activo==='pendiente'||p.activo==='pending').length;
     const inactivos  = todos.filter(p => p.activo===false||p.activo==='false').length;
+    // Desktop
     const sa=document.getElementById('statActivos');   if(sa) sa.textContent=activos;
     const sp=document.getElementById('statPendientes');if(sp) sp.textContent=pendientes;
     const si=document.getElementById('statInactivos'); if(si) si.textContent=inactivos;
+    // Móvil
+    const msa=document.getElementById('mobStatActivos');   if(msa) msa.textContent=activos;
+    const msp=document.getElementById('mobStatPendientes');if(msp) msp.textContent=pendientes;
+    const msi=document.getElementById('mobStatInactivos'); if(msi) msi.textContent=inactivos;
+    const mobSub=document.getElementById('mobSubTotal');   if(mobSub) mobSub.textContent=activos+' activos';
   }
-
   function initApp() {
-    // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
-    // Init PIN y dark mode
     initDarkMode();
-    // Limpiar fotos legacy de localStorage
     try { localStorage.removeItem('camp-monitores-fotos'); } catch(e) {}
 
-    // Cargar TODOS los datos desde Sheets
-    (async () => {
-      await loadAllFromSheets();
-      await loadParticipantesFromSheets();
-      gruposEdit = JSON.parse(JSON.stringify(grupos));
-      updateHeroStats();
-      renderEditTable();
-      renderMonitorGrid();
-      renderObsGrid();
-      renderGruposPorMonitor();
-      renderGruposClase();
-      const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-      const mobTotal = document.getElementById('mobTotal');
-      if (mobTotal) mobTotal.textContent = total;
-      const mobSub = document.getElementById('mobSubTotal');
-      if (mobSub) mobSub.textContent = total + ' inscritos';
-      const heroNum = document.querySelector('.hero-stat .num');
-      if (heroNum) {
-        const activeCount = getAllEditParticipants().length; // already filtered
-        const allCount = getAllEditParticipants(true).length;
-        heroNum.textContent = activeCount;
-        // Add inactive note if any
-        const heroLbl = document.querySelector('.hero-stat .lbl');
-        if (heroLbl && allCount > activeCount) {
-          heroLbl.textContent = 'Participantes (' + (allCount - activeCount) + ' inactivos)';
-        }
-      }
-      const dnavPart = document.getElementById('dnav-sub-participantes');
-      if (dnavPart) dnavPart.textContent = total + ' inscritos';
-      const dnavMon = document.getElementById('dnav-sub-monitores');
-      if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
-    loadAsistencia();
-    })();
-
-    // Actualizar contadores móvil (inicial con datos base)
-    const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-    const mobTotal = document.getElementById('mobTotal');
-    if (mobTotal) mobTotal.textContent = total;
-    const mobSub = document.getElementById('mobSubTotal');
-    if (mobSub) mobSub.textContent = total + ' inscritos';
-    const mobMon = document.getElementById('mobMonCount');
-    if (mobMon) mobMon.textContent = monitoresData.length + ' monitores';
-    // Desktop nav counters
-    const dnavPart = document.getElementById('dnav-sub-participantes');
-    if (dnavPart) dnavPart.textContent = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length + ' inscritos';
-    const dnavMon = document.getElementById('dnav-sub-monitores');
-    if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
-    loadAsistencia();
-    // Arranque normal de la app (preload fichas, render tablas, etc.)
+    // Render immediately with local data (no waiting for Sheets)
+    updateHeroStats();
     renderEditTable();
     renderMonitorGrid();
     renderObsGrid();
     renderGruposPorMonitor();
     renderGruposClase();
     renderMedResumen();
+    renderCursosGrid();
+
+    // Then load from Sheets and re-render
+    (async () => {
+      await loadAllFromSheets();
+      await loadParticipantesFromSheets();
+      gruposEdit = JSON.parse(JSON.stringify(grupos));
+
+      // Actualizar todos los contadores y paneles
+      updateHeroStats();
+      renderEditTable();
+      renderMonitorGrid();
+      renderObsGrid();
+      renderGruposPorMonitor();
+      renderGruposClase();
+      renderMedResumen();
+
+      // Contadores nav desktop
+      const dnavPart = document.getElementById('dnav-sub-participantes');
+      if (dnavPart) dnavPart.textContent = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length + ' inscritos';
+      const dnavMon = document.getElementById('dnav-sub-monitores');
+      if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
+
+      loadAsistencia();
+      updateHeroStats(); // segunda llamada para asegurar contadores móvil
+    })();
 
     if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
       setStatus('local'); cacheLoaded = true;
@@ -3778,6 +3806,7 @@
       const esPendiente = p.activo === 'pendiente' || p.activo === 'pending';
       const esInactivo  = p.activo === false || p.activo === 'false' || p.activo === 'inactivo';
       const esActivo    = !esPendiente && !esInactivo;
+      if (filtroActivo === 'todos') return true;
       if (filtroActivo === 'activo'    && !esActivo)    return false;
       if (filtroActivo === 'inactivo'  && !esInactivo)  return false;
       if (filtroActivo === 'pendiente' && !esPendiente) return false;
@@ -3890,19 +3919,259 @@
   }
 
   function addAlumno() {
-    // Crear alumno temporal y abrir su ficha directamente para editar
-    const gid = document.getElementById('filtroGrupo').value || 'g6';
-    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 200) + 1;
-    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid, grupoCamp:'', monitorId:''};
-    gruposEdit[gid].participantes.push(nuevoP);
-    grupos[gid].participantes.push(nuevoP);
+    const gid  = document.getElementById('filtroGrupo').value || 'g6';
+    const maxN = Math.max(...getAllEditParticipants(true).map(p => p.n), 200) + 1;
+    // Mark as _nuevo so saveFicha knows it hasn't been added to grupos yet
+    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid,
+                    grupoCamp:'', monitorId:'', activo: true, _nuevo: true};
     const g = gruposEdit[gid] || grupos[gid];
     openFicha(nuevoP, g);
   }
 
-  function imprimirListaAlumnos() {
-    const filtro     = document.getElementById('filtroGrupo').value;
-    const filtroAct  = document.getElementById('filtroActivo').value;
+      function abrirImprimirFicha() {
+    const modal = document.getElementById('imprimirFichaModal');
+    modal.style.display = 'flex';
+  }
+
+  function generarPDFFicha() {
+    document.getElementById('imprimirFichaModal').style.display = 'none';
+
+    const inclDatosP = document.getElementById('fpDatosPersonales').checked;
+    const inclContact = document.getElementById('fpContacto').checked;
+    const inclMedico  = document.getElementById('fpMedico').checked;
+    const inclGrupo   = document.getElementById('fpGrupo').checked;
+    const inclNotas   = document.getElementById('fpNotas').checked;
+
+    // Gather current ficha data from the open modal
+    const nombre    = document.getElementById('fichaNombre')?.textContent || '';
+    const curso     = document.getElementById('fichaCurso')?.textContent  || '';
+    const apellidos = document.getElementById('fApellidos')?.value || '';
+    const nombreP   = document.getElementById('fNombre')?.value   || '';
+    const gidEl     = document.getElementById('fCurso');  // select with options
+    const grupoClase= document.getElementById('fGrupoClase')?.value || '';
+    const monSel    = document.getElementById('fMonitor');
+    const monNombre = monSel?.options[monSel.selectedIndex]?.text || 'Sin asignar';
+    const grupoCamp = document.getElementById('fGrupoCamp')?.value || '';
+
+    const contacto  = document.getElementById('fContacto')?.value || '';
+    const tel1      = document.getElementById('fTel1')?.value || '';
+    const tel2      = document.getElementById('fTel2')?.value || '';
+
+    const alergias  = document.getElementById('fAlergias')?.value || '';
+    const medicacion= document.getElementById('fMedicacion')?.value || '';
+    const obsM      = document.getElementById('fObservaciones')?.value || '';
+
+    // Linked panel data (grupo campamento, cabaña)
+    const linkedPanel = document.getElementById('fichaLinkedPanel');
+    const linkedHtml  = linkedPanel ? linkedPanel.innerHTML : '';
+
+    // Notas del alumno
+    const nEl = document.getElementById('fichaAvatar')?.dataset.n;
+    const notas = nEl && obsAlumnos[nEl]?.notas ? obsAlumnos[nEl].notas : [];
+
+    let sections = '';
+
+    if (inclDatosP) {
+      sections += `<div class="section">
+        <div class="section-title">📋 Datos del participante</div>
+        <table class="data-table">
+          <tr><td class="label">Apellidos</td><td>${escHtml(apellidos)}</td></tr>
+          <tr><td class="label">Nombre</td><td>${escHtml(nombreP)}</td></tr>
+          <tr><td class="label">Curso</td><td>${escHtml(gidEl?.options[gidEl.selectedIndex]?.text||'')}</td></tr>
+          <tr><td class="label">Grupo de clase</td><td>${escHtml(grupoClase||'—')}</td></tr>
+        </table>
+      </div>`;
+    }
+
+    if (inclGrupo) {
+      sections += `<div class="section">
+        <div class="section-title">🏕 Organización en el campamento</div>
+        <table class="data-table">
+          <tr><td class="label">Grupo campamento</td><td>${escHtml(grupoCamp||'Sin asignar')}</td></tr>
+          <tr><td class="label">Monitor/a</td><td>${escHtml(monNombre)}</td></tr>
+        </table>
+        ${linkedHtml ? '<div style="font-size:11px;color:#888;margin-top:6px;">'+linkedHtml.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,200)+'</div>' : ''}
+      </div>`;
+    }
+
+    if (inclContact) {
+      sections += `<div class="section">
+        <div class="section-title">📞 Contacto familiar</div>
+        <table class="data-table">
+          <tr><td class="label">Persona de contacto</td><td>${escHtml(contacto||'—')}</td></tr>
+          <tr><td class="label">Teléfono 1</td><td>${escHtml(tel1||'—')}</td></tr>
+          <tr><td class="label">Teléfono 2</td><td>${escHtml(tel2||'—')}</td></tr>
+        </table>
+      </div>`;
+    }
+
+    if (inclMedico) {
+      const hasData = alergias || medicacion || obsM;
+      sections += `<div class="section ${alergias?'alert-section':''}">
+        <div class="section-title">💊 Datos médicos${alergias?' <span class="alert-badge">⚠️ ALERGIAS</span>':''}</div>
+        ${hasData ? `<table class="data-table">
+          ${alergias?`<tr><td class="label alert-label">Alergias</td><td class="alert-val">${escHtml(alergias)}</td></tr>`:''}
+          ${medicacion?`<tr><td class="label">Medicación</td><td>${escHtml(medicacion)}</td></tr>`:''}
+          ${obsM?`<tr><td class="label">Observaciones</td><td>${escHtml(obsM)}</td></tr>`:''}
+        </table>` : '<p class="no-data">Sin datos médicos registrados</p>'}
+      </div>`;
+    }
+
+    if (inclNotas && notas.length) {
+      const moodLabel = m => m==='bien'?'😊 Bien':m==='regular'?'😐 Regular':'😟 Necesita atención';
+      const moodColor = m => m==='bien'?'#27AE60':m==='regular'?'#E67E22':'#C0392B';
+      sections += `<div class="section">
+        <div class="section-title">🗒 Notas del equipo (${notas.length})</div>
+        ${notas.slice().reverse().map(n => `
+          <div class="nota-item" style="border-left-color:${moodColor(n.mood)};">
+            <div class="nota-mood" style="color:${moodColor(n.mood)};">${moodLabel(n.mood)}</div>
+            <div class="nota-texto">${escHtml(n.texto)}</div>
+            <div class="nota-fecha">${escHtml(n.fecha||'')} · ${escHtml(n.monitor||'Monitor')}</div>
+          </div>`).join('')}
+      </div>`;
+    } else if (inclNotas) {
+      sections += `<div class="section"><div class="section-title">🗒 Notas del equipo</div><p class="no-data">Sin notas registradas</p></div>`;
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ficha de ${escHtml(apellidos)}, ${escHtml(nombreP)}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #222; font-size: 13px; }
+  .header { display: flex; align-items: center; gap: 16px; padding: 16px; background: #2D5016; border-radius: 12px; margin-bottom: 20px; color: white; }
+  .avatar { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; flex-shrink: 0; }
+  .header-name { font-size: 1.2rem; font-weight: 700; }
+  .header-meta { font-size: 12px; opacity: .75; margin-top: 2px; }
+  .section { margin-bottom: 18px; border: 1.5px solid #e8e0d0; border-radius: 10px; overflow: hidden; }
+  .alert-section { border-color: #f5c6cb; }
+  .section-title { background: #f9f6f1; padding: 10px 14px; font-weight: 700; font-size: 13px; color: #2D5016; border-bottom: 1px solid #e8e0d0; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table td { padding: 8px 14px; border-bottom: 1px solid #f0ebe0; vertical-align: top; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .label { font-weight: 600; color: #666; width: 38%; font-size: 12px; }
+  .alert-label { color: #C0392B; }
+  .alert-val { color: #C0392B; font-weight: 600; }
+  .alert-badge { background: #fdecea; color: #C0392B; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700; }
+  .no-data { padding: 10px 14px; color: #aaa; font-style: italic; font-size: 12px; }
+  .nota-item { padding: 10px 14px; border-left: 3px solid #2D5016; margin: 8px 14px; border-radius: 0 8px 8px 0; background: #f9f6f1; }
+  .nota-mood { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+  .nota-texto { font-size: 13px; margin-bottom: 4px; }
+  .nota-fecha { font-size: 10px; color: #aaa; }
+  .footer { margin-top: 20px; text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #e8e0d0; padding-top: 12px; }
+  @media print { .no-print { display: none !important; } body { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="avatar">${getInitials(nombreP, apellidos)}</div>
+  <div>
+    <div class="header-name">${escHtml(apellidos)}, ${escHtml(nombreP)}</div>
+    <div class="header-meta">${escHtml(gidEl?.options[gidEl.selectedIndex]?.text||'')} · Campamento Algámitas 2026</div>
+  </div>
+</div>
+${sections}
+<div class="footer">CampApp · Escuela y Deporte · Generado: ${new Date().toLocaleString('es-ES')}</div>
+<div class="no-print" style="margin-top:20px;text-align:center;">
+  <button onclick="window.print()" style="padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 400);
+  }
+
+function imprimirGrupos(tipo) {
+    let titulo = '';
+    let sourceId = '';
+    if (tipo === 'campamento') { titulo = 'Grupos campamento'; sourceId = 'gtab-campamento'; }
+    if (tipo === 'monitor')    { titulo = 'Grupos por monitor'; sourceId = 'gruposPorMonitor'; }
+    if (tipo === 'clase')      { titulo = 'Grupos por clase';   sourceId = 'gruposPorClase'; }
+
+    // Asegurarse de que el contenido está renderizado
+    if (tipo === 'monitor') { renderGruposPorMonitor(); if (!document.getElementById(sourceId)?.innerHTML) sourceId = 'mobGTabMonPanel'; }
+    if (tipo === 'clase')   { renderGruposClase();   if (!document.getElementById(sourceId)?.innerHTML) sourceId = 'mobGTabClasePanel'; }
+    if (tipo === 'campamento') {
+      // Try desktop first, fall back to mobile
+      if (!document.getElementById('gtab-campamento') || !document.getElementById('gtab-campamento').querySelector('.grupo-card, .grupo-resumen-card')) {
+        sourceId = 'mobGTabCampPanel';
+      }
+    }
+
+    const sourceEl = document.getElementById(sourceId);
+    if (!sourceEl) return;
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>${titulo} — CampApp</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #222; }
+  h1 { color: #2D5016; font-size: 1.3rem; margin-bottom: 4px; }
+  .meta { font-size: 12px; color: #888; margin-bottom: 20px; }
+  /* Grupos campamento */
+  .grupo-card-print { border: 1.5px solid #d9ceb8; border-radius: 10px; padding: 14px; margin-bottom: 14px; break-inside: avoid; }
+  .grupo-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid #ede5d0; padding-bottom: 8px; }
+  .grupo-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .grupo-nombre { font-weight: 700; font-size: 15px; }
+  .grupo-meta { font-size: 11px; color: #888; }
+  .alumno-chip { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; margin: 2px; background: #f0f7eb; }
+  .alerta-chip { background: #fdecea !important; }
+  /* Por monitor / clase */
+  .grupo-resumen-card { border: 1.5px solid #d9ceb8; border-radius: 10px; padding: 14px; margin-bottom: 14px; break-inside: avoid; }
+  .grupo-resumen-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .grupo-color-dot { width: 12px; height: 12px; border-radius: 50%; background: #2D5016; flex-shrink: 0; }
+  .grupo-resumen-title { font-weight: 700; font-size: 14px; }
+  .grupo-resumen-meta { font-size: 11px; color: #888; margin-left: auto; }
+  .grupo-alumno-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 11px; margin: 2px; background: #f0f7eb; }
+  .chip-avatar { width: 18px; height: 18px; border-radius: 50%; background: #2D5016; color: white; font-size: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  @media print {
+    body { padding: 10px; }
+    button { display: none; }
+    .grupo-card-print, .grupo-resumen-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1>🏕 ${titulo} — Campamento Algámitas 2026</h1>
+<div class="meta">Generado: ${new Date().toLocaleString('es-ES')}</div>
+${sourceEl.innerHTML}
+<div style="margin-top:20px;text-align:center;" class="no-print">
+  <button onclick="window.print()" style="padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+  }
+
+  function mobImprimirGrupos() {
+    // Detect which panel is visible
+    const campPanel  = document.getElementById('mobGTabCampPanel');
+    const monPanel   = document.getElementById('mobGTabMonPanel');
+    const clasePanel = document.getElementById('mobGTabClasePanel');
+    let tipo = 'campamento';
+    if (monPanel   && monPanel.style.display   !== 'none') tipo = 'monitor';
+    if (clasePanel && clasePanel.style.display !== 'none') tipo = 'clase';
+    imprimirGrupos(tipo);
+  }
+
+function imprimirListaAlumnos() {
+    // Support both desktop and mobile filter IDs
+    const filtro    = document.getElementById('filtroGrupo')?.value || document.getElementById('mobFiltCurso')?.value || '';
+    const filtroAct = document.getElementById('filtroActivo')?.value || document.getElementById('mobFiltEstado')?.value || '';
     const filtroNom  = filtro
       ? (gruposEdit[filtro]?.label || filtro)
       : 'Todos los cursos';
@@ -4002,27 +4271,19 @@
     setTimeout(() => win.print(), 400);
   }
 
-  function saveAllAlumnos() {
-    // Sync gruposEdit back to grupos global
+  function saveAllAlumnos(btn) {
     Object.entries(gruposEdit).forEach(([gid, g]) => {
       grupos[gid].participantes = g.participantes.map(p => ({...p}));
     });
     updateHeroStats();
-
-    // Sincronizar con Google Sheets
-    const msg = document.getElementById('editSavedMsg');
-    msg.textContent = '⏳ Sincronizando con Sheets…';
-    msg.style.opacity = '1';
+    const _btn = btn || document.querySelector('.edit-toolbar .edit-btn.primary ~ .edit-btn');
+    btnLoading(_btn, 'Guardando…');
     syncAllParticipantesSheets().then(() => {
-      const totalActivos = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length;
-      const totalTodos = getAllEditParticipants(true).length;
-      msg.textContent = `✔ ${totalActivos} activos / ${totalTodos} total`;
-      setTimeout(() => msg.style.opacity = '0', 3000);
+      const act = getAllEditParticipants().filter(p => p.activo !== 'pendiente').length;
+      btnDone(_btn, act + ' activos guardados');
     }).catch(() => {
-      msg.textContent = `✔ ${total} participantes guardados (sin conexión a Sheets)`;
-      setTimeout(() => msg.style.opacity = '0', 3000);
+      btnError(_btn, 'Sin conexión — guardado local');
     });
-
     renderGruposPorMonitor();
     renderGruposClase();
     updateHeroStats();
@@ -4097,7 +4358,18 @@
     return opts;
   }
 
-  function renderMonitorGrid() {
+    function showMonTab(tab, btn) {
+    document.getElementById('monPanelEquipo').style.display = tab === 'equipo' ? 'block' : 'none';
+    document.getElementById('monPanelMedico').style.display = tab === 'medico' ? 'block' : 'none';
+    ['monTabEquipo','monTabMedico'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) { b.style.background = ''; b.style.color = ''; }
+    });
+    if (btn) { btn.style.background = 'var(--verde-bosque)'; btn.style.color = 'white'; }
+    if (tab === 'medico') renderMedResumen();
+  }
+
+function renderMonitorGrid() {
     const grid = document.getElementById('monitorGrid');
     if (!grid) return;
     grid.innerHTML = '';
@@ -4166,14 +4438,15 @@
     renderMonitorGrid();
   }
 
-  function saveMonitores() {
+  function saveMonitores(btn) {
+    if (btn) btnLoading(btn, 'Guardando…');
     saveMonitoresStorage();
-    const msg = document.getElementById('monSavedMsg');
-    msg.textContent = '✔ Guardado';
-    msg.style.opacity = '1';
-    setTimeout(() => msg.style.opacity = '0', 2500);
-    renderGruposPorMonitor();
-    logCambio('monitor', 'Equipo de monitores actualizado', monitoresData.length + ' monitores');
+    setTimeout(() => {
+      if (btn) btnDone(btn, 'Monitores guardados');
+      else showSyncIndicator('✔ Monitores guardados', 'ok');
+      renderGruposPorMonitor();
+      logCambio('monitor', 'Equipo de monitores actualizado', monitoresData.length + ' monitores');
+    }, 300);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -4543,11 +4816,13 @@
   }
 
   function mobAddAlumno() {
-    const gid = 'g6';
-    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 200) + 1;
-    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid, grupoCamp:'', monitorId:''};
-    gruposEdit[gid].participantes.push(nuevoP);
-    grupos[gid].participantes.push(nuevoP);
+    // Use current mob filter curso if set, else g6
+    const filtGid = document.getElementById('mobFiltCurso')?.value || 'g6';
+    const gid = filtGid;
+    const maxN = Math.max(...getAllEditParticipants(true).map(p => p.n), 200) + 1;
+    // _nuevo: no push to grupos until saveFicha confirms
+    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid,
+                    grupoCamp:'', monitorId:'', activo: true, _nuevo: true};
     const g = gruposEdit[gid] || grupos[gid];
     openFicha(nuevoP, g);
   }
@@ -4706,7 +4981,7 @@
         <div style="padding:12px 14px;">
           <textarea rows="4" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #d9ceb8;background:#f9f6f1;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;outline:none;resize:vertical;"
             onchange="obsData[${i}].texto=this.value;saveObs();">${escHtml(obs.texto||'')}</textarea>
-          <button onclick="obsData[${i}].texto=this.previousElementSibling.value;saveObs();showSyncIndicator('✔ Nota guardada','ok');"
+          <button onclick="const _b=this;btnLoading(_b,'Guardando…');obsData[${i}].texto=this.previousElementSibling.querySelector('textarea').value;saveObs();setTimeout(()=>btnDone(_b,'Nota guardada'),300);"
             style="width:100%;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;">💾 Guardar</button>
         </div>`;
       container.appendChild(div);
@@ -4773,12 +5048,14 @@
     sheetsSet('grupos', gruposCamp);
   }
 
-  function saveGruposCamp() {
+  function saveGruposCamp(btn) {
+    if (btn) btnLoading(btn, 'Guardando…');
     saveGruposCampStorage();
-    const msg = document.getElementById('gcSavedMsg');
-    msg.textContent = '✔ Guardado'; msg.style.opacity = '1';
-    setTimeout(() => msg.style.opacity = '0', 2500);
-    logCambio('grupo', 'Grupos campamento guardados', gruposCamp.length + ' grupos');
+    setTimeout(() => {
+      if (btn) btnDone(btn, 'Grupos guardados');
+      else showSyncIndicator('✔ Grupos guardados', 'ok');
+      logCambio('grupo', 'Grupos campamento guardados', gruposCamp.length + ' grupos');
+    }, 300);
   }
 
 
@@ -5658,6 +5935,7 @@
     saveProgData();
     closeProgModal();
     if (progVistaCalendario) renderCalendario(); else renderProg();
+    showSyncIndicator('✔ Actividad guardada', 'ok');
     logCambio('programacion', (editingProgId ? 'Actividad editada' : 'Actividad creada') + ': ' + (act.nombre || act.tipo), act.horaInicio ? act.horaInicio + ' – ' + act.horaFin : '');
   }
 
@@ -5668,6 +5946,7 @@
     saveProgData();
     closeProgModal();
     if (progVistaCalendario) renderCalendario(); else renderProg();
+    showSyncIndicator('✔ Actividad guardada', 'ok');
     logCambio('programacion', 'Actividad eliminada: ' + (delAct?.nombre || ''), '');
   }
 
@@ -5808,7 +6087,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:5px;">
           ${alumnos.map(p => {
             const med = getMedAlert(p.n);
-            return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:20px;background:${med?'#fdecea':'#f0f7eb'};font-size:11px;cursor:pointer;" onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(gruposEdit[p.gid]||grupos[p.gid]||{})})">
+            return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:20px;background:${med?'#fdecea':'#f0f7eb'};font-size:11px;cursor:pointer;" onclick="openFichaById(${p.n})">
               ${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}${med?'<span style="font-size:11px;">'+med+'</span>':''}
             </div>`;
           }).join('')}
@@ -6341,103 +6620,25 @@
     if (!ind) {
       ind = document.createElement('div');
       ind.id = 'syncIndicator';
-      ind.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:8px 16px;border-radius:20px;font-family:"DM Sans",sans-serif;font-size:12px;font-weight:600;z-index:9999;transition:opacity .4s;box-shadow:0 4px 16px rgba(0,0,0,.15);';
+      ind.style.cssText = 'position:fixed;bottom:24px;right:20px;padding:10px 18px;border-radius:24px;font-family:\'DM Sans\',sans-serif;font-size:13px;font-weight:700;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.25);transition:opacity .3s,transform .3s;display:flex;align-items:center;gap:8px;';
       document.body.appendChild(ind);
     }
-    const styles = {
-      ok:      'background:#27AE60;color:white;',
-      warn:    'background:#E67E22;color:white;',
-      loading: 'background:#2D5016;color:white;',
-      error:   'background:#C0392B;color:white;'
+    clearTimeout(ind._timer);
+    const colors = {
+      ok:   {bg:'#2D5016', color:'white'},
+      warn: {bg:'#E67E22', color:'white'},
+      err:  {bg:'#C0392B', color:'white'},
     };
-    ind.style.cssText += styles[type] || styles.ok;
-    ind.textContent = msg;
+    const c = colors[type] || colors.ok;
+    ind.style.background = c.bg;
+    ind.style.color = c.color;
     ind.style.opacity = '1';
-    if (type !== 'loading') {
-      clearTimeout(ind._timer);
-      ind._timer = setTimeout(() => ind.style.opacity = '0', 3000);
-    }
-  }
-
-
-  // ══════════════════════════════════════════════════════════════
-  //  ACTUALIZAR / RESINCRONIZAR SIN CERRAR SESIÓN
-  // ══════════════════════════════════════════════════════════════
-  async function actualizarApp(btn) {
-    // Animación girando
-    const icons = [document.getElementById('refreshIcon'), document.getElementById('refreshIconMob')];
-    const subs  = [document.getElementById('refreshSub'),  document.getElementById('refreshSubMob')];
-    icons.forEach(el => { if (el) { el.style.animation = 'spin .8s linear infinite'; el.textContent = '🔄'; } });
-    subs.forEach(el  => { if (el) el.textContent = 'Cargando…'; });
-    showSyncIndicator('⏳ Actualizando…', 'loading');
-
-    try {
-      // 1. Recargar todos los datos de config (monitores, grupos, obs, prog, notas)
-      await loadAllFromSheets();
-
-      // 2. Recargar participantes
-      await loadParticipantesFromSheets();
-      gruposEdit = JSON.parse(JSON.stringify(grupos));
-
-      // 3. Re-renderizar la pestaña activa
-      const activePanel = document.querySelector('.tab-panel.active');
-      const activeId = activePanel ? activePanel.id.replace('tab-', '') : 'participantes';
-
-      renderEditTable();
-      renderMonitorGrid();
-      renderObsGrid();
-      renderGruposPorMonitor();
-      renderGruposClase();
-
-      if (activeId === 'grupos')        { renderBanco(); renderGruposCamp(); }
-      if (activeId === 'cabanas')       renderCabanasVista();
-      if (activeId === 'programacion')  { populateProgFiltros(); renderProg(); }
-      if (activeId === 'obsalumnos')    renderObsAlumnos();
-      if (activeId === 'monitores')     renderMedResumen();
-
-      // 4. Actualizar contadores
-      const total = getAllEditParticipants().filter(p => p.activo !== 'pendiente' && p.activo !== 'pending').length;
-      const heroNum = document.querySelector('.hero-stat .num');
-      if (heroNum) {
-        const activeCount = getAllEditParticipants().length; // already filtered
-        const allCount = getAllEditParticipants(true).length;
-        heroNum.textContent = activeCount;
-        // Add inactive note if any
-        const heroLbl = document.querySelector('.hero-stat .lbl');
-        if (heroLbl && allCount > activeCount) {
-          heroLbl.textContent = 'Participantes (' + (allCount - activeCount) + ' inactivos)';
-        }
-      }
-      const dnavPart = document.getElementById('dnav-sub-participantes');
-      if (dnavPart) dnavPart.textContent = total + ' inscritos';
-      const dnavMon = document.getElementById('dnav-sub-monitores');
-      if (dnavMon) dnavMon.textContent = monitoresData.length + ' monitores';
-    loadAsistencia();
-      const mobTotal = document.getElementById('mobTotal');
-      if (mobTotal) mobTotal.textContent = total;
-      const mobSub = document.getElementById('mobSubTotal');
-      if (mobSub) mobSub.textContent = total + ' inscritos';
-      const mobMon = document.getElementById('mobMonCount');
-      if (mobMon) mobMon.textContent = monitoresData.length + ' monitores';
-
-      icons.forEach(el => { if (el) { el.style.animation = ''; el.textContent = '✅'; } });
-      subs.forEach(el  => { if (el) el.textContent = 'Actualizado'; });
-      showSyncIndicator('✔ Todo actualizado', 'ok');
-
-      setTimeout(() => {
-        icons.forEach(el => { if (el) el.textContent = '🔄'; });
-        subs.forEach(el  => { if (el) el.textContent = 'Sincronizar datos'; });
-      }, 3000);
-
-    } catch(e) {
-      icons.forEach(el => { if (el) { el.style.animation = ''; el.textContent = '⚠️'; } });
-      subs.forEach(el  => { if (el) el.textContent = 'Error al actualizar'; });
-      showSyncIndicator('⚠ Error al actualizar', 'warn');
-      setTimeout(() => {
-        icons.forEach(el => { if (el) el.textContent = '🔄'; });
-        subs.forEach(el  => { if (el) el.textContent = 'Sincronizar datos'; });
-      }, 3000);
-    }
+    ind.style.transform = 'translateY(0)';
+    ind.textContent = msg;
+    ind._timer = setTimeout(() => {
+      ind.style.opacity = '0';
+      ind.style.transform = 'translateY(8px)';
+    }, 4000);
   }
 
 
@@ -6461,6 +6662,7 @@
       const esInact = p.activo === false || p.activo === 'false';
       const esAct   = !esPend && !esInact;
       if (filtCurso  && p.gid !== filtCurso)             return false;
+      if (filtEstado === 'todos') return true; // mostrar todos sin excepción
       if (filtEstado === 'activo'    && !esAct)   return false;
       if (filtEstado === 'pendiente' && !esPend)  return false;
       if (filtEstado === 'inactivo'  && !esInact) return false;
@@ -6587,7 +6789,7 @@
           <button onclick="saveAllAlumnos()"
             style="padding:10px 14px;border-radius:10px;border:1.5px solid #f0f7eb;background:white;
               font-size:14px;cursor:pointer;" title="Guardar cambios">💾</button>
-          <button onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(g||{})})"
+          <button onclick="openFichaById(${p.n})"
             style="flex:1;padding:10px;border-radius:10px;border:none;background:#2D5016;color:white;
               font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
             🩺 Ver ficha completa
@@ -6927,7 +7129,7 @@
         </div>
         <!-- Acciones grupo -->
         <div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #ede5d0;">
-          <button onclick="saveGruposCamp();showSyncIndicator('✔ Grupo guardado','ok');"
+          <button onclick="saveGruposCamp(this)"
             style="flex:1;padding:9px;border-radius:10px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">💾 Guardar</button>
           <button onclick="if(confirm('¿Eliminar grupo?'))deleteGrupoCamp('${g.id}')"
             style="padding:9px 12px;border-radius:10px;border:1.5px solid #fdecea;background:white;font-size:13px;cursor:pointer;">🗑</button>
@@ -8244,6 +8446,28 @@
   // ══════════════════════════════════════════════════════════════
   //  F. MODO OSCURO
   // ══════════════════════════════════════════════════════════════
+
+
+  // ── Spinner universal en botón guardar ──
+  function btnLoading(btn, label) {
+    if (!btn) return;
+    btn._origLabel = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ ' + (label || 'Guardando…');
+  }
+  function btnDone(btn, msg) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.innerHTML = btn._origLabel || '💾 Guardar';
+    showSyncIndicator('✔ ' + (msg || 'Datos guardados'), 'ok');
+  }
+  function btnError(btn, msg) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.innerHTML = btn._origLabel || '💾 Guardar';
+    showSyncIndicator('⚠ ' + (msg || 'Error al guardar'), 'warn');
+  }
+
   function initDarkMode() {
     const saved = localStorage.getItem('camp-dark-mode');
     if (saved === 'true') applyDarkMode(true);
@@ -8457,6 +8681,40 @@
   </div>
 </div>
 
+<!-- ══ MODAL IMPRIMIR FICHA ══ -->
+<div id="imprimirFichaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:20px;padding:28px;max-width:420px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.3);">
+    <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:#2D5016;margin-bottom:6px;">🖨️ Imprimir ficha</div>
+    <div style="font-size:13px;color:#888;margin-bottom:20px;">Selecciona qué secciones incluir en el PDF</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpDatosPersonales" checked style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">📋 Datos del participante</div><div style="font-size:11px;color:#888;">Nombre, curso, grupo, monitor</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpContacto" checked style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">📞 Contacto familiar</div><div style="font-size:11px;color:#888;">Teléfonos, persona de contacto</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpMedico" checked style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">💊 Datos médicos</div><div style="font-size:11px;color:#888;">Alergias, medicación, observaciones</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpGrupo" checked style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">🏕 Organización campamento</div><div style="font-size:11px;color:#888;">Grupo, cabaña, monitor asignado</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpNotas" style="width:16px;height:16px;accent-color:#2D5016;cursor:pointer;">
+        <div style="flex:1;"><div style="font-weight:600;font-size:13px;">🗒 Notas individuales</div><div style="font-size:11px;color:#888;">Observaciones del equipo</div></div>
+      </label>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="generarPDFFicha()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Generar PDF</button>
+      <button onclick="document.getElementById('imprimirFichaModal').style.display='none'" style="padding:12px 16px;border-radius:12px;border:1.5px solid #d9ceb8;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- FICHA ALUMNO -->
 <div class="ficha-overlay" id="fichaOverlay" onclick="handleFichaOverlay(event)">
   <div class="ficha-box" style="max-width:560px;">
@@ -8546,7 +8804,8 @@
     </div>
     <div class="ficha-footer">
       <span class="ficha-saved-msg" id="fichaSavedMsg">✔ Datos guardados</span>
-      <button class="ficha-save-btn" onclick="saveFicha()">Guardar ficha</button>
+      <button class="ficha-save-btn" style="background:#f0f7eb;color:#2D5016;border:1.5px solid #2D5016;" onclick="abrirImprimirFicha()">🖨️ Imprimir</button>
+      <button class="ficha-save-btn" id="fichaSaveBtn" onclick="saveFicha()">Guardar ficha</button>
     </div>
   </div>
 </div>
@@ -8564,8 +8823,36 @@
     <div class="mob-stat"><div class="num">9,0</div><div class="lbl">Valoración 2025</div></div>
   </div>
 
+
+</div>
+
+</div>
+
+<!-- ══ INTERFAZ MÓVIL ══ -->
   <!-- PANTALLA PRINCIPAL -->
   <div class="mob-screen active" id="mob-home">
+    <!-- Stats bar -->
+    <div style="background:#2D5016;padding:14px 16px;display:flex;gap:20px;align-items:center;">
+      <div style="flex:1;">
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:white;line-height:1.2;" id="mobHeroTitle">Campamento Algámitas 2026</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px;" id="mobHeroSub">ACPA · Colegio San José SSCC</div>
+      </div>
+    </div>
+    <div style="background:#2D5016;padding:10px 16px 14px;display:flex;gap:24px;border-bottom:3px solid rgba(255,255,255,.1);">
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:white;line-height:1;" id="mobStatActivos">—</div>
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px;">✅ Activos</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:#F39C12;line-height:1;" id="mobStatPendientes">—</div>
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px;">⏳ Pendientes</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:rgba(255,255,255,.5);line-height:1;" id="mobStatInactivos">—</div>
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px;">⛔ No activos</div>
+      </div>
+    </div>
+
     <div class="mob-grid">
 
       <!-- ALUMNOS -->
@@ -8695,6 +8982,7 @@
         <option value="activo">✅ Activos</option>
         <option value="pendiente">⏳ Pendientes</option>
         <option value="inactivo">⛔ No activos</option>
+        <option value="todos">📋 Todos (imprimir)</option>
       </select>
     </div>
     <div class="mob-search-bar">
@@ -8832,7 +9120,6 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">👥 Participantes</div>
-      <button onclick="mobAddAlumno()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
     </div>
     <div class="mob-search-bar">
       <input type="text" id="mobAlumnoSearch" placeholder="🔍 Buscar por nombre o apellidos…" oninput="renderMobAlumnos()"/>
@@ -8876,7 +9163,10 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">🏕 Grupos campamento</div>
-      <button onclick="addGrupoCamp();renderMobGruposMain()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Grupo</button>
+      <div style="display:flex;gap:5px;">
+        <button onclick="addGrupoCamp();renderMobGruposMain()" style="padding:5px 9px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:11px;font-weight:700;cursor:pointer;">+ Grupo</button>
+        <button onclick="mobImprimirGrupos()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">🖨️</button>
+      </div>
     </div>
     <!-- Sub-nav grupos móvil -->
     <div style="display:flex;gap:0;border-bottom:2px solid #d9ceb8;background:white;position:sticky;top:57px;z-index:90;">
@@ -9032,7 +9322,7 @@
       <button onclick="ejecutarExport()" style="padding:10px 22px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🖨 Imprimir / Guardar PDF</button>
     </div>
   </div>
-</div>
+
 
 <!-- ══ ÁREA DE IMPRESIÓN (generada dinámicamente) ══ -->
 <div id="printArea"></div>
