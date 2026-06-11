@@ -3304,7 +3304,9 @@
     }
 
     // Refresh edit table if visible
-    if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
+    renderEditTable();
+    renderMobEdicion();
+    updateHeroStats();
 
     const msg = document.getElementById('fichaSavedMsg');
     msg.textContent = '✔ Ficha guardada';
@@ -9110,11 +9112,7 @@ ${sections}
         <div class="mob-label">Modo</div>
         <div class="mob-sub">Oscuro/Claro</div>
       </div>
-      <div class="mob-card" onclick="actualizarApp(this)">
-        <div class="mob-icon" id="mobRefreshIcon">🔄</div>
-        <div class="mob-label">Actualizar</div>
-        <div class="mob-sub">Sincronizar datos</div>
-      </div>
+
 
     </div>
   </div>
