@@ -226,7 +226,7 @@
     justify-content: center;
     padding: 20px;
   }
-  .modal-overlay.visible { display: flex; }
+  .modal-overlay.visible { display: flex !important; }
 
   .modal-box {
     background: var(--blanco);
@@ -2116,6 +2116,7 @@
           <option value="activo">✅ Activos</option>
           <option value="pendiente">⏳ Pendientes de revisar</option>
           <option value="inactivo">⛔ No activos</option>
+          <option value="todos">📋 Todos (imprimir)</option>
         </select>
       </div>
     </div>
@@ -2144,16 +2145,25 @@
   <!-- TAB MONITORES -->
   <div id="tab-monitores" class="tab-panel">
     <h2 class="section-title">👤 Equipo de monitores</h2>
+    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--crema-oscuro);">
+      <button class="gtab-btn active" id="monTabEquipo" onclick="showMonTab('equipo',this)">👤 Equipo</button>
+      <button class="gtab-btn" id="monTabMedico" onclick="showMonTab('medico',this)">🩺 Fichas y alertas</button>
+    </div>
+    <div id="monPanelEquipo">
     <div class="edit-toolbar">
       <button class="edit-btn primary" onclick="addMonitor()">➕ Añadir monitor/a</button>
       <button class="edit-btn" onclick="saveMonitores(this)">💾 Guardar</button>
       <span id="monSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
     </div>
     <div class="monitor-grid" id="monitorGrid"></div>
-    <h2 class="section-title" style="margin-top:32px;">🩺 Resumen médico — Panel coordinador</h2>
-    <p style="font-size:13px;opacity:.6;margin-bottom:20px;">Participantes con datos médicos relevantes registrados en sus fichas.</p>
-    <div id="medResumen">
-      <div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Carga las fichas médicas desde la pestaña Participantes para ver el resumen aquí.</div>
+    </div><!-- /monPanelEquipo -->
+
+    <div id="monPanelMedico" style="display:none;">
+      <h2 class="section-title" style="margin-top:32px;">🩺 Fichas y alertas médicas</h2>
+      <p style="font-size:13px;opacity:.6;margin-bottom:20px;">Participantes con datos médicos relevantes registrados en sus fichas.</p>
+      <div id="medResumen">
+        <div style="text-align:center;padding:40px;font-size:13px;opacity:.4;">Carga las fichas desde la pestaña Participantes para ver el resumen aquí.</div>
+      </div>
     </div>
   </div>
 
@@ -2199,6 +2209,9 @@
 
     <!-- POR CLASE -->
     <div class="gtab-panel" id="gtab-clase">
+      <div class="edit-toolbar">
+        <button class="edit-btn" onclick="imprimirGrupos('clase')">🖨️ Imprimir</button>
+      </div>
       <div id="gruposPorClase"></div>
     </div>
   </div>
@@ -2305,100 +2318,7 @@
       <div id="calContainer" style="overflow-x:auto;border-radius:16px;border:1.5px solid var(--crema-oscuro);background:var(--blanco);"></div>
     </div>
 
-    <!-- Modal nueva/editar actividad -->
-    <div class="modal-overlay" id="progModal" onclick="if(event.target===this)closeProgModal()" style="z-index:1300;">
-      <div class="modal-box" style="max-width:600px;max-height:92vh;">
-        <div class="modal-header">
-          <div class="modal-color-bar" id="progModalBar" style="background:var(--verde-medio)"></div>
-          <div class="modal-header-text">
-            <div class="modal-title" id="progModalTitle">Nueva actividad</div>
-          </div>
-          <button class="modal-close" onclick="closeProgModal()">✕</button>
-        </div>
-        <div class="modal-list" style="padding:20px;overflow-y:auto;">
-          <div class="prog-form-grid">
-            <div class="prog-field">
-              <label>Tipo de actividad</label>
-              <select id="pTipo" onchange="updateProgModalColor()">
-                <option value="velada">🌙 Velada</option>
-                <option value="taller">🎨 Taller</option>
-                <option value="juego">🎮 Juego</option>
-                <option value="liga">⚽ Liga</option>
-                <option value="piscina">🏊 Piscina</option>
-                <option value="comedor">🍽 Comedor</option>
-                <option value="libre">🌿 Tiempo libre</option>
-                <option value="desayuno">☕ Desayuno</option>
-                <option value="almuerzo">🥗 Almuerzo</option>
-                <option value="merienda">🍎 Merienda</option>
-                <option value="cena">🍽 Cena</option>
-              </select>
-            </div>
-            <div class="prog-field">
-              <label>Nombre / descripción</label>
-              <input type="text" id="pNombre" placeholder="Ej. Velada del Tesoro…"/>
-            </div>
 
-            <div class="prog-field prog-full">
-              <label>Días de la semana</label>
-              <div id="pDias" style="display:flex;flex-wrap:wrap;gap:6px;">
-                <button type="button" class="dia-btn" data-dia="lunes"    onclick="clickDia(this)">Lunes</button>
-                <button type="button" class="dia-btn" data-dia="martes"   onclick="clickDia(this)">Martes</button>
-                <button type="button" class="dia-btn" data-dia="miercoles" onclick="clickDia(this)">Miércoles</button>
-                <button type="button" class="dia-btn" data-dia="jueves"   onclick="clickDia(this)">Jueves</button>
-                <button type="button" class="dia-btn" data-dia="viernes"  onclick="clickDia(this)">Viernes</button>
-                <button type="button" class="dia-btn" data-dia="sabado"   onclick="clickDia(this)">Sábado</button>
-                <button type="button" class="dia-btn" data-dia="domingo"  onclick="clickDia(this)">Domingo</button>
-                <button type="button" class="dia-btn dia-btn-all" onclick="seleccionarTodosLosDias()" title="Seleccionar todos los días">📅 Semanal</button>
-              </div>
-            </div>
-
-            <div class="prog-field">
-              <label>Fecha de inicio</label>
-              <input type="date" id="pFechaInicio" onchange="autoSetFechaFin()"/>
-            </div>
-            <div class="prog-field">
-              <label>Fecha de fin</label>
-              <input type="date" id="pFechaFin"/>
-            </div>
-            <div class="prog-field">
-              <label>Hora de inicio</label>
-              <input type="time" id="pHoraInicio" value="09:00" min="08:00" max="23:59"/>
-            </div>
-            <div class="prog-field">
-              <label>Hora de fin</label>
-              <input type="time" id="pHoraFin" value="10:00" min="08:00" max="24:00"/>
-            </div>
-
-            <div class="prog-field prog-full">
-              <label>Grupos campamento asignados</label>
-              <div id="pGruposCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-            </div>
-
-            <div class="prog-field prog-full">
-              <label>Monitores responsables</label>
-              <div id="pMonitoresCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-            </div>
-
-            <div class="prog-field prog-full">
-              <label>Lugar / espacio</label>
-              <input type="text" id="pLugar" placeholder="Ej. Piscina, Pabellón, Zona barbacoa…"/>
-            </div>
-            <div class="prog-field prog-full">
-              <label>Materiales necesarios</label>
-              <input type="text" id="pMateriales" placeholder="Ej. Cuerdas, pinturas, balones…"/>
-            </div>
-            <div class="prog-field prog-full">
-              <label>Observaciones</label>
-              <textarea id="pObs" rows="2" placeholder="Notas adicionales…"></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1.5px solid var(--crema-oscuro);">
-          <button onclick="deleteProgActividad()" id="btnDelProg" style="padding:9px 18px;border-radius:12px;border:1.5px solid var(--rojo-suave);background:white;color:var(--rojo-suave);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:none;">🗑 Eliminar</button>
-          <button onclick="saveProgActividad()" style="padding:9px 22px;border-radius:12px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar actividad</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- TAB OBSERVACIONES POR ALUMNO -->
@@ -2970,11 +2890,21 @@
 
   async function loadFichaData(n) {
     if (!getActiveScriptUrl() || getActiveScriptUrl() === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
-      // Fallback a localStorage si no hay URL
       try { const raw = localStorage.getItem(storageKey(n)); return raw ? JSON.parse(raw) : null; }
       catch(e) { return null; }
     }
-    return fichasCache[String(n)] || null;
+    // Return from cache if available
+    if (fichasCache[String(n)]) return fichasCache[String(n)];
+    // Fetch individually from Sheets if not in cache
+    try {
+      const r = await fetch(getActiveScriptUrl() + '?action=getFicha&n=' + n + '&pwd=' + PASSWORD);
+      const j = await r.json();
+      if (j.ok && j.data) {
+        fichasCache[String(n)] = j.data;
+        return j.data;
+      }
+    } catch(e) { console.warn('No se pudo cargar ficha individual:', e); }
+    return null;
   }
 
   async function saveFichaData(n, data) {
@@ -3164,6 +3094,12 @@
   /* ── FICHA ALUMNO ── */
   let currentFichaP = null;
 
+  function openFichaById(n) {
+    const p = getAllEditParticipants(true).find(x => x.n === n);
+    if (!p) return;
+    const g = gruposEdit[p.gid] || grupos[p.gid] || {};
+    openFicha(p, g);
+  }
   async function openFicha(p, g) {
     currentFichaP = p;
 
@@ -3306,6 +3242,17 @@
       grupoCamp: newGrupoCamp,
       monitorId: newMonitorId,
     };
+    // Si es nuevo (_nuevo), validar que tenga al menos nombre o apellidos
+    if (currentFichaP._nuevo) {
+      if (!newAp && !newNm) {
+        const btn = document.getElementById('fichaSaveBtn');
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Guardar ficha'; }
+        alert('Introduce al menos el nombre o los apellidos.');
+        return;
+      }
+      // Solo ahora se añade a grupos
+      delete updatedP._nuevo;
+    }
     if (gruposEdit[newGid]) gruposEdit[newGid].participantes.push(updatedP);
     if (grupos[newGid])     grupos[newGid].participantes.push(updatedP);
     currentFichaP = updatedP;
@@ -3321,6 +3268,12 @@
 
     // ── Guardar datos médicos/contacto ──
     const data = {
+      // Personal data (needed so Apps Script doesn't overwrite with empty)
+      apellidos:     newAp || currentFichaP.apellidos || '',
+      nombre:        newNm || currentFichaP.nombre    || '',
+      curso:         newGid,
+      grupo:         newGrupoClase,
+      // Contact & medical data
       contacto:      document.getElementById('fContacto').value,
       tel1:          document.getElementById('fTel1').value,
       tel2:          document.getElementById('fTel2').value,
@@ -3350,8 +3303,14 @@
     if (document.getElementById('tab-edicion').classList.contains('active')) renderEditTable();
 
     const msg = document.getElementById('fichaSavedMsg');
+    msg.textContent = '✔ Ficha guardada';
     msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 2500);
+    setTimeout(() => msg.classList.remove('show'), 3000);
+    showSyncIndicator('✔ Ficha guardada correctamente', 'ok');
+    // Refrescar listas
+    renderEditTable();
+    renderMobEdicion();
+    updateHeroStats();
     // Registrar en historial según qué cambió realmente
     const tieneDatosMedicos = data.alergias || data.medicacion || data.observaciones;
     const cambioDatosPers   = (newAp !== currentFichaP?.apellidos) || (newNm !== currentFichaP?.nombre)
@@ -3621,10 +3580,19 @@
     const activos    = todos.filter(p => { const ep=p.activo==='pendiente'||p.activo==='pending'; const ei=p.activo===false||p.activo==='false'; return !ep&&!ei; }).length;
     const pendientes = todos.filter(p => p.activo==='pendiente'||p.activo==='pending').length;
     const inactivos  = todos.filter(p => p.activo===false||p.activo==='false').length;
+    // Desktop
     const sa=document.getElementById('statActivos');   if(sa) sa.textContent=activos;
     const sp=document.getElementById('statPendientes');if(sp) sp.textContent=pendientes;
     const si=document.getElementById('statInactivos'); if(si) si.textContent=inactivos;
+    // Móvil
+    const msa=document.getElementById('mobStatActivos');   if(msa) msa.textContent=activos;
+    const msp=document.getElementById('mobStatPendientes');if(msp) msp.textContent=pendientes;
+    const msi=document.getElementById('mobStatInactivos'); if(msi) msi.textContent=inactivos;
+    // Subtotal card Participantes móvil
+    const mobSub=document.getElementById('mobSubTotal');
+    if(mobSub) mobSub.textContent=activos+' activos';
   }
+
 
   function initApp() {
     // Clonar grupos en gruposEdit para edición
@@ -3781,6 +3749,7 @@
       const esPendiente = p.activo === 'pendiente' || p.activo === 'pending';
       const esInactivo  = p.activo === false || p.activo === 'false' || p.activo === 'inactivo';
       const esActivo    = !esPendiente && !esInactivo;
+      if (filtroActivo === 'todos')    return true;
       if (filtroActivo === 'activo'    && !esActivo)    return false;
       if (filtroActivo === 'inactivo'  && !esInactivo)  return false;
       if (filtroActivo === 'pendiente' && !esPendiente) return false;
@@ -3834,6 +3803,8 @@
         </td>
         <td class="otros-grupos-cell" data-n="${p.n}"></td>
         <td style="white-space:nowrap;">
+          <button onclick="openFichaById(${p.n})" title="Ver ficha completa"
+            style="padding:4px 8px;border-radius:6px;border:none;background:#e8f4fd;color:#1a6fa0;font-size:13px;cursor:pointer;margin-right:4px;">🩺</button>
           <button onclick="saveAllAlumnos()" title="Guardar cambios"
             style="padding:4px 8px;border-radius:6px;border:none;background:#f0f7eb;color:#2D5016;font-size:13px;cursor:pointer;margin-right:4px;">💾</button>
           <button class="tbl-del-btn" onclick="deleteAlumno(${p.n},'${p.gid}')" title="Eliminar">🗑</button>
@@ -3893,12 +3864,9 @@
   }
 
   function addAlumno() {
-    // Crear alumno temporal y abrir su ficha directamente para editar
-    const gid = document.getElementById('filtroGrupo').value || 'g6';
-    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 200) + 1;
-    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid, grupoCamp:'', monitorId:''};
-    gruposEdit[gid].participantes.push(nuevoP);
-    grupos[gid].participantes.push(nuevoP);
+    const gid  = document.getElementById('filtroGrupo')?.value || 'g6';
+    const maxN = Math.max(...getAllEditParticipants(true).map(p => p.n), 200) + 1;
+    const nuevoP = {n:maxN, apellidos:'', nombre:'', grupo:'❓', gid, grupoCamp:'', monitorId:'', activo:true, _nuevo:true};
     const g = gruposEdit[gid] || grupos[gid];
     openFicha(nuevoP, g);
   }
@@ -4528,11 +4496,9 @@
   }
 
   function mobAddAlumno() {
-    const gid = 'g6';
-    const maxN = Math.max(...getAllEditParticipants().map(p => p.n), 200) + 1;
-    const nuevoP = {n: maxN, apellidos:'', nombre:'', grupo:'❓', gid: gid, grupoCamp:'', monitorId:''};
-    gruposEdit[gid].participantes.push(nuevoP);
-    grupos[gid].participantes.push(nuevoP);
+    const gid  = document.getElementById('mobFiltCurso')?.value || 'g6';
+    const maxN = Math.max(...getAllEditParticipants(true).map(p => p.n), 200) + 1;
+    const nuevoP = {n:maxN, apellidos:'', nombre:'', grupo:'❓', gid, grupoCamp:'', monitorId:'', activo:true, _nuevo:true};
     const g = gruposEdit[gid] || grupos[gid];
     openFicha(nuevoP, g);
   }
@@ -4743,6 +4709,228 @@
     return ids;
   }
 
+  function imprimirGrupos(tipo) {
+    let titulo = '';
+    let contenido = '';
+
+    if (tipo === 'campamento') {
+      titulo = 'Grupos campamento — Algámitas 2026';
+      const container = document.getElementById('gruposCampContainer');
+      contenido = container ? container.innerHTML : '';
+    } else if (tipo === 'monitor') {
+      renderGruposPorMonitor();
+      const container = document.getElementById('gruposPorMonitor');
+      contenido = container ? container.innerHTML : '';
+      titulo = 'Grupos por monitor — Algámitas 2026';
+    } else if (tipo === 'clase') {
+      renderGruposClase();
+      const container = document.getElementById('gruposPorClase');
+      contenido = container ? container.innerHTML : '';
+      titulo = 'Grupos por clase — Algámitas 2026';
+    }
+
+    if (!contenido || contenido.trim() === '') {
+      alert('No hay datos para imprimir en esta vista.');
+      return;
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>${titulo}</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; padding:20px; color:#222; font-size:13px; }
+  h1 { color:#2D5016; font-size:1.2rem; margin-bottom:4px; }
+  .meta { font-size:11px; color:#888; margin-bottom:20px; }
+  /* Grupo cards */
+  .gcamp-card { border:1.5px solid #d9ceb8; border-radius:10px; padding:14px; margin-bottom:12px; break-inside:avoid; }
+  .gcamp-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .gcamp-nombre { font-weight:700; font-size:14px; }
+  .gcamp-meta { font-size:11px; color:#888; }
+  /* Chips alumnos */
+  .grupo-alumno-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 8px;
+    border-radius:20px; background:#f0f7eb; font-size:11px; margin:2px; }
+  .chip-avatar { width:18px; height:18px; border-radius:50%; background:#2D5016;
+    color:white; font-size:8px; font-weight:800; display:inline-flex;
+    align-items:center; justify-content:center; }
+  /* Resumen por monitor/clase */
+  .grupo-resumen-card { border:1.5px solid #d9ceb8; border-radius:10px; padding:14px;
+    margin-bottom:12px; break-inside:avoid; }
+  .grupo-resumen-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .grupo-resumen-title { font-weight:700; font-size:14px; }
+  .grupo-resumen-meta { font-size:11px; color:#888; margin-left:auto; }
+  .grupo-alumnos-list { display:flex; flex-wrap:wrap; gap:4px; }
+  /* Ocultar botones en impresión */
+  button, .edit-toolbar, .no-print { display:none !important; }
+  @media print { body { padding:10px; } }
+</style>
+</head>
+<body>
+<h1>🏕 ${titulo}</h1>
+<div class="meta">Campamento Algámitas 2026 · ACPA · Generado: ${new Date().toLocaleString('es-ES')}</div>
+${contenido}
+<div class="no-print" style="margin-top:20px;text-align:center;">
+  <button onclick="window.print()" style="display:inline-block!important;padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="display:inline-block!important;padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) { alert('Permite ventanas emergentes para imprimir.'); return; }
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 600);
+  }
+
+  function mobImprimirGrupos() {
+    // Detectar qué subpestaña está activa en móvil
+    const campPanel  = document.getElementById('mobGTabCampPanel');
+    const monPanel   = document.getElementById('mobGTabMonPanel');
+    const clasePanel = document.getElementById('mobGTabClasePanel');
+    let tipo = 'campamento';
+    if (monPanel   && monPanel.style.display   !== 'none') tipo = 'monitor';
+    if (clasePanel && clasePanel.style.display !== 'none') tipo = 'clase';
+    imprimirGrupos(tipo);
+  }
+
+  function abrirImprimirFicha() {
+    document.getElementById('imprimirFichaModal').style.display = 'flex';
+  }
+
+  function generarPDFFicha() {
+    document.getElementById('imprimirFichaModal').style.display = 'none';
+
+    const incl = {
+      datos:  document.getElementById('fpDatosPersonales').checked,
+      contacto: document.getElementById('fpContacto').checked,
+      medico: document.getElementById('fpMedico').checked,
+      org:    document.getElementById('fpOrganizacion').checked,
+      notas:  document.getElementById('fpNotas').checked,
+    };
+
+    // Recoger datos del modal abierto
+    const apellidos = document.getElementById('fApellidos')?.value || '';
+    const nombre    = document.getElementById('fNombre')?.value    || '';
+    const cursoSel  = document.getElementById('fCurso');
+    const cursoTxt  = cursoSel?.options[cursoSel.selectedIndex]?.text || '';
+    const grupoClase= document.getElementById('fGrupoClase')?.value || '';
+    const grupoCamp = document.getElementById('fGrupoCamp')?.value  || '';
+    const monSel    = document.getElementById('fMonitor');
+    const monTxt    = monSel?.options[monSel.selectedIndex]?.text   || 'Sin asignar';
+    const contacto  = document.getElementById('fContacto')?.value   || '';
+    const tel1      = document.getElementById('fTel1')?.value       || '';
+    const tel2      = document.getElementById('fTel2')?.value       || '';
+    const codigoAN  = document.getElementById('fCodigoAN')?.value   || '';
+    const alergias  = document.getElementById('fAlergias')?.value   || '';
+    const medicacion= document.getElementById('fMedicacion')?.value || '';
+    const obsM      = document.getElementById('fObservaciones')?.value || '';
+
+    // Notas del alumno
+    const p = currentFichaP;
+    const notas = p && obsAlumnos[p.n]?.notas ? obsAlumnos[p.n].notas : [];
+    const moodLabel = m => m==='bien'?'😊 Bien':m==='regular'?'😐 Regular':'😟 Necesita atención';
+    const moodColor = m => m==='bien'?'#27AE60':m==='regular'?'#E67E22':'#C0392B';
+
+    let sections = '';
+
+    if (incl.datos) {
+      sections += `<div class="sec">
+        <div class="sec-title">📋 Datos del participante</div>
+        <table class="dt">
+          <tr><td class="lbl">Apellidos</td><td>${escHtml(apellidos)}</td></tr>
+          <tr><td class="lbl">Nombre</td><td>${escHtml(nombre)}</td></tr>
+          <tr><td class="lbl">Curso</td><td>${escHtml(cursoTxt)}</td></tr>
+          <tr><td class="lbl">Grupo de clase</td><td>${escHtml(grupoClase||'—')}</td></tr>
+        </table></div>`;
+    }
+    if (incl.org) {
+      sections += `<div class="sec">
+        <div class="sec-title">🏕 Organización en el campamento</div>
+        <table class="dt">
+          <tr><td class="lbl">Grupo campamento</td><td>${escHtml(grupoCamp||'Sin asignar')}</td></tr>
+          <tr><td class="lbl">Monitor/a</td><td>${escHtml(monTxt)}</td></tr>
+        </table></div>`;
+    }
+    if (incl.contacto) {
+      sections += `<div class="sec">
+        <div class="sec-title">📞 Contacto familiar</div>
+        <table class="dt">
+          <tr><td class="lbl">Persona de contacto</td><td>${escHtml(contacto||'—')}</td></tr>
+          <tr><td class="lbl">Teléfono 1</td><td>${escHtml(tel1||'—')}</td></tr>
+          <tr><td class="lbl">Teléfono 2</td><td>${escHtml(tel2||'—')}</td></tr>
+        </table></div>`;
+    }
+    if (incl.medico) {
+      const hasAlert = alergias.trim();
+      sections += `<div class="sec${hasAlert?' alert-sec':''}">
+        <div class="sec-title">💊 Datos médicos${hasAlert?' <span class="alert-badge">⚠️ ALERGIAS</span>':''}</div>
+        <table class="dt">
+          ${alergias?`<tr><td class="lbl alert-lbl">Alergias</td><td class="alert-val">${escHtml(alergias)}</td></tr>`:''}
+          ${codigoAN?`<tr><td class="lbl">Código AN</td><td>${escHtml(codigoAN)}</td></tr>`:''}
+          ${medicacion?`<tr><td class="lbl">Medicación</td><td>${escHtml(medicacion)}</td></tr>`:''}
+          ${obsM?`<tr><td class="lbl">Observaciones</td><td>${escHtml(obsM)}</td></tr>`:''}
+          ${!alergias&&!medicacion&&!obsM?'<tr><td colspan="2" style="color:#aaa;font-style:italic;">Sin datos médicos registrados</td></tr>':''}
+        </table></div>`;
+    }
+    if (incl.notas) {
+      sections += `<div class="sec">
+        <div class="sec-title">🗒 Notas del equipo (${notas.length})</div>
+        ${notas.length ? notas.slice().reverse().map(n=>`
+          <div style="padding:8px 10px;border-left:3px solid ${moodColor(n.mood)};background:#f9f6f1;border-radius:0 8px 8px 0;margin-bottom:6px;">
+            <div style="font-size:11px;font-weight:700;color:${moodColor(n.mood)};">${moodLabel(n.mood)}</div>
+            <div style="font-size:13px;margin-top:2px;">${escHtml(n.texto)}</div>
+            <div style="font-size:10px;color:#aaa;margin-top:3px;">${escHtml(n.fecha||'')} · ${escHtml(n.monitor||'Monitor')}</div>
+          </div>`).join('') : '<p style="color:#aaa;font-style:italic;font-size:12px;">Sin notas registradas</p>'}
+        </div>`;
+    }
+
+    const initials = getInitials(nombre, apellidos);
+    const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Ficha — ${escHtml(apellidos)}, ${escHtml(nombre)}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;padding:24px;color:#222;font-size:13px}
+  .header{display:flex;align-items:center;gap:14px;padding:14px 16px;background:#2D5016;border-radius:12px;margin-bottom:18px;color:white}
+  .avatar{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex-shrink:0}
+  .hname{font-size:1.1rem;font-weight:700}
+  .hmeta{font-size:11px;opacity:.75;margin-top:2px}
+  .sec{margin-bottom:16px;border:1.5px solid #e8e0d0;border-radius:10px;overflow:hidden}
+  .alert-sec{border-color:#f5c6cb}
+  .sec-title{background:#f9f6f1;padding:9px 14px;font-weight:700;font-size:12px;color:#2D5016;border-bottom:1px solid #e8e0d0}
+  .dt{width:100%;border-collapse:collapse}
+  .dt td{padding:7px 14px;border-bottom:1px solid #f0ebe0;vertical-align:top}
+  .dt tr:last-child td{border-bottom:none}
+  .lbl{font-weight:600;color:#666;width:38%;font-size:12px}
+  .alert-lbl{color:#C0392B}
+  .alert-val{color:#C0392B;font-weight:600}
+  .alert-badge{background:#fdecea;color:#C0392B;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:6px}
+  .footer{margin-top:16px;text-align:center;font-size:10px;color:#aaa;border-top:1px solid #e8e0d0;padding-top:10px}
+  .no-print{margin-top:18px;text-align:center}
+  @media print{.no-print{display:none!important}body{padding:12px}}
+</style></head><body>
+<div class="header">
+  <div class="avatar">${escHtml(initials)}</div>
+  <div><div class="hname">${escHtml(apellidos)}, ${escHtml(nombre)}</div>
+  <div class="hmeta">${escHtml(cursoTxt)} · Campamento Algámitas 2026</div></div>
+</div>
+${sections}
+<div class="footer">CampApp · Escuela y Deporte · ${new Date().toLocaleString('es-ES')}</div>
+<div class="no-print">
+  <button onclick="window.print()" style="padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) { alert('Permite ventanas emergentes para imprimir.'); return; }
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+  }
+
   function showGTab(id, btn) {
     document.querySelectorAll('#tab-grupos .gtab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('#tab-grupos .gtab-btn').forEach(b => b.classList.remove('active'));
@@ -4909,13 +5097,19 @@
           <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.4;margin-bottom:8px;">
             ${alumnosDelGrupo.length} alumno${alumnosDelGrupo.length!==1?'s':''} en este grupo
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;" id="alumnosGrupo-${g.id}">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;border-radius:10px;transition:background .15s;padding:4px;" id="dropzone-${g.id}"
+            ondragover="event.preventDefault();document.getElementById('dropzone-${g.id}').style.background='#e8f5e9';"
+            ondragleave="document.getElementById('dropzone-${g.id}').style.background='';"
+            ondrop="dropToGrupo(event,${g.id})">
             ${alumnosDelGrupo.length === 0
               ? '<span style="font-size:12px;opacity:.35;font-style:italic;">Sin alumnos asignados. Usa el buscador.</span>'
               : alumnosDelGrupo.map(p => {
                   const pg = gruposEdit[p.gid]||grupos[p.gid];
                   const medA = getMedAlert(p.n);
-                  return `<div class="draggable-chip" style="background:${pg.hex}22;color:${pg.hex};border-color:${pg.hex}44;cursor:default;display:inline-flex;align-items:center;gap:4px;">
+                  return `<div class="draggable-chip" draggable="true"
+                    ondragstart="event.dataTransfer.setData('pid','${p.n}');event.dataTransfer.setData('fromGcampId','${g.id}');event.target.style.opacity='.4';"
+                    ondragend="event.target.style.opacity='1';"
+                    style="background:${pg.hex}22;color:${pg.hex};border-color:${pg.hex}44;cursor:grab;display:inline-flex;align-items:center;gap:4px;">
                     <span>${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}</span>
                     ${medA}
                     <span class="chip-x" onclick="removeAlumnoFromGrupo(${g.id},${p.n})">✕</span>
@@ -5025,7 +5219,8 @@
 
   function dropToGrupo(e, gid) {
     e.preventDefault();
-    document.getElementById('dropzone-' + gid).classList.remove('drag-over');
+    const dz = document.getElementById('dropzone-' + gid);
+    if (dz) dz.style.background = '';
     const pid = parseInt(e.dataTransfer.getData('pid'));
     const fromGcampId = e.dataTransfer.getData('fromGcampId');
 
@@ -5794,7 +5989,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:5px;">
           ${alumnos.map(p => {
             const med = getMedAlert(p.n);
-            return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:20px;background:${med?'#fdecea':'#f0f7eb'};font-size:11px;cursor:pointer;" onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(gruposEdit[p.gid]||grupos[p.gid]||{})})">
+            return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:20px;background:${med?'#fdecea':'#f0f7eb'};font-size:11px;cursor:pointer;" onclick="openFichaById(${p.n})">
               ${escHtml(p.apellidos.split(' ')[0])}, ${escHtml(p.nombre)}${med?'<span style="font-size:11px;">'+med+'</span>':''}
             </div>`;
           }).join('')}
@@ -6467,6 +6662,7 @@
       const esInact = p.activo === false || p.activo === 'false';
       const esAct   = !esPend && !esInact;
       if (filtCurso  && p.gid !== filtCurso)             return false;
+      if (filtEstado === 'todos')    return true;
       if (filtEstado === 'activo'    && !esAct)   return false;
       if (filtEstado === 'pendiente' && !esPend)  return false;
       if (filtEstado === 'inactivo'  && !esInact) return false;
@@ -6593,7 +6789,7 @@
           <button onclick="saveAllAlumnos()"
             style="padding:10px 14px;border-radius:10px;border:1.5px solid #f0f7eb;background:white;
               font-size:14px;cursor:pointer;" title="Guardar cambios">💾</button>
-          <button onclick="openFicha(${JSON.stringify(p)},${JSON.stringify(g||{})})"
+          <button onclick="openFichaById(${p.n})"
             style="flex:1;padding:10px;border-radius:10px;border:none;background:#2D5016;color:white;
               font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
             🩺 Ver ficha completa
@@ -8250,6 +8446,14 @@
   // ══════════════════════════════════════════════════════════════
   //  F. MODO OSCURO
   // ══════════════════════════════════════════════════════════════
+  function showMonTab(tab, btn) {
+    document.getElementById('monPanelEquipo').style.display = tab === 'equipo' ? 'block' : 'none';
+    document.getElementById('monPanelMedico').style.display = tab === 'medico' ? 'block' : 'none';
+    document.querySelectorAll('#tab-monitores .gtab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    if (tab === 'medico') renderMedResumen();
+  }
+
   function initDarkMode() {
     const saved = localStorage.getItem('camp-dark-mode');
     if (saved === 'true') applyDarkMode(true);
@@ -8464,6 +8668,40 @@
 </div>
 
 <!-- FICHA ALUMNO -->
+<!-- ══ MODAL IMPRIMIR FICHA ══ -->
+<div id="imprimirFichaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:20px;padding:28px;max-width:420px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.3);">
+    <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:#2D5016;margin-bottom:6px;">🖨️ Imprimir ficha</div>
+    <div style="font-size:13px;color:#888;margin-bottom:18px;">Selecciona qué secciones incluir</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpDatosPersonales" checked style="width:16px;height:16px;accent-color:#2D5016;">
+        <div><div style="font-weight:600;font-size:13px;">📋 Datos del participante</div><div style="font-size:11px;color:#888;">Nombre, curso, grupo, monitor</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpContacto" checked style="width:16px;height:16px;accent-color:#2D5016;">
+        <div><div style="font-weight:600;font-size:13px;">📞 Contacto familiar</div><div style="font-size:11px;color:#888;">Persona de contacto y teléfonos</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpMedico" checked style="width:16px;height:16px;accent-color:#2D5016;">
+        <div><div style="font-weight:600;font-size:13px;">💊 Datos médicos</div><div style="font-size:11px;color:#888;">Alergias, medicación, observaciones</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpOrganizacion" checked style="width:16px;height:16px;accent-color:#2D5016;">
+        <div><div style="font-weight:600;font-size:13px;">🏕 Organización campamento</div><div style="font-size:11px;color:#888;">Grupo, cabaña, monitor asignado</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1.5px solid #d9ceb8;background:#f9f6f1;">
+        <input type="checkbox" id="fpNotas" style="width:16px;height:16px;accent-color:#2D5016;">
+        <div><div style="font-weight:600;font-size:13px;">🗒 Notas individuales</div><div style="font-size:11px;color:#888;">Observaciones del equipo de monitores</div></div>
+      </label>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="generarPDFFicha()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#2D5016;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Generar PDF</button>
+      <button onclick="document.getElementById('imprimirFichaModal').style.display='none'" style="padding:12px 16px;border-radius:12px;border:1.5px solid #d9ceb8;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="ficha-overlay" id="fichaOverlay" onclick="handleFichaOverlay(event)">
   <div class="ficha-box" style="max-width:560px;">
     <div class="ficha-header">
@@ -8552,6 +8790,7 @@
     </div>
     <div class="ficha-footer">
       <span class="ficha-saved-msg" id="fichaSavedMsg">✔ Datos guardados</span>
+      <button class="ficha-save-btn" style="background:#f0f7eb;color:#2D5016;border:1.5px solid #2D5016;" onclick="abrirImprimirFicha()">🖨️ Imprimir</button>
       <button class="ficha-save-btn" id="fichaSaveBtn" onclick="saveFichaConSpinner()">Guardar ficha</button>
     </div>
   </div>
@@ -8570,8 +8809,120 @@
     <div class="mob-stat"><div class="num">9,0</div><div class="lbl">Valoración 2025</div></div>
   </div>
 
-  <!-- PANTALLA PRINCIPAL -->
+  
+    <!-- Modal nueva/editar actividad -->
+    <div class="modal-overlay" id="progModal" onclick="if(event.target===this)closeProgModal()" style="z-index:1300;">
+      <div class="modal-box" style="max-width:600px;max-height:92vh;">
+        <div class="modal-header">
+          <div class="modal-color-bar" id="progModalBar" style="background:var(--verde-medio)"></div>
+          <div class="modal-header-text">
+            <div class="modal-title" id="progModalTitle">Nueva actividad</div>
+          </div>
+          <button class="modal-close" onclick="closeProgModal()">✕</button>
+        </div>
+        <div class="modal-list" style="padding:20px;overflow-y:auto;">
+          <div class="prog-form-grid">
+            <div class="prog-field">
+              <label>Tipo de actividad</label>
+              <select id="pTipo" onchange="updateProgModalColor()">
+                <option value="velada">🌙 Velada</option>
+                <option value="taller">🎨 Taller</option>
+                <option value="juego">🎮 Juego</option>
+                <option value="liga">⚽ Liga</option>
+                <option value="piscina">🏊 Piscina</option>
+                <option value="comedor">🍽 Comedor</option>
+                <option value="libre">🌿 Tiempo libre</option>
+                <option value="desayuno">☕ Desayuno</option>
+                <option value="almuerzo">🥗 Almuerzo</option>
+                <option value="merienda">🍎 Merienda</option>
+                <option value="cena">🍽 Cena</option>
+              </select>
+            </div>
+            <div class="prog-field">
+              <label>Nombre / descripción</label>
+              <input type="text" id="pNombre" placeholder="Ej. Velada del Tesoro…"/>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Días de la semana</label>
+              <div id="pDias" style="display:flex;flex-wrap:wrap;gap:6px;">
+                <button type="button" class="dia-btn" data-dia="lunes"    onclick="clickDia(this)">Lunes</button>
+                <button type="button" class="dia-btn" data-dia="martes"   onclick="clickDia(this)">Martes</button>
+                <button type="button" class="dia-btn" data-dia="miercoles" onclick="clickDia(this)">Miércoles</button>
+                <button type="button" class="dia-btn" data-dia="jueves"   onclick="clickDia(this)">Jueves</button>
+                <button type="button" class="dia-btn" data-dia="viernes"  onclick="clickDia(this)">Viernes</button>
+                <button type="button" class="dia-btn" data-dia="sabado"   onclick="clickDia(this)">Sábado</button>
+                <button type="button" class="dia-btn" data-dia="domingo"  onclick="clickDia(this)">Domingo</button>
+                <button type="button" class="dia-btn dia-btn-all" onclick="seleccionarTodosLosDias()" title="Seleccionar todos los días">📅 Semanal</button>
+              </div>
+            </div>
+
+            <div class="prog-field">
+              <label>Fecha de inicio</label>
+              <input type="date" id="pFechaInicio" onchange="autoSetFechaFin()"/>
+            </div>
+            <div class="prog-field">
+              <label>Fecha de fin</label>
+              <input type="date" id="pFechaFin"/>
+            </div>
+            <div class="prog-field">
+              <label>Hora de inicio</label>
+              <input type="time" id="pHoraInicio" value="09:00" min="08:00" max="23:59"/>
+            </div>
+            <div class="prog-field">
+              <label>Hora de fin</label>
+              <input type="time" id="pHoraFin" value="10:00" min="08:00" max="24:00"/>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Grupos campamento asignados</label>
+              <div id="pGruposCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Monitores responsables</label>
+              <div id="pMonitoresCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Lugar / espacio</label>
+              <input type="text" id="pLugar" placeholder="Ej. Piscina, Pabellón, Zona barbacoa…"/>
+            </div>
+            <div class="prog-field prog-full">
+              <label>Materiales necesarios</label>
+              <input type="text" id="pMateriales" placeholder="Ej. Cuerdas, pinturas, balones…"/>
+            </div>
+            <div class="prog-field prog-full">
+              <label>Observaciones</label>
+              <textarea id="pObs" rows="2" placeholder="Notas adicionales…"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1.5px solid var(--crema-oscuro);">
+          <button onclick="deleteProgActividad()" id="btnDelProg" style="padding:9px 18px;border-radius:12px;border:1.5px solid var(--rojo-suave);background:white;color:var(--rojo-suave);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:none;">🗑 Eliminar</button>
+          <button onclick="saveProgActividad()" style="padding:9px 22px;border-radius:12px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar actividad</button>
+        </div>
+      </div>
+    </div>
+
+<!-- PANTALLA PRINCIPAL -->
   <div class="mob-screen active" id="mob-home">
+    <!-- Stats bar móvil -->
+    <div style="background:#2D5016;padding:10px 16px 12px;display:flex;gap:0;">
+      <div style="flex:1;text-align:center;border-right:1px solid rgba(255,255,255,.15);">
+        <div style="font-size:1.5rem;font-weight:900;color:white;line-height:1;" id="mobStatActivos">—</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:2px;">✅ Activos</div>
+      </div>
+      <div style="flex:1;text-align:center;border-right:1px solid rgba(255,255,255,.15);">
+        <div style="font-size:1.5rem;font-weight:900;color:#F39C12;line-height:1;" id="mobStatPendientes">—</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:2px;">⏳ Pendientes</div>
+      </div>
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:1.5rem;font-weight:900;color:rgba(255,255,255,.45);line-height:1;" id="mobStatInactivos">—</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:2px;">⛔ No activos</div>
+      </div>
+    </div>
+
     <div class="mob-grid">
 
       <!-- ALUMNOS -->
@@ -8701,6 +9052,8 @@
         <option value="activo">✅ Activos</option>
         <option value="pendiente">⏳ Pendientes</option>
         <option value="inactivo">⛔ No activos</option>
+      
+        <option value="todos">📋 Todos (imprimir)</option>
       </select>
     </div>
     <div class="mob-search-bar">
@@ -8838,7 +9191,7 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">👥 Participantes</div>
-      <button onclick="mobAddAlumno()" style="padding:6px 12px;border-radius:10px;border:none;background:var(--verde-bosque);color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
+
     </div>
     <div class="mob-search-bar">
       <input type="text" id="mobAlumnoSearch" placeholder="🔍 Buscar por nombre o apellidos…" oninput="renderMobAlumnos()"/>
@@ -8882,7 +9235,10 @@
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">🏕 Grupos campamento</div>
-      <button onclick="addGrupoCamp();renderMobGruposMain()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Grupo</button>
+      <div style="display:flex;gap:5px;">
+        <button onclick="mobImprimirGrupos()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">🖨️</button>
+        <button onclick="addGrupoCamp();renderMobGruposMain()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Grupo</button>
+      </div>
     </div>
     <!-- Sub-nav grupos móvil -->
     <div style="display:flex;gap:0;border-bottom:2px solid #d9ceb8;background:white;position:sticky;top:57px;z-index:90;">
