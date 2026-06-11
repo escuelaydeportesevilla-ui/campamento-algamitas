@@ -2183,6 +2183,8 @@
       <div class="edit-toolbar">
         <button class="edit-btn primary" onclick="addGrupoCamp()">➕ Nuevo grupo</button>
         <button class="edit-btn" onclick="saveGruposCamp(this)">💾 Guardar grupos</button>
+        <button class="edit-btn" onclick="imprimirGrupos('campamento')">🖨️ Imprimir</button>
+        <button class="edit-btn" onclick="exportGruposExcel('campamento')">📊 Excel</button>
         <button class="edit-btn danger" onclick="resetTodosGrupos()" title="Eliminar todos los grupos y empezar de cero">🗑 Resetear todo</button>
         <span id="gcSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
       </div>
@@ -2202,7 +2204,8 @@
     <!-- POR MONITOR -->
     <div class="gtab-panel" id="gtab-monitor">
       <div class="edit-toolbar">
-        <button class="edit-btn" onclick="renderGruposPorMonitor()">🔄 Actualizar</button>
+        <button class="edit-btn" onclick="imprimirGrupos('monitor')">🖨️ Imprimir</button>
+        <button class="edit-btn" onclick="exportGruposExcel('monitor')">📊 Excel</button>
       </div>
       <div id="gruposPorMonitor"></div>
     </div>
@@ -2211,6 +2214,7 @@
     <div class="gtab-panel" id="gtab-clase">
       <div class="edit-toolbar">
         <button class="edit-btn" onclick="imprimirGrupos('clase')">🖨️ Imprimir</button>
+        <button class="edit-btn" onclick="exportGruposExcel('clase')">📊 Excel</button>
       </div>
       <div id="gruposPorClase"></div>
     </div>
@@ -4707,6 +4711,93 @@
     const ids = new Set();
     gruposCamp.forEach(g => (g.alumnos||[]).forEach(id => ids.add(id)));
     return ids;
+  }
+
+  function exportGruposExcel(tipo) {
+    let rows = [];
+    let filename = '';
+
+    if (tipo === 'campamento') {
+      filename = 'grupos_campamento_algamitas2026.csv';
+      rows = [['Grupo','Cabaña','Tipo alojamiento','Monitores','Apellidos','Nombre','Curso','Clase','Alerta médica']];
+      gruposCamp.forEach(g => {
+        const mons = (g.monitores||[]).map(id => {
+          const m = monitoresData.find(x => String(x.id) === String(id));
+          return m ? (m.nombre+' '+m.apellidos).trim() : '';
+        }).filter(Boolean).join(' / ');
+        const alumnos = (g.alumnos||[]).map(n => getAllEditParticipants(true).find(p => p.n === n)).filter(Boolean)
+          .sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+        if (!alumnos.length) {
+          rows.push([g.nombre||'', g.cabana||'', g.tipoAloj||'', mons, '(sin alumnos)', '', '', '', '']);
+        } else {
+          alumnos.forEach(p => {
+            const cg = gruposEdit[p.gid]||grupos[p.gid];
+            const f = fichasCache[String(p.n)] || {};
+            const alerta = (f.alergias && String(f.alergias).trim()) ? 'ALERGIAS: '+f.alergias
+                         : (f.medicacion && String(f.medicacion).trim()) ? 'Medicación: '+f.medicacion : '';
+            rows.push([g.nombre||'', g.cabana||'', g.tipoAloj||'', mons,
+                       p.apellidos, p.nombre, cg?.label||'', p.grupo!=='❓'?p.grupo:'', alerta]);
+          });
+        }
+      });
+    } else if (tipo === 'monitor') {
+      filename = 'grupos_por_monitor_algamitas2026.csv';
+      rows = [['Monitor/a','Rol','Grupo campamento','Apellidos','Nombre','Curso','Clase']];
+      monitoresData.forEach(m => {
+        const monName = (m.nombre+' '+m.apellidos).trim();
+        const susGrupos = gruposCamp.filter(g => (g.monitores||[]).map(String).includes(String(m.id)));
+        if (!susGrupos.length) {
+          rows.push([monName, m.rol||'', '(sin grupo)', '', '', '', '']);
+        } else {
+          susGrupos.forEach(g => {
+            const alumnos = (g.alumnos||[]).map(n => getAllEditParticipants(true).find(p => p.n === n)).filter(Boolean)
+              .sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+            if (!alumnos.length) {
+              rows.push([monName, m.rol||'', g.nombre||'', '(sin alumnos)', '', '', '']);
+            } else {
+              alumnos.forEach(p => {
+                const cg = gruposEdit[p.gid]||grupos[p.gid];
+                rows.push([monName, m.rol||'', g.nombre||'', p.apellidos, p.nombre, cg?.label||'', p.grupo!=='❓'?p.grupo:'']);
+              });
+            }
+          });
+        }
+      });
+    } else if (tipo === 'clase') {
+      filename = 'grupos_por_clase_algamitas2026.csv';
+      rows = [['Curso','Clase','Apellidos','Nombre','Grupo campamento','Monitor/es']];
+      const lista = getAllEditParticipants().slice()
+        .sort((a,b) => (a.gid+a.grupo+a.apellidos).localeCompare(b.gid+b.grupo+b.apellidos,'es',{sensitivity:'base'}));
+      lista.forEach(p => {
+        const cg = gruposEdit[p.gid]||grupos[p.gid];
+        const gc = gruposCamp.find(g => (g.alumnos||[]).includes(p.n));
+        const mons = gc ? (gc.monitores||[]).map(id => {
+          const m = monitoresData.find(x => String(x.id) === String(id));
+          return m ? (m.nombre+' '+m.apellidos).trim() : '';
+        }).filter(Boolean).join(' / ') : '';
+        rows.push([cg?.label||'', p.grupo!=='❓'?p.grupo:'', p.apellidos, p.nombre, gc?.nombre||'(sin grupo)', mons]);
+      });
+    }
+
+    if (rows.length <= 1) { alert('No hay datos para exportar.'); return; }
+
+    const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
+    const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showSyncIndicator('✔ Excel descargado', 'ok');
+  }
+
+  function mobExportGruposExcel() {
+    const monPanel   = document.getElementById('mobGTabMonPanel');
+    const clasePanel = document.getElementById('mobGTabClasePanel');
+    let tipo = 'campamento';
+    if (monPanel   && monPanel.style.display   !== 'none') tipo = 'monitor';
+    if (clasePanel && clasePanel.style.display !== 'none') tipo = 'clase';
+    exportGruposExcel(tipo);
   }
 
   function imprimirGrupos(tipo) {
@@ -9237,6 +9328,7 @@ ${sections}
       <div class="mob-topbar-title">🏕 Grupos campamento</div>
       <div style="display:flex;gap:5px;">
         <button onclick="mobImprimirGrupos()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">🖨️</button>
+        <button onclick="mobExportGruposExcel()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">📊</button>
         <button onclick="addGrupoCamp();renderMobGruposMain()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Grupo</button>
       </div>
     </div>
