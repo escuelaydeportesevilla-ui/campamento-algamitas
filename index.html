@@ -2021,27 +2021,7 @@
 
 
     <!-- MODAL -->
-    <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
-      <div class="modal-box">
-        <div class="modal-header">
-          <div class="modal-color-bar" id="modalColorBar"></div>
-          <div class="modal-header-text">
-            <div class="modal-title" id="modalTitle"></div>
-            <div class="modal-subtitle" id="modalSubtitle"></div>
-          </div>
-          <button class="modal-close" onclick="closeModal()">✕</button>
-        </div>
-        <div class="modal-search">
-          <input type="text" id="modalSearch" placeholder="🔍  Buscar por nombre o apellidos…" oninput="filterModal()" />
-        </div>
-        <div class="modal-list" id="modalList"></div>
-        <div class="modal-empty" id="modalEmpty">No se encontraron resultados.</div>
-        <div class="modal-footer">
-          <span id="modalCount"></span>
-          <span>Pulsa Esc para cerrar</span>
-        </div>
-      </div>
-    </div>
+    
 
     <!-- BARRAS -->
     <div class="barra-section">
@@ -8904,100 +8884,7 @@ ${sections}
   </div>
 
   
-    <!-- Modal nueva/editar actividad -->
-    <div class="modal-overlay" id="progModal" onclick="if(event.target===this)closeProgModal()" style="z-index:1300;">
-      <div class="modal-box" style="max-width:600px;max-height:92vh;">
-        <div class="modal-header">
-          <div class="modal-color-bar" id="progModalBar" style="background:var(--verde-medio)"></div>
-          <div class="modal-header-text">
-            <div class="modal-title" id="progModalTitle">Nueva actividad</div>
-          </div>
-          <button class="modal-close" onclick="closeProgModal()">✕</button>
-        </div>
-        <div class="modal-list" style="padding:20px;overflow-y:auto;">
-          <div class="prog-form-grid">
-            <div class="prog-field">
-              <label>Tipo de actividad</label>
-              <select id="pTipo" onchange="updateProgModalColor()">
-                <option value="velada">🌙 Velada</option>
-                <option value="taller">🎨 Taller</option>
-                <option value="juego">🎮 Juego</option>
-                <option value="liga">⚽ Liga</option>
-                <option value="piscina">🏊 Piscina</option>
-                <option value="comedor">🍽 Comedor</option>
-                <option value="libre">🌿 Tiempo libre</option>
-                <option value="desayuno">☕ Desayuno</option>
-                <option value="almuerzo">🥗 Almuerzo</option>
-                <option value="merienda">🍎 Merienda</option>
-                <option value="cena">🍽 Cena</option>
-              </select>
-            </div>
-            <div class="prog-field">
-              <label>Nombre / descripción</label>
-              <input type="text" id="pNombre" placeholder="Ej. Velada del Tesoro…"/>
-            </div>
-
-            <div class="prog-field prog-full">
-              <label>Días de la semana</label>
-              <div id="pDias" style="display:flex;flex-wrap:wrap;gap:6px;">
-                <button type="button" class="dia-btn" data-dia="lunes"    onclick="clickDia(this)">Lunes</button>
-                <button type="button" class="dia-btn" data-dia="martes"   onclick="clickDia(this)">Martes</button>
-                <button type="button" class="dia-btn" data-dia="miercoles" onclick="clickDia(this)">Miércoles</button>
-                <button type="button" class="dia-btn" data-dia="jueves"   onclick="clickDia(this)">Jueves</button>
-                <button type="button" class="dia-btn" data-dia="viernes"  onclick="clickDia(this)">Viernes</button>
-                <button type="button" class="dia-btn" data-dia="sabado"   onclick="clickDia(this)">Sábado</button>
-                <button type="button" class="dia-btn" data-dia="domingo"  onclick="clickDia(this)">Domingo</button>
-                <button type="button" class="dia-btn dia-btn-all" onclick="seleccionarTodosLosDias()" title="Seleccionar todos los días">📅 Semanal</button>
-              </div>
-            </div>
-
-            <div class="prog-field">
-              <label>Fecha de inicio</label>
-              <input type="date" id="pFechaInicio" onchange="autoSetFechaFin()"/>
-            </div>
-            <div class="prog-field">
-              <label>Fecha de fin</label>
-              <input type="date" id="pFechaFin"/>
-            </div>
-            <div class="prog-field">
-              <label>Hora de inicio</label>
-              <input type="time" id="pHoraInicio" value="09:00" min="08:00" max="23:59"/>
-            </div>
-            <div class="prog-field">
-              <label>Hora de fin</label>
-              <input type="time" id="pHoraFin" value="10:00" min="08:00" max="24:00"/>
-            </div>
-
-            <div class="prog-field prog-full">
-              <label>Grupos campamento asignados</label>
-              <div id="pGruposCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-            </div>
-
-            <div class="prog-field prog-full">
-              <label>Monitores responsables</label>
-              <div id="pMonitoresCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-            </div>
-
-            <div class="prog-field prog-full">
-              <label>Lugar / espacio</label>
-              <input type="text" id="pLugar" placeholder="Ej. Piscina, Pabellón, Zona barbacoa…"/>
-            </div>
-            <div class="prog-field prog-full">
-              <label>Materiales necesarios</label>
-              <input type="text" id="pMateriales" placeholder="Ej. Cuerdas, pinturas, balones…"/>
-            </div>
-            <div class="prog-field prog-full">
-              <label>Observaciones</label>
-              <textarea id="pObs" rows="2" placeholder="Notas adicionales…"></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1.5px solid var(--crema-oscuro);">
-          <button onclick="deleteProgActividad()" id="btnDelProg" style="padding:9px 18px;border-radius:12px;border:1.5px solid var(--rojo-suave);background:white;color:var(--rojo-suave);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:none;">🗑 Eliminar</button>
-          <button onclick="saveProgActividad()" style="padding:9px 22px;border-radius:12px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar actividad</button>
-        </div>
-      </div>
-    </div>
+    
 
 <!-- PANTALLA PRINCIPAL -->
   <div class="mob-screen active" id="mob-home">
@@ -9492,6 +9379,125 @@ ${sections}
 
 
 <!-- Modo oscuro: solo en menú móvil y barra desktop -->
+
+
+<!-- Modal nueva/editar actividad -->
+    <div class="modal-overlay" id="progModal" onclick="if(event.target===this)closeProgModal()" style="z-index:1300;">
+      <div class="modal-box" style="max-width:600px;max-height:92vh;">
+        <div class="modal-header">
+          <div class="modal-color-bar" id="progModalBar" style="background:var(--verde-medio)"></div>
+          <div class="modal-header-text">
+            <div class="modal-title" id="progModalTitle">Nueva actividad</div>
+          </div>
+          <button class="modal-close" onclick="closeProgModal()">✕</button>
+        </div>
+        <div class="modal-list" style="padding:20px;overflow-y:auto;">
+          <div class="prog-form-grid">
+            <div class="prog-field">
+              <label>Tipo de actividad</label>
+              <select id="pTipo" onchange="updateProgModalColor()">
+                <option value="velada">🌙 Velada</option>
+                <option value="taller">🎨 Taller</option>
+                <option value="juego">🎮 Juego</option>
+                <option value="liga">⚽ Liga</option>
+                <option value="piscina">🏊 Piscina</option>
+                <option value="comedor">🍽 Comedor</option>
+                <option value="libre">🌿 Tiempo libre</option>
+                <option value="desayuno">☕ Desayuno</option>
+                <option value="almuerzo">🥗 Almuerzo</option>
+                <option value="merienda">🍎 Merienda</option>
+                <option value="cena">🍽 Cena</option>
+              </select>
+            </div>
+            <div class="prog-field">
+              <label>Nombre / descripción</label>
+              <input type="text" id="pNombre" placeholder="Ej. Velada del Tesoro…"/>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Días de la semana</label>
+              <div id="pDias" style="display:flex;flex-wrap:wrap;gap:6px;">
+                <button type="button" class="dia-btn" data-dia="lunes"    onclick="clickDia(this)">Lunes</button>
+                <button type="button" class="dia-btn" data-dia="martes"   onclick="clickDia(this)">Martes</button>
+                <button type="button" class="dia-btn" data-dia="miercoles" onclick="clickDia(this)">Miércoles</button>
+                <button type="button" class="dia-btn" data-dia="jueves"   onclick="clickDia(this)">Jueves</button>
+                <button type="button" class="dia-btn" data-dia="viernes"  onclick="clickDia(this)">Viernes</button>
+                <button type="button" class="dia-btn" data-dia="sabado"   onclick="clickDia(this)">Sábado</button>
+                <button type="button" class="dia-btn" data-dia="domingo"  onclick="clickDia(this)">Domingo</button>
+                <button type="button" class="dia-btn dia-btn-all" onclick="seleccionarTodosLosDias()" title="Seleccionar todos los días">📅 Semanal</button>
+              </div>
+            </div>
+
+            <div class="prog-field">
+              <label>Fecha de inicio</label>
+              <input type="date" id="pFechaInicio" onchange="autoSetFechaFin()"/>
+            </div>
+            <div class="prog-field">
+              <label>Fecha de fin</label>
+              <input type="date" id="pFechaFin"/>
+            </div>
+            <div class="prog-field">
+              <label>Hora de inicio</label>
+              <input type="time" id="pHoraInicio" value="09:00" min="08:00" max="23:59"/>
+            </div>
+            <div class="prog-field">
+              <label>Hora de fin</label>
+              <input type="time" id="pHoraFin" value="10:00" min="08:00" max="24:00"/>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Grupos campamento asignados</label>
+              <div id="pGruposCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Monitores responsables</label>
+              <div id="pMonitoresCheck" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <div class="prog-field prog-full">
+              <label>Lugar / espacio</label>
+              <input type="text" id="pLugar" placeholder="Ej. Piscina, Pabellón, Zona barbacoa…"/>
+            </div>
+            <div class="prog-field prog-full">
+              <label>Materiales necesarios</label>
+              <input type="text" id="pMateriales" placeholder="Ej. Cuerdas, pinturas, balones…"/>
+            </div>
+            <div class="prog-field prog-full">
+              <label>Observaciones</label>
+              <textarea id="pObs" rows="2" placeholder="Notas adicionales…"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1.5px solid var(--crema-oscuro);">
+          <button onclick="deleteProgActividad()" id="btnDelProg" style="padding:9px 18px;border-radius:12px;border:1.5px solid var(--rojo-suave);background:white;color:var(--rojo-suave);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:none;">🗑 Eliminar</button>
+          <button onclick="saveProgActividad()" style="padding:9px 22px;border-radius:12px;border:none;background:var(--verde-bosque);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Guardar actividad</button>
+        </div>
+      </div>
+    </div>
+
+
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-color-bar" id="modalColorBar"></div>
+          <div class="modal-header-text">
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-subtitle" id="modalSubtitle"></div>
+          </div>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-search">
+          <input type="text" id="modalSearch" placeholder="🔍  Buscar por nombre o apellidos…" oninput="filterModal()" />
+        </div>
+        <div class="modal-list" id="modalList"></div>
+        <div class="modal-empty" id="modalEmpty">No se encontraron resultados.</div>
+        <div class="modal-footer">
+          <span id="modalCount"></span>
+          <span>Pulsa Esc para cerrar</span>
+        </div>
+      </div>
+    </div>
 
 </body>
 </html>
