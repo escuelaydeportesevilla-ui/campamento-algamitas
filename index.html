@@ -3413,11 +3413,34 @@
     // No guardar el proyecto base hardcodeado
     const extras = projects.filter(p => !p.base);
     try { localStorage.setItem('campapp-projects', JSON.stringify(extras)); } catch(e) {}
+    // Sincronizar con el Sheet base para que aparezcan en TODOS los dispositivos
+    try {
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action:'saveConfig', pwd: PASSWORD, key:'proyectos', value: extras })
+      }).catch(()=>{});
+    } catch(e) {}
   }
 
   function showProjectSelector() {
     document.getElementById('projectOverlay').style.display = 'flex';
-    renderProjectList(getProjects());
+    renderProjectList(getProjects());          // local primero (instantáneo)
+    cargarProyectosRemotos();                  // luego fusionar con el Sheet
+  }
+
+  async function cargarProyectosRemotos() {
+    try {
+      const r = await fetch(SCRIPT_URL + '?action=getConfig&key=proyectos&pwd=' + PASSWORD);
+      const j = await r.json();
+      if (!j.ok || !Array.isArray(j.data)) return;
+      // Fusionar: remotos + locales sin duplicar (por id)
+      const locales = JSON.parse(localStorage.getItem('campapp-projects') || '[]');
+      const map = {};
+      [...j.data, ...locales].forEach(p => { if (p && p.id) map[p.id] = p; });
+      const fusion = Object.values(map);
+      localStorage.setItem('campapp-projects', JSON.stringify(fusion));
+      renderProjectList(getProjects());
+    } catch(e) { /* sin conexión: se queda la lista local */ }
   }
 
   function renderProjectList(projects) {
