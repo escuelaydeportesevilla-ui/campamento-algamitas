@@ -1845,6 +1845,21 @@
             <input type="date" id="npFechaFin"/>
           </div>
         </div>
+        <label>PIN de acceso al proyecto * (4-6 dígitos)</label>
+        <input type="tel" id="npPin" maxlength="6" placeholder="Ej. 2027" autocomplete="off"
+          style="letter-spacing:4px;font-weight:700;"/>
+        <p style="font-size:11px;color:#888;margin:2px 0 10px;line-height:1.4;">
+          Se pedirá cada vez que alguien quiera entrar en este proyecto.
+        </p>
+        <label>Paleta de colores</label>
+        <div id="npPaleta" style="display:flex;gap:8px;margin:4px 0 10px;flex-wrap:wrap;">
+          <div class="pal-opt" data-pal="bosque"    onclick="selPaleta(this)" style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#2D5016,#7FB069);cursor:pointer;border:3px solid #2D5016;" title="Verde bosque"></div>
+          <div class="pal-opt" data-pal="oceano"    onclick="selPaleta(this)" style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0D3B66,#5FA8D3);cursor:pointer;border:3px solid transparent;" title="Azul océano"></div>
+          <div class="pal-opt" data-pal="atardecer" onclick="selPaleta(this)" style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#B23A0F,#F2A65A);cursor:pointer;border:3px solid transparent;" title="Naranja atardecer"></div>
+          <div class="pal-opt" data-pal="lavanda"   onclick="selPaleta(this)" style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#4A2D7A,#9B7EDE);cursor:pointer;border:3px solid transparent;" title="Morado lavanda"></div>
+          <div class="pal-opt" data-pal="teja"      onclick="selPaleta(this)" style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7A1E1E,#D9777E);cursor:pointer;border:3px solid transparent;" title="Rojo teja"></div>
+          <div class="pal-opt" data-pal="turquesa"  onclick="selPaleta(this)" style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0E5D5D,#5FC2BA);cursor:pointer;border:3px solid transparent;" title="Turquesa"></div>
+        </div>
         <label>URL del Apps Script *</label>
         <input type="url" id="npScriptUrl" placeholder="https://script.google.com/macros/s/..."/>
         <p style="font-size:11px;color:#e07a3b;margin:4px 0 10px;line-height:1.5;">
@@ -1883,9 +1898,9 @@
 <div id="statusBar" style="display:none;padding:8px 20px;font-size:12px;font-weight:600;color:white;text-align:center;position:sticky;top:0;z-index:2000;transition:background .3s;"></div>
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-badge">🏕 ACPA · Colegio San José SSCC</div>
-  <h1>Campamento <span>Algámitas</span> 2026</h1>
-  <p class="hero-sub">Planificación pedagógica · Basada en la evaluación 2025</p>
+  <div class="hero-badge" id="heroBadge">🏕 ACPA · Colegio San José SSCC</div>
+  <h1 id="heroTitle">Campamento <span>Algámitas</span> 2026</h1>
+  <p class="hero-sub" id="heroSubP">Planificación pedagógica · Basada en la evaluación 2025</p>
   <div class="hero-stats">
     <div class="hero-stat">
       <span class="num" id="statActivos">—</span>
@@ -2658,7 +2673,8 @@
 </footer>
 
 <script>
-  let monitoresData = JSON.parse(localStorage.getItem('camp-monitores') || '[]');
+  function pKey(base) { return base + (window._projectKey || ''); }
+  let monitoresData = JSON.parse(localStorage.getItem(pKey('camp-monitores')) || '[]');
   // ══════════════════════════════════════════════════════════════
   //  CONFIGURACIÓN — pega aquí la URL de tu Apps Script desplegado
   // ══════════════════════════════════════════════════════════════
@@ -3452,16 +3468,55 @@
   }
 
   function selectProject(project) {
+    // Doble filtro: PIN del proyecto (solo proyectos con PIN definido)
+    if (!project.base && project.pin) {
+      let intento = null;
+      for (let i = 0; i < 3; i++) {
+        intento = prompt((i === 0
+          ? '🔒 PIN de acceso a "' + project.nombre + '":'
+          : '❌ PIN incorrecto. Inténtalo de nuevo (' + (3 - i) + ' intentos):'));
+        if (intento === null) return;            // canceló
+        if (intento.trim() === String(project.pin)) { intento = 'OK'; break; }
+        intento = null;
+      }
+      if (intento !== 'OK') {
+        alert('PIN incorrecto. Acceso denegado a este proyecto.');
+        return;
+      }
+    }
     currentProject = project;
     window._activeScriptUrl = (project.scriptUrl && project.scriptUrl.startsWith('http'))
       ? project.scriptUrl : SCRIPT_URL;
+    window._projectKey = project.base ? '' : ('-' + project.id);
     document.getElementById('projectOverlay').style.display = 'none';
 
-    // Actualizar hero
+    // Proyecto NO base: vaciar los datos semilla de Algámitas.
+    // Los datos reales del proyecto se cargarán desde SU Google Sheet.
+    if (!project.base) {
+      Object.keys(grupos).forEach(gid => { grupos[gid].participantes = []; });
+      fichasCache = {};
+    }
+
+    // Actualizar hero con identidad del proyecto
     const heroTitle = document.getElementById('heroTitle');
-    if (heroTitle) heroTitle.textContent = project.nombre;
-    const heroSub = document.querySelector('.hero-sub');
-    if (heroSub && project.entidad) heroSub.textContent = project.entidad;
+    const heroBadge = document.getElementById('heroBadge');
+    const heroSub   = document.getElementById('heroSubP');
+    if (project.base) {
+      if (heroTitle) heroTitle.innerHTML = 'Campamento <span>Algámitas</span> 2026';
+      if (heroBadge) heroBadge.textContent = '🏕 ACPA · Colegio San José SSCC';
+      if (heroSub)   heroSub.textContent = 'Planificación pedagógica · Basada en la evaluación 2025';
+    } else {
+      if (heroTitle) heroTitle.textContent = project.nombre;
+      if (heroBadge) heroBadge.textContent = '🏕 ' + (project.entidad || 'CampApp');
+      if (heroSub) {
+        const f = (project.fechaInicio && project.fechaFin)
+          ? project.fechaInicio.split('-').reverse().join('/') + ' — ' + project.fechaFin.split('-').reverse().join('/')
+          : '';
+        heroSub.textContent = f || 'Gestión del campamento';
+      }
+    }
+    // Aplicar paleta de colores del proyecto
+    aplicarPaleta(project.base ? 'bosque' : (project.paleta || 'bosque'));
 
     try { sessionStorage.setItem('campapp-project', JSON.stringify(project)); } catch(e) {}
     initApp();
@@ -3470,6 +3525,36 @@
   function openNewProjectForm() {
     const form = document.getElementById('newProjForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+
+  const PALETAS = {
+    bosque:   { oscuro:'#2D5016', medio:'#4A7C2F', claro:'#7FB069', suave:'#C5DEB0' },
+    oceano:   { oscuro:'#0D3B66', medio:'#1D6FA3', claro:'#5FA8D3', suave:'#BBDDF2' },
+    atardecer:{ oscuro:'#B23A0F', medio:'#D35F2B', claro:'#F2A65A', suave:'#FAD7AE' },
+    lavanda:  { oscuro:'#4A2D7A', medio:'#6B4BA3', claro:'#9B7EDE', suave:'#D6C8F0' },
+    teja:     { oscuro:'#7A1E1E', medio:'#A33B3B', claro:'#D9777E', suave:'#F0C8CB' },
+    turquesa: { oscuro:'#0E5D5D', medio:'#1F8A83', claro:'#5FC2BA', suave:'#BCE8E3' },
+  };
+  let _paletaSel = 'bosque';
+
+  function selPaleta(el) {
+    _paletaSel = el.dataset.pal;
+    document.querySelectorAll('#npPaleta .pal-opt').forEach(p => p.style.borderColor = 'transparent');
+    el.style.borderColor = PALETAS[_paletaSel].oscuro;
+  }
+
+  function aplicarPaleta(palId) {
+    const p = PALETAS[palId] || PALETAS.bosque;
+    const r = document.documentElement.style;
+    r.setProperty('--verde-bosque', p.oscuro);
+    r.setProperty('--verde-medio',  p.medio);
+    r.setProperty('--verde-claro',  p.claro);
+    r.setProperty('--verde-suave',  p.suave);
+    // Colores fijos inline (barra de stats móvil, botones)
+    document.querySelectorAll('[style]').forEach(el => {
+      const s = el.getAttribute('style');
+      if (s && s.includes('#2D5016')) el.setAttribute('style', s.replaceAll('#2D5016', p.oscuro));
+    });
   }
 
   function createProject() {
@@ -3484,12 +3569,20 @@
       alert('Pega la URL del Apps Script del nuevo proyecto.\nEs necesaria para guardar los datos.');
       return;
     }
+    const pin = document.getElementById('npPin').value.trim();
+    if (!/^[0-9]{4,6}$/.test(pin)) {
+      alert('El PIN debe tener entre 4 y 6 dígitos numéricos.');
+      return;
+    }
 
     const newProject = {
       id: 'proj_' + Date.now(),
       nombre, entidad,
       fechaInicio: fi, fechaFin: ff,
-      scriptUrl, activo: 'activo', base: false
+      scriptUrl, activo: 'activo', base: false,
+      paleta: _paletaSel,
+      pin: pin,
+      paleta: _paletaSel
     };
 
     const projects = getProjects();
@@ -3582,6 +3675,11 @@
 
 
   function initApp() {
+    // Recargar datos locales del proyecto activo (claves separadas por proyecto)
+    try { monitoresData = JSON.parse(localStorage.getItem(pKey('camp-monitores')) || '[]'); } catch(e) { monitoresData = []; }
+    try { gruposCamp    = JSON.parse(localStorage.getItem(pKey('camp-grupos'))    || '[]'); } catch(e) { gruposCamp = []; }
+    try { progData      = JSON.parse(localStorage.getItem(pKey('camp-prog'))      || '[]'); } catch(e) { progData = []; }
+    try { obsAlumnos    = JSON.parse(localStorage.getItem(pKey('camp-obs-alumnos')) || '{}'); } catch(e) { obsAlumnos = {}; }
     // Clonar grupos en gruposEdit para edición
     gruposEdit = JSON.parse(JSON.stringify(grupos));
     // Init PIN y dark mode
@@ -4298,7 +4396,7 @@
   // ══════════════════════════════════════════════════════════════
   //  OBSERVACIONES GENERALES
   // ══════════════════════════════════════════════════════════════
-  let obsData = JSON.parse(localStorage.getItem('camp-obs') || '[]');
+  let obsData = JSON.parse(localStorage.getItem(pKey('camp-obs')) || '[]');
   if (!obsData.length) {
     obsData = [
       {id:1, titulo:'Incidencias generales', color:'var(--naranja)', texto:''},
@@ -4688,7 +4786,7 @@
   // ══════════════════════════════════════════════════════════════
   const GCAMP_COLORS = ['#4A90D9','#27AE60','#E67E22','#8E44AD','#C0392B','#16A085','#D35400','#2980B9','#8E44AD','#1ABC9C'];
 
-  let gruposCamp = JSON.parse(localStorage.getItem('camp-grupos') || '[]');
+  let gruposCamp = JSON.parse(localStorage.getItem(pKey('camp-grupos')) || '[]');
   // IDs de alumnos ya asignados a algún grupo
   function asignadosEnGrupos() {
     const ids = new Set();
@@ -5442,7 +5540,7 @@ ${sections}
   const DIAS_ORDER = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
   const DIAS_LABELS = {lunes:'Lunes',martes:'Martes',miercoles:'Miércoles',jueves:'Jueves',viernes:'Viernes',sabado:'Sábado',domingo:'Domingo'};
 
-  let progData = JSON.parse(localStorage.getItem('camp-prog') || '[]');
+  let progData = JSON.parse(localStorage.getItem(pKey('camp-prog')) || '[]');
   let progVistaCalendario = false;
   let editingProgId = null;
 
@@ -6122,7 +6220,7 @@ ${sections}
   // ══════════════════════════════════════════════════════════════
   //  OBSERVACIONES POR ALUMNO
   // ══════════════════════════════════════════════════════════════
-  let obsAlumnos = JSON.parse(localStorage.getItem('camp-obs-alumnos') || '{}');
+  let obsAlumnos = JSON.parse(localStorage.getItem(pKey('camp-obs-alumnos')) || '{}');
   // Structure: { [n]: { apellidos, nombre, gid, notas: [{id, fecha, texto, mood, monitor}] } }
 
   function saveObsAlumnos() {
@@ -6574,11 +6672,11 @@ ${sections}
         if (j.data.obsAlumnos) obsAlumnos    = Object.keys(j.data.obsAlumnos).length ? j.data.obsAlumnos : obsAlumnos;
         // Cache local
         try {
-          localStorage.setItem('camp-monitores',  JSON.stringify(monitoresData));
-          localStorage.setItem('camp-grupos',      JSON.stringify(gruposCamp));
-          localStorage.setItem('camp-obs',         JSON.stringify(obsData));
-          localStorage.setItem('camp-prog',        JSON.stringify(progData));
-          localStorage.setItem('camp-obs-alumnos', JSON.stringify(obsAlumnos));
+          localStorage.setItem(pKey('camp-monitores'),  JSON.stringify(monitoresData));
+          localStorage.setItem(pKey('camp-grupos'),      JSON.stringify(gruposCamp));
+          localStorage.setItem(pKey('camp-obs'),         JSON.stringify(obsData));
+          localStorage.setItem(pKey('camp-prog'),        JSON.stringify(progData));
+          localStorage.setItem(pKey('camp-obs-alumnos'), JSON.stringify(obsAlumnos));
         } catch(e){}
         showSyncIndicator('✔ Datos cargados', 'ok');
       }
@@ -6590,11 +6688,11 @@ ${sections}
   }
 
   function loadFromLocalStorage() {
-    try { const d = localStorage.getItem('camp-monitores');  if (d) monitoresData = JSON.parse(d); } catch(e){}
-    try { const d = localStorage.getItem('camp-grupos');     if (d) gruposCamp    = JSON.parse(d); } catch(e){}
-    try { const d = localStorage.getItem('camp-obs');        if (d) obsData       = JSON.parse(d); } catch(e){}
-    try { const d = localStorage.getItem('camp-prog');       if (d) progData      = JSON.parse(d); } catch(e){}
-    try { const d = localStorage.getItem('camp-obs-alumnos');if (d) obsAlumnos    = JSON.parse(d); } catch(e){}
+    try { const d = localStorage.getItem(pKey('camp-monitores'));  if (d) monitoresData = JSON.parse(d); } catch(e){}
+    try { const d = localStorage.getItem(pKey('camp-grupos'));     if (d) gruposCamp    = JSON.parse(d); } catch(e){}
+    try { const d = localStorage.getItem(pKey('camp-obs'));        if (d) obsData       = JSON.parse(d); } catch(e){}
+    try { const d = localStorage.getItem(pKey('camp-prog'));       if (d) progData      = JSON.parse(d); } catch(e){}
+    try { const d = localStorage.getItem(pKey('camp-obs-alumnos'));if (d) obsAlumnos    = JSON.parse(d); } catch(e){}
   }
 
   // Indicador de sync en pantalla
@@ -7599,7 +7697,7 @@ ${sections}
   let asistFecha = new Date();
 
   function loadAsistencia() {
-    try { asistenciaData = JSON.parse(localStorage.getItem('camp-asistencia') || '{}'); } catch(e) {}
+    try { asistenciaData = JSON.parse(localStorage.getItem(pKey('camp-asistencia')) || '{}'); } catch(e) {}
     // Also try from Sheets config
     if (getActiveScriptUrl() && getActiveScriptUrl().startsWith('http')) {
       sheetsGet('asistencia').then(data => {
@@ -7609,7 +7707,7 @@ ${sections}
   }
 
   function saveAsistencia() {
-    try { localStorage.setItem('camp-asistencia', JSON.stringify(asistenciaData)); } catch(e) {}
+    try { localStorage.setItem(pKey('camp-asistencia'), JSON.stringify(asistenciaData)); } catch(e) {}
     sheetsSet('asistencia', asistenciaData);
   }
 
@@ -8373,11 +8471,11 @@ ${sections}
   };
 
   function loadHistorial() {
-    try { historialData = JSON.parse(localStorage.getItem('camp-historial') || '[]'); } catch(e) { historialData = []; }
+    try { historialData = JSON.parse(localStorage.getItem(pKey('camp-historial')) || '[]'); } catch(e) { historialData = []; }
   }
 
   function saveHistorialStorage() {
-    try { localStorage.setItem('camp-historial', JSON.stringify(historialData.slice(0, HIST_MAX))); } catch(e) {}
+    try { localStorage.setItem(pKey('camp-historial'), JSON.stringify(historialData.slice(0, HIST_MAX))); } catch(e) {}
   }
 
   function logCambio(tipo, accion, detalle) {
