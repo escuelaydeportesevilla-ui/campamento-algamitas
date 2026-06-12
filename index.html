@@ -2678,6 +2678,7 @@
 </footer>
 
 <script>
+  let monitoresData = JSON.parse(localStorage.getItem('camp-monitores') || '[]');
   // ══════════════════════════════════════════════════════════════
   //  CONFIGURACIÓN — pega aquí la URL de tu Apps Script desplegado
   // ══════════════════════════════════════════════════════════════
@@ -5789,8 +5790,11 @@ ${sections}
 
   // ── Modal nueva/editar actividad ──
   function openProgModal(id) {
+    try {
     editingProgId = id || null;
-    const a = id ? progData.find(x => x.id === id) : null;
+    const a = (id && Array.isArray(progData)) ? progData.find(x => x.id === id) : null;
+    // Mostrar el modal PRIMERO: si algo falla después, siempre se puede cerrar
+    document.getElementById('progModal').classList.add('visible');
     document.getElementById('progModalTitle').textContent = a ? 'Editar actividad' : 'Nueva actividad';
     document.getElementById('btnDelProg').style.display = a ? 'block' : 'none';
 
@@ -5827,7 +5831,7 @@ ${sections}
     // Grupos campamento
     const gDiv = document.getElementById('pGruposCheck');
     gDiv.innerHTML = '';
-    gruposCamp.forEach(g => {
+    (Array.isArray(gruposCamp) ? gruposCamp : []).forEach(g => {
       const checked = a ? (a.grupos||[]).includes(String(g.id)) : false;
       const lbl = document.createElement('label');
       lbl.className = 'prog-dia-label' + (checked ? ' checked' : '');
@@ -5839,7 +5843,7 @@ ${sections}
     // Monitores
     const mDiv = document.getElementById('pMonitoresCheck');
     mDiv.innerHTML = '';
-    monitoresData.forEach(m => {
+    (Array.isArray(monitoresData) ? monitoresData : []).forEach(m => {
       const checked = a ? (a.monitores||[]).includes(String(m.id)) : false;
       const lbl = document.createElement('label');
       lbl.className = 'prog-dia-label' + (checked ? ' checked' : '');
@@ -5849,8 +5853,12 @@ ${sections}
     });
 
     updateProgModalColor();
-    document.getElementById('progModal').classList.add('visible');
     document.body.style.overflow = 'hidden';
+    } catch(err) {
+      console.error('Error abriendo modal de actividad:', err);
+      document.body.style.overflow = '';
+      alert('Error al abrir el formulario: ' + err.message);
+    }
   }
 
   function closeProgModal() {
@@ -7264,13 +7272,6 @@ ${sections}
       </div>`).join('') || '<div style="padding:8px 10px;font-size:12px;opacity:.4;">Sin resultados</div>';
   }
 
-  function renderMobGruposPorMonitor() {
-    const c = document.getElementById('mobGTabMonPanel');
-    if (!c) return;
-    renderGruposPorMonitor();
-    const desktop = document.getElementById('gruposPorMonitor');
-    c.innerHTML = desktop ? desktop.innerHTML : '<div style="text-align:center;padding:30px;font-size:13px;opacity:.4;">Sin datos.</div>';
-  }
 
   function renderMobGruposPorClase() {
     const c = document.getElementById('mobGTabClasePanel');
