@@ -313,23 +313,45 @@
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div> Enviando…';
 
+    // Recoger valores del formulario
+    const _dni      = document.getElementById('fDni').value.trim().toUpperCase();
+    const _email    = document.getElementById('fEmail').value.trim();
+    const _fechanac = document.getElementById('fFechaNac').value;
+    const _dir      = document.getElementById('fDireccion').value.trim();
+    const _nivel    = document.getElementById('fNivel').value;
+    const _situ     = document.getElementById('fSituacion').value;
+    const _rama     = document.getElementById('fRama').value.trim();
+    const _obs      = document.getElementById('fObservaciones').value.trim();
+
+    // Construir observaciones estructuradas (compatible con Apps Script v6)
+    const obsLineas = [
+      '--- DATOS PERSONALES ---',
+      'DNI/NIE: '        + _dni,
+      'Email: '          + _email,
+      'Fecha nac.: '     + _fechanac,
+      'Dirección: '      + _dir,
+      '--- PERFIL ---',
+      'Nivel académico: '  + _nivel,
+      'Situación laboral: ' + _situ,
+      'Rama: '             + (_rama || '—'),
+    ];
+    if (_obs) obsLineas.push('--- OBSERVACIONES ---', _obs);
+
     const data = {
-      action:          'saveInscripcion',
-      pwd:             ACCESS_CODE,
-      apellidos:       document.getElementById('fApellidos').value.trim(),
-      nombre:          document.getElementById('fNombre').value.trim(),
-      fechaNacimiento: document.getElementById('fFechaNac').value,
-      dni:             document.getElementById('fDni').value.trim().toUpperCase(),
-      email:           document.getElementById('fEmail').value.trim(),
-      direccion:       document.getElementById('fDireccion').value.trim(),
-      contacto:        document.getElementById('fContacto').value.trim(),
-      tel1:            document.getElementById('fTel1').value.trim(),
-      tel2:            document.getElementById('fTel2').value.trim(),
-      nivelAcademico:  document.getElementById('fNivel').value,
-      situacionLaboral:document.getElementById('fSituacion').value,
-      rama:            document.getElementById('fRama').value.trim(),
-      observaciones:   document.getElementById('fObservaciones').value.trim(),
-      rgpd:            'Aceptado ' + new Date().toLocaleString('es-ES'),
+      action:       'saveInscripcion',
+      pwd:          ACCESS_CODE,
+      apellidos:    document.getElementById('fApellidos').value.trim(),
+      nombre:       document.getElementById('fNombre').value.trim(),
+      curso:        'g1',   // grupo único del curso ETL
+      grupo:        '',
+      contacto:     document.getElementById('fContacto').value.trim(),
+      tel1:         document.getElementById('fTel1').value.trim(),
+      tel2:         document.getElementById('fTel2').value.trim(),
+      codigoAN:     '',
+      alergias:     '',
+      medicacion:   '',
+      observaciones: obsLineas.join('\n'),
+      rgpd:         'Aceptado ' + new Date().toLocaleString('es-ES'),
     };
 
     try {
