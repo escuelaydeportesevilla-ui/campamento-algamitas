@@ -265,8 +265,8 @@
 <script>
   // ⚠️ CONFIGURACIÓN: pega aquí la URL del Apps Script del NUEVO proyecto
   const SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbywtKJE7hNwRT3tEBeavigpz7RQ3Eznqn5fUvCKKwE83ZLCEAeE88V546bm4xpdQcM/exec';
-  // Código que entregarás a los futuros alumnos
-  const ACCESS_CODE = 'escuela2026';
+  const ACCESS_CODE = 'escuela2026';  // código para abrir el formulario
+  const SHEETS_PWD  = 'sanjose2026';  // contraseña del Apps Script (INSCRIPCION_PWD)
 
   function checkAccess() {
     const val = document.getElementById('accessCode').value.trim().toLowerCase();
@@ -339,7 +339,7 @@
 
     const data = {
       action:       'saveInscripcion',
-      pwd:          ACCESS_CODE,
+      pwd:          SHEETS_PWD,
       apellidos:    document.getElementById('fApellidos').value.trim(),
       nombre:       document.getElementById('fNombre').value.trim(),
       curso:        'g1',   // grupo único del curso ETL
@@ -379,6 +379,9 @@
   }
 
   function reiniciar() {
+    const btn = document.getElementById('btnEnviar');
+    btn.disabled = false;
+    btn.innerHTML = '<span style="font-size:16px">✉️</span> Enviar inscripción';
     ['fApellidos','fNombre','fFechaNac','fDni','fEmail','fDireccion',
      'fContacto','fTel1','fTel2','fRama','fObservaciones']
       .forEach(id => document.getElementById(id).value = '');
@@ -391,8 +394,4 @@
     document.getElementById('successScreen').style.display = 'none';
     document.getElementById('formScreen').style.display   = 'block';
     window.scrollTo(0,0);
-  }
-</script>
-
-</body>
-</html>
+  }>
