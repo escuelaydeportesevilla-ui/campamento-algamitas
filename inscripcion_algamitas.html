@@ -153,12 +153,13 @@
         <label>Curso escolar <span class="req">*</span></label>
         <select id="fCurso">
           <option value="">— Selecciona —</option>
+          <option>2º Primaria</option>
+          <option>3º Primaria</option>
+          <option>4º Primaria</option>
+          <option>5º Primaria</option>
+          <option>6º Primaria</option>
           <option>1º ESO</option>
           <option>2º ESO</option>
-          <option>3º ESO</option>
-          <option>4º ESO</option>
-          <option>1º Bachillerato</option>
-          <option>2º Bachillerato</option>
           <option>Otro</option>
         </select>
         <div class="field-error">Selecciona el curso</div>
@@ -297,7 +298,7 @@
     btn.innerHTML = '<div class="spinner"></div> Enviando…';
 
     const curso = document.getElementById('fCurso').value;
-    const gidMap = {'1º ESO':'g1','2º ESO':'g2','3º ESO':'g3','4º ESO':'g4','1º Bachillerato':'g5','2º Bachillerato':'g6'};
+    const gidMap = {'2º Primaria':'g1','3º Primaria':'g1','4º Primaria':'g2','5º Primaria':'g2','6º Primaria':'g3','1º ESO':'g4','2º ESO':'g5','Otro':'g5'};
 
     const data = {
       action:        'saveInscripcion',
