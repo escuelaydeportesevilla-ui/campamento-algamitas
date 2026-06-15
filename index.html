@@ -3517,6 +3517,9 @@
     // Los datos reales del proyecto se cargarán desde SU Google Sheet.
     if (!project.base) {
       Object.keys(grupos).forEach(gid => { grupos[gid].participantes = []; });
+      // Añadir grupo genérico g1 para acoger los inscritos del curso
+      if (!grupos['g1']) grupos['g1'] = { label: 'Alumnos del curso', participantes: [] };
+      else grupos['g1'].participantes = [];
       fichasCache = {};
     }
 
@@ -3540,6 +3543,13 @@
     }
     // Aplicar paleta de colores del proyecto
     aplicarPaleta(project.base ? 'bosque' : (project.paleta || 'bosque'));
+    // Adaptar selector de curso/grupo al tipo de proyecto
+    const fg = document.getElementById('filtroGrupo');
+    if (fg) {
+      if (!project.base) {
+        fg.innerHTML = '<option value="">Todos los participantes</option><option value="g1">Alumnos del curso</option>';
+      }
+    }
     // Footer según proyecto
     const fl1 = document.getElementById('footerLinea1');
     const fl2 = document.getElementById('footerLinea2');
