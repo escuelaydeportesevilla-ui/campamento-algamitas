@@ -2148,6 +2148,8 @@
     <div class="edit-toolbar">
       <button class="edit-btn primary" onclick="addMonitor()">➕ Añadir monitor/a</button>
       <button class="edit-btn" onclick="saveMonitores(this)">💾 Guardar</button>
+      <button class="edit-btn" onclick="imprimirListaMonitores()">🖨️ Imprimir</button>
+      <button class="edit-btn" onclick="exportMonitoresExcel()">📊 Excel</button>
       <span id="monSavedMsg" style="font-size:12px;color:var(--verde-medio);font-weight:600;opacity:0;transition:opacity .4s;margin-left:8px;"></span>
     </div>
     <div class="monitor-grid" id="monitorGrid"></div>
@@ -2323,7 +2325,11 @@
   <!-- TAB OBSERVACIONES POR ALUMNO -->
   <div id="tab-obsalumnos" class="tab-panel">
     <h2 class="section-title">🗒 Notas individuales de alumnos</h2>
-    <p style="font-size:13px;opacity:.55;margin-bottom:20px;">Registra observaciones sobre el comportamiento, estado de ánimo, logros o incidencias de cada participante. Visible solo para el equipo de monitores.</p>
+    <p style="font-size:13px;opacity:.55;margin-bottom:14px;">Registra observaciones sobre el comportamiento, estado de ánimo, logros o incidencias de cada participante. Visible solo para el equipo de monitores.</p>
+    <div class="edit-toolbar" style="margin-bottom:16px;">
+      <button class="edit-btn" onclick="imprimirNotasAlumnos()">🖨️ Imprimir notas</button>
+      <button class="edit-btn" onclick="exportNotasExcel()">📊 Excel</button>
+    </div>
 
     <!-- Buscador de alumno -->
     <div class="obs-alu-search">
@@ -4219,6 +4225,17 @@
         </div>
         <div class="monitor-field"><label>Observaciones</label>
           <textarea rows="2" onchange="updateMonitor(${i},'observaciones',this.value)">${escHtml(m.observaciones)}</textarea></div>
+        <div class="monitor-field" style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+          <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.8px;">Estado</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+            <span style="color:${m.activo===false?'#C0392B':'#27AE60'};">${m.activo===false?'⛔ No activo':'✅ Activo'}</span>
+            <input type="checkbox" ${m.activo!==false?'checked':''} style="width:16px;height:16px;accent-color:#2D5016;"
+              onchange="updateMonitor(${i},'activo',this.checked);renderMonitorGrid()"/>
+          </label>
+        </div>
+        <div style="margin-top:10px;text-align:right;">
+          <button onclick="saveMonitorIndividual(${i},this)" style="padding:6px 14px;border-radius:8px;border:1.5px solid #2D5016;background:white;color:#2D5016;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">💾 Guardar</button>
+        </div>
       `;
       grid.appendChild(div);
     });
@@ -4227,7 +4244,7 @@
   // uploadMonitorPhoto eliminada - avatars con iniciales
 
   function updateMonitor(i, field, val) {
-    monitoresData[i][field] = val;
+    monitoresData[i][field] = field === 'activo' ? val : val;
     // refresh name/initials display
     const cards = document.querySelectorAll('.monitor-card');
     if (cards[i]) {
@@ -4908,7 +4925,7 @@
 
     if (rows.length <= 1) { alert('No hay datos para exportar.'); return; }
 
-    const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
+    const csv = rows.map(r=>r.map(c=>{var s=String(c);return '"'+s.split('"').join('""')+'"';}).join(';')).join('\n');
     const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -5149,6 +5166,171 @@ ${sections}
     setTimeout(() => win.print(), 500);
   }
 
+  function _getNotasFiltradas() {
+    // Lee filtros activos del panel de notas
+    const filtNom  = (document.getElementById('obsAluFiltNom')?.value  || '').toLowerCase().trim();
+    const filtMood = document.getElementById('obsAluFiltMood')?.value || '';
+    return Object.entries(obsAlumnos)
+      .filter(([n, d]) => {
+        if (!d.notas || !d.notas.length) return false;
+        if (filtMood && !d.notas.some(nota => nota.mood === filtMood)) return false;
+        if (filtNom && !(d.apellidos+' '+d.nombre).toLowerCase().includes(filtNom)) return false;
+        return true;
+      })
+      .sort(([,a],[,b]) => a.apellidos.localeCompare(b.apellidos,'es',{sensitivity:'base'}));
+  }
+
+  function imprimirNotasAlumnos() {
+    const entries = _getNotasFiltradas();
+    if (!entries.length) { alert('No hay notas que imprimir con el filtro actual.'); return; }
+    const moodLabel = m => m==='bien'?'😊 Bien':m==='regular'?'😐 Regular':'😟 Necesita atención';
+    const moodColor = m => m==='bien'?'#27AE60':m==='regular'?'#E67E22':'#C0392B';
+    let body = '';
+    entries.forEach(([n, d]) => {
+      body += `<div class="alumno-block">
+        <div class="alumno-header">${escHtml(d.apellidos)}, ${escHtml(d.nombre)} <span class="n-notas">(${d.notas.length} nota${d.notas.length!==1?'s':''})</span></div>`;
+      [...d.notas].reverse().forEach(nota => {
+        body += `<div class="nota-item" style="border-left:3px solid ${moodColor(nota.mood)};">
+          <div class="nota-mood" style="color:${moodColor(nota.mood)};">${moodLabel(nota.mood)}</div>
+          <div class="nota-texto">${escHtml(nota.texto)}</div>
+          <div class="nota-meta">${escHtml(nota.fecha||'')} · ${escHtml(nota.monitor||'Monitor')}</div>
+        </div>`;
+      });
+      body += '</div>';
+    });
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Notas individuales de alumnos</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;padding:20px;color:#222;font-size:13px}
+  h1{color:#2D5016;font-size:1.2rem;margin-bottom:4px}
+  .meta{font-size:11px;color:#888;margin-bottom:20px}
+  .alumno-block{margin-bottom:20px;break-inside:avoid}
+  .alumno-header{background:#2D5016;color:white;padding:8px 12px;border-radius:8px 8px 0 0;font-weight:700;font-size:13px}
+  .n-notas{font-weight:400;opacity:.7;font-size:11px}
+  .nota-item{padding:8px 12px;background:#f9f6f1;border-bottom:1px solid #e8e0d0;margin-top:0}
+  .nota-mood{font-size:11px;font-weight:700;margin-bottom:3px}
+  .nota-texto{font-size:13px;margin-bottom:3px}
+  .nota-meta{font-size:10px;color:#aaa}
+  .no-print{margin-top:20px;text-align:center}
+  @media print{.no-print{display:none!important}body{padding:10px}}
+</style></head><body>
+<h1>🗒 Notas individuales de alumnos</h1>
+<div class="meta">Campamento Algámitas 2026 · ${entries.length} alumno${entries.length!==1?'s':''} · ${new Date().toLocaleString('es-ES')}</div>
+${body}
+<div class="no-print">
+  <button onclick="window.print()" style="padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;">🖨️ Imprimir / PDF</button>
+  <button onclick="window.close()" style="padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body></html>`;
+    const win = window.open('','_blank');
+    if (!win) { alert('Permite ventanas emergentes para imprimir.'); return; }
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+  }
+
+  function exportNotasExcel() {
+    const entries = _getNotasFiltradas();
+    if (!entries.length) { alert('No hay notas que exportar con el filtro actual.'); return; }
+    const moodLabel = m => m==='bien'?'Bien':m==='regular'?'Regular':'Necesita atención';
+    const rows = [['Apellidos','Nombre','Fecha','Estado ánimo','Nota','Monitor']];
+    entries.forEach(([n, d]) => {
+      [...d.notas].reverse().forEach(nota => {
+        rows.push([d.apellidos, d.nombre, nota.fecha||'', moodLabel(nota.mood), nota.texto, nota.monitor||'']);
+      });
+    });
+    const csv = rows.map(r=>r.map(c=>{var s=String(c);return '"'+s.split('"').join('""')+'"';}).join(';')).join('\n');
+    const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'notas_alumnos_algamitas2026.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showSyncIndicator('✔ Excel descargado', 'ok');
+  }
+
+  function saveMonitorIndividual(i, btn) {
+    if (btn) { btn.disabled=true; btn.innerHTML='⏳ Guardando…'; }
+    saveMonitoresStorage();
+    setTimeout(() => {
+      if (btn) { btn.disabled=false; btn.innerHTML='💾 Guardar'; }
+      showSyncIndicator('✔ Monitor guardado', 'ok');
+    }, 300);
+  }
+
+  function imprimirListaMonitores() {
+    const todos     = monitoresData;
+    const activos   = todos.filter(m => m.activo !== false);
+    const inactivos = todos.filter(m => m.activo === false);
+    const renderGroup = (lista, titulo, color) => {
+      if (!lista.length) return '';
+      const rows = lista.map(m => {
+        const gc = gruposCamp.find(g => (g.monitores||[]).map(String).includes(String(m.id)));
+        return `<tr>
+          <td>${escHtml((m.nombre+' '+m.apellidos).trim())}</td>
+          <td>${escHtml(m.rol||'')}</td>
+          <td>${escHtml(m.tel||'')}</td>
+          <td>${escHtml(m.email||'')}</td>
+          <td>${escHtml(gc?.nombre||'—')}</td>
+          <td style="color:${color};font-weight:700;">${titulo}</td>
+        </tr>`;
+      }).join('');
+      return rows;
+    };
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Listado de monitores</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;padding:20px;color:#222;font-size:13px}
+  h1{color:#2D5016;font-size:1.2rem;margin-bottom:4px}
+  .meta{font-size:11px;color:#888;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#2D5016;color:white;padding:8px 10px;text-align:left;font-size:12px}
+  td{padding:7px 10px;border-bottom:1px solid #e8e0d0;vertical-align:top}
+  tr:nth-child(even) td{background:#f9f6f1}
+  .no-print{margin-top:20px;text-align:center}
+  @media print{.no-print{display:none!important}body{padding:10px}}
+</style></head><body>
+<h1>👤 Equipo de monitores</h1>
+<div class="meta">${new Date().toLocaleString('es-ES')} · ${activos.length} activo${activos.length!==1?'s':''} / ${inactivos.length} no activo${inactivos.length!==1?'s':''}</div>
+<table>
+  <thead><tr><th>Nombre</th><th>Rol</th><th>Teléfono</th><th>Email</th><th>Grupo campamento</th><th>Estado</th></tr></thead>
+  <tbody>
+    ${renderGroup(activos,'✅ Activo','#27AE60')}
+    ${renderGroup(inactivos,'⛔ No activo','#C0392B')}
+  </tbody>
+</table>
+<div class="no-print">
+  <button onclick="window.print()" style="padding:10px 24px;background:#2D5016;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;">🖨️ Imprimir / PDF</button>
+  <button onclick="window.close()" style="padding:10px 24px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>
+</div>
+</body></html>`;
+    const win = window.open('','_blank');
+    if (!win) { alert('Permite ventanas emergentes para imprimir.'); return; }
+    win.document.write(html); win.document.close();
+    setTimeout(() => win.print(), 500);
+  }
+
+  function exportMonitoresExcel() {
+    const rows = [['Nombre','Apellidos','Rol','Teléfono','Email','Grupo campamento','Estado']];
+    monitoresData.forEach(m => {
+      const gc = gruposCamp.find(g => (g.monitores||[]).map(String).includes(String(m.id)));
+      rows.push([
+        m.nombre||'', m.apellidos||'', m.rol||'',
+        m.tel||'', m.email||'',
+        gc?.nombre||'',
+        m.activo===false ? 'No activo' : 'Activo'
+      ]);
+    });
+    const csv = rows.map(r=>r.map(c=>{var s=String(c);return '"'+s.split('"').join('""')+'"';}).join(';')).join('\n');
+    const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'monitores_algamitas2026.csv'; a.click();
+    URL.revokeObjectURL(a.href);
+    showSyncIndicator('✔ Excel descargado', 'ok');
+  }
+
   function showGTab(id, btn) {
     document.querySelectorAll('#tab-grupos .gtab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('#tab-grupos .gtab-btn').forEach(b => b.classList.remove('active'));
@@ -5350,7 +5532,7 @@ ${sections}
           <select onchange="addMonitorToGrupo(${g.id},this.value);this.value=''"
             style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;max-width:280px;">
             <option value="">— Selecciona un monitor —</option>
-            ${monitoresData.filter(m => !(g.monitores||[]).includes(m.id)).map(m =>
+            ${monitoresData.filter(m => m.activo!==false && !(g.monitores||[]).includes(m.id)).map(m =>
               `<option value="${m.id}">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</option>`).join('')}
           </select>
         </div>
@@ -7930,7 +8112,7 @@ ${sections}
       const gc = gruposCamp.find(gc => (gc.alumnos||[]).includes(p.n));
       rows.push([p.apellidos, p.nombre, g?.label||'', gc?.nombre||'', day[p.n]||'Sin marcar']);
     });
-    const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const csv = rows.map(r=>r.map(c=>{var s=String(c);return '"'+s.split('"').join('""')+'"';}).join(',')).join('\n');
     const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -9182,6 +9364,10 @@ ${sections}
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">🗒 Notas de alumnos</div>
+      <div style="display:flex;gap:5px;">
+        <button onclick="imprimirNotasAlumnos()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">🖨️</button>
+        <button onclick="exportNotasExcel()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">📊</button>
+      </div>
     </div>
     <div class="mob-search-bar">
       <input type="text" id="mobObsAluSearch" placeholder="🔍 Buscar alumno para añadir nota…" oninput="searchMobObsAlumno()" autocomplete="off"/>
@@ -9334,7 +9520,11 @@ ${sections}
     <div class="mob-topbar">
       <div class="mob-back" onclick="mobBack()">←</div>
       <div class="mob-topbar-title">👤 Monitores</div>
-      <button onclick="addMonitor();renderMobMonitores()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
+      <div style="display:flex;gap:5px;align-items:center;">
+        <button onclick="imprimirListaMonitores()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">🖨️</button>
+        <button onclick="exportMonitoresExcel()" style="padding:5px 9px;border-radius:8px;border:1.5px solid #888;background:transparent;color:#666;font-size:11px;cursor:pointer;">📊</button>
+        <button onclick="addMonitor();renderMobMonitores()" style="padding:6px 12px;border-radius:10px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:600;cursor:pointer;">+ Añadir</button>
+      </div>
     </div>
     <div id="mobMonResumenMed" style="margin:12px 16px 0;display:none;"></div>
     <div style="padding:10px 16px;border-bottom:1px solid #d9ceb8;background:white;display:flex;gap:6px;">
