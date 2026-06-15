@@ -5167,8 +5167,12 @@ ${sections}
   }
 
   function _getNotasFiltradas() {
-    // Lee filtros activos del panel de notas
-    const filtNom  = (document.getElementById('obsAluFiltNom')?.value  || '').toLowerCase().trim();
+    // Lee filtros activos — desktop y móvil
+    const filtNom  = (
+      document.getElementById('obsAluFiltNombre')?.value ||   // desktop
+      document.getElementById('mobObsAluSearch')?.value  ||   // móvil
+      ''
+    ).toLowerCase().trim();
     const filtMood = document.getElementById('obsAluFiltMood')?.value || '';
     return Object.entries(obsAlumnos)
       .filter(([n, d]) => {
