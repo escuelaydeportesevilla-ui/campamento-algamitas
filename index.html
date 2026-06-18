@@ -4244,7 +4244,25 @@
   // uploadMonitorPhoto eliminada - avatars con iniciales
 
   function updateMonitor(i, field, val) {
-    monitoresData[i][field] = field === 'activo' ? val : val;
+    monitoresData[i][field] = val;
+    // Si se asigna un grupo al monitor, sincronizar gruposCamp.monitores[]
+    if (field === 'grupoAsignado') {
+      const mId = String(monitoresData[i].id);
+      // Quitar de todos los grupos campamento
+      gruposCamp.forEach(g => {
+        g.monitores = (g.monitores||[]).filter(id => String(id) !== mId);
+      });
+      // Añadir al grupo seleccionado si hay valor
+      if (val) {
+        const gcId = val.replace(/^camp_/, '');
+        const gc = gruposCamp.find(g => String(g.id) === gcId);
+        if (gc) {
+          if (!gc.monitores) gc.monitores = [];
+          if (!gc.monitores.map(String).includes(mId)) gc.monitores.push(mId);
+          saveGruposCampStorage();
+        }
+      }
+    }
     // refresh name/initials display
     const cards = document.querySelectorAll('.monitor-card');
     if (cards[i]) {
@@ -5536,7 +5554,7 @@ ${body}
           <select onchange="addMonitorToGrupo(${g.id},this.value);this.value=''"
             style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--crema-oscuro);background:var(--crema);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;max-width:280px;">
             <option value="">— Selecciona un monitor —</option>
-            ${monitoresData.filter(m => m.activo!==false && !(g.monitores||[]).includes(m.id)).map(m =>
+            ${monitoresData.filter(m => m.activo!==false && !(g.monitores||[]).map(String).includes(String(m.id))).map(m =>
               `<option value="${m.id}">${escHtml(m.nombre)} ${escHtml(m.apellidos)}</option>`).join('')}
           </select>
         </div>
@@ -5653,13 +5671,24 @@ ${body}
 
   function addMonitorToGrupo(gid, monitorId) {
     if (!monitorId) return;
-    const g = gruposCamp.find(g => g.id === gid);
-    if (g && !g.monitores.includes(monitorId)) { g.monitores.push(monitorId); saveGruposCampStorage(); renderGruposCamp(); }
+    const g = gruposCamp.find(g => String(g.id) === String(gid));
+    if (!g) return;
+    if (!g.monitores) g.monitores = [];
+    const mId = String(monitorId);
+    if (!g.monitores.map(String).includes(mId)) {
+      g.monitores.push(mId);
+      saveGruposCampStorage();
+      renderGruposCamp();
+    }
   }
 
   function removeMonitorFromGrupo(gid, monitorId) {
-    const g = gruposCamp.find(g => g.id === gid);
-    if (g) { g.monitores = g.monitores.filter(id => id !== monitorId); saveGruposCampStorage(); renderGruposCamp(); }
+    const g = gruposCamp.find(g => String(g.id) === String(gid));
+    if (g) {
+      g.monitores = (g.monitores||[]).filter(id => String(id) !== String(monitorId));
+      saveGruposCampStorage();
+      renderGruposCamp();
+    }
   }
 
   // ── PDF / Documentos ──
