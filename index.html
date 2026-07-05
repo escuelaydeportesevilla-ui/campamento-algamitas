@@ -1899,6 +1899,12 @@
 <!-- HERO -->
 <div class="hero">
   <div class="hero-badge" id="heroBadge">🏕 ACPA · Colegio San José SSCC</div>
+  <div style="position:absolute;top:16px;right:16px;display:flex;gap:8px;z-index:5;">
+    <button onclick="actualizarApp()" title="Recargar datos"
+      style="background:rgba(255,255,255,.15);border:none;color:white;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:16px;">🔄</button>
+    <button onclick="salirApp()" title="Salir del proyecto"
+      style="background:rgba(255,255,255,.15);border:none;color:white;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:16px;">🚪</button>
+  </div>
   <h1 id="heroTitle">Campamento <span>Algámitas</span> 2026</h1>
   <p class="hero-sub" id="heroSubP">Planificación pedagógica · Basada en la evaluación 2025</p>
   <div class="hero-stats">
@@ -6314,7 +6320,7 @@ ${body}
 
       // Aplicar actualizaciones de Sheets
       j.data.forEach(sheetP => {
-        const n = parseInt(sheetP.n);
+        const n = parseInt(sheetP.n !== undefined ? sheetP.n : sheetP.S);
         const gid = sheetP.gid || 'g6';
         // Parse activo: 'true'/true → true, 'false'/false → false, 'pendiente' → 'pendiente'
         const activoRaw = sheetP.activo;
@@ -7079,6 +7085,13 @@ ${body}
         subs.forEach(el  => { if (el) el.textContent = 'Sincronizar datos'; });
       }, 3000);
     }
+  }
+
+  function salirApp() {
+    if (!confirm('¿Salir del proyecto? Se guardarán los cambios pendientes antes de salir.')) return;
+    Object.keys(syncTimers).forEach(k => clearTimeout(syncTimers[k]));
+    showSyncIndicator('👋 Saliendo…', 'loading');
+    setTimeout(() => showProjectSelector(), 400);
   }
 
 
