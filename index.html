@@ -7334,7 +7334,8 @@ ${body}
     // Render search + existing notes
     const entries = Object.entries(obsAlumnos)
       .filter(([,a]) => {
-        if (!a.notas || !a.notas.length) return false;
+        if (!a.notas) return false;
+        if (!a.notas.length) return true;
         if (mobFiltMood) return a.notas.some(n => n.mood === mobFiltMood);
         return true;
       })
@@ -7353,6 +7354,7 @@ ${body}
       const g = p ? (gruposEdit[p.gid]||grupos[p.gid]) : null;
       const card = document.createElement('div');
       card.style.cssText = 'background:white;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);';
+      card.id = 'mobobscard-' + n;
 
       // Header
       card.innerHTML = `
@@ -7362,10 +7364,18 @@ ${body}
             <div style="font-weight:700;font-size:14px;">${escHtml(alumno.apellidos)}, ${escHtml(alumno.nombre)}</div>
             <div style="font-size:11px;opacity:.5;">${g?g.label:''} · ${alumno.notas.length} nota${alumno.notas.length!==1?'s':''}</div>
           </div>
-          <button onclick="openAddNota(${n})" style="padding:6px 10px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:700;cursor:pointer;">+ Nota</button>
+          <button onclick="openAddNotaMob(${n})" style="padding:6px 10px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:12px;font-weight:700;cursor:pointer;">+ Nota</button>
         </div>
         <div style="padding:10px 14px;">
-          ${alumno.notas.slice().reverse().map(nota => {
+          ${alumno.notas.length === 0 ? `
+            <div class="mood-selector" style="display:flex;gap:6px;margin-bottom:8px;">
+              <button class="mood-btn selected" data-mood="bien" onclick="toggleMood(this)" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid #d9ceb8;font-size:12px;">😊</button>
+              <button class="mood-btn" data-mood="regular" onclick="toggleMood(this)" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid #d9ceb8;font-size:12px;">😐</button>
+              <button class="mood-btn" data-mood="mal" onclick="toggleMood(this)" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid #d9ceb8;font-size:12px;">😟</button>
+            </div>
+            <textarea rows="3" placeholder="Escribe la observación…" style="width:100%;padding:9px;border-radius:8px;border:1.5px solid #d9ceb8;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;"></textarea>
+            <button onclick="addNotaMob(${n},this)" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:none;background:#2D5016;color:white;font-size:13px;font-weight:700;cursor:pointer;">Guardar nota</button>
+          ` : alumno.notas.slice().reverse().map(nota => {
             const moodIcon = nota.mood==='bien'?'😊':nota.mood==='regular'?'😐':'😟';
             const moodColor = nota.mood==='bien'?'#27AE60':nota.mood==='regular'?'#E67E22':'#C0392B';
             return `<div style="padding:10px;background:#f9f6f1;border-radius:10px;margin-bottom:8px;border-left:3px solid ${moodColor};" id="mob-nota-item-${n}-${nota.id}">
